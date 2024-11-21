@@ -25,7 +25,7 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-0n!^rc92pcf=fr
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DJANGO_DEBUG', True)
 
-ALLOWED_HOSTS = [os.environ.get('DJANGO_ALLOWED_HOST', "*")]
+ALLOWED_HOSTS = ["muhangiki-wallet.onrender.com", "*"]
 
 
 # Application definition
