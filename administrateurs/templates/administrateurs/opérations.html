@@ -1,0 +1,40 @@
+{% extends 'administrateurs/base.html' %}
+
+{% block title %}Opérations{% endblock %}
+
+{% block content %}
+<h1>Opérations</h1>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="card-title">Liste des Opérations</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Nom</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for opération in opérations %}
+                        <tr>
+                            <td>{{ opération.name }}</td>
+                            <td>
+                                <a href="{% url 'administrateurs:supprimer_opération' opération.id %}" class="btn btn-sm btn-danger">Supprimer</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<a href="{% url 'administrateurs:creer_opération' %}" class="btn btn-primary mt-3">Créer une Opération</a>
+
+{% endblock %}

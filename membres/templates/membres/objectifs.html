@@ -1,0 +1,138 @@
+{% extends 'membres/base.html' %}
+
+{% block title %}Mes Objectifs{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <h1 class="text-center mb-4">Mes Objectifs</h1>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{message.tags}}{% endif %} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="row mb-3">
+        <div class="col-md-12 text-end">
+            <button type="button" class="btn btn-mw text-white" data-bs-toggle="modal" data-bs-target="#ajouterObjectifModal">
+                Ajouter un objectif
+            </button>
+        </div>
+    </div>
+
+    <div class="row">
+        {% for objectif in objectifs %}
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="card-title font-weight-bold">{{ objectif.nom }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="progress color-mw mb-3" style="height: 20px;">
+                        <div class="progress-bar" role="progressbar" 
+                             style="width: {{ objectif.pourcentage_atteint }}%;" 
+                             aria-valuenow="{{ objectif.montant_epargne }}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="{{ objectif.montant_cible }}">
+                            {{ objectif.pourcentage_atteint|floatformat:2 }}%
+                        </div>
+                    </div>
+                    <p class="card-text">
+                        <span class="font-weight-bold">Montant cible :</span> 
+                        {{ objectif.montant_cible|floatformat:2 }} {{ objectif.devise }}
+                    </p>
+                    <p class="card-text">
+                        <span class="font-weight-bold">Montant épargné :</span> 
+                        {{ objectif.montant_epargne|floatformat:2 }} {{ objectif.devise }}
+                    </p>
+                    <p class="card-text">
+                        <span class="font-weight-bold">Date limite :</span> 
+                        {{ objectif.date_limite }}
+                    </p> 
+
+                    <div class="d-flex justify-content-between">
+                        <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#depotModal{{ objectif.id }}">
+                            Déposer
+                        </button>
+                        <div>
+                            <a href="{% url 'membres:objectifs' %}" class="btn btn-secondary btn-sm">Modifier</a>
+                            <a href="{% url 'membres:objectifs' %}" class="btn btn-danger btn-sm">Supprimer</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de dépôt -->
+        <div class="modal fade" id="depotModal{{ objectif.id }}" tabindex="-1" aria-labelledby="depotModalLabel{{ objectif.id }}" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="depotModalLabel{{ objectif.id }}">Effectuer un dépôt pour {{ objectif.nom }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form method="post" action="{% url 'membres:objectifs' %}">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="montant" class="form-label">Montant du dépôt ({{ objectif.devise }}):</label>
+                                <input type="number" class="form-control" id="montant" name="montant" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Déposer</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-md-12 text-center">
+            <p>Aucun objectif pour le moment.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Modal d'ajout d'objectif -->
+    <div class="modal fade" id="ajouterObjectifModal" tabindex="-1" aria-labelledby="ajouterObjectifModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="ajouterObjectifModalLabel">Ajouter un nouvel objectif</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form method="post" action="{% url 'membres:objectifs' %}">
+                        {% csrf_token %}
+                        {% for field in form %}
+                            <div class="mb-3">
+                                <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}:</label>
+                                {% if field.field.widget.input_type == 'select' %}
+                                    <select class="form-select {% if field.errors %}is-invalid{% endif %}" id="{{ field.id_for_label }}" name="{{ field.name }}">
+                                        {% for option in field.field.choices %}
+                                            <option value="{{ option.0 }}" {% if field.value == option.0 %}selected{% endif %}>{{ option.1 }}</option>
+                                        {% endfor %}
+                                    </select>
+                                {% else %}
+                                    <input type="{{ field.field.widget.input_type }}" class="form-control {% if field.errors %}is-invalid{% endif %}" id="{{ field.id_for_label }}" name="{{ field.name }}" value="{{ field.value|default:'' }}">
+                                {% endif %}
+                                {% if field.errors %}
+                                    <div class="invalid-feedback">
+                                        {{ field.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                        <button type="submit" class="btn btn-primary">Ajouter</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

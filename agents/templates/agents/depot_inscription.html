@@ -1,0 +1,69 @@
+{% extends 'agents/base.html' %}
+{% load static %}
+
+{% block title %}Dépôts d'inscription{% endblock %}
+
+{% block content %}
+<h1>Dépôts d'inscription</h1>
+
+<div class="row mt-4">
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{message.tags}}{% endif %} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+
+    <div class="col-12">
+        <div class="card shadow-sm rounded-4">
+            <div class="card-body">
+                <table id="depots-table" class="table table-striped" style="width:100%">  </a>
+                    <thead>
+                        <tr>
+                            <th>Membre</th>
+                            <th>Montant</th>
+                            <th>Devise</th>
+                            <th>Numéro de transaction</th>
+                            <th>Date du dépôt</th>
+                            <th>Statut</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for depot in depots_inscriptions %}
+                        <tr>
+                            <td>{{ depot.membre.prenom }} {{ depot.membre.nom }}</td>
+                            <td>{{ depot.montant }}</td>
+                            <td>{{ depot.devise }}</td>
+                            <td>{{ depot.numero_transaction }}</td>
+                            <td>{{ depot.date_depot }}</td>
+                            <td>{{ depot.statut }}</td>
+                            <td>
+                                {% if depot.statut == "En attente" %}
+                                <a href="{% url 'agents:approuver_depot_inscription' depot.transaction.pk %}" class="btn btn-sm btn-success"><i class="fas fa-check"></i> Valider</a>
+                                <a href="{% url 'agents:rejetter_depot_inscription' depot.transaction.pk %}" class="btn btn-sm btn-danger ms-2"><i class="fas fa-times"></i> Rejeter</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                            <tr><td colspan="7" class="text-center">Aucun dépôt d'inscription trouvé.</td></tr>
+                        {% endfor %}
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+$(document).ready(function () {
+    $('#depots-table').DataTable();
+});
+</script>
+
+{% endblock %}

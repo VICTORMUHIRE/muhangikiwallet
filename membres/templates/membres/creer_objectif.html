@@ -1,0 +1,34 @@
+{% extends 'membres/base.html' %}
+
+{% block title %}Ajouter un objectif{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <h1 class="text-center mb-4">Ajouter un nouvel objectif</h1>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 offset-md-3">
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="nom" class="form-label">Nom de l'objectif:</label>
+                    <input type="text" class="form-control" id="nom" name="nom" required>
+                </div>
+                <div class="mb-3">
+                    <label for="montant_cible" class="form-label">Montant cible:</label>
+                    <input type="number" class="form-control" id="montant_cible" name="montant_cible" required>
+                </div>
+                <div class="mb-3">
+                    <label for="date_limite" class="form-label">Date limite:</label>
+                    <input type="date" class="form-control" id="date_limite" name="date_limite" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Ajouter</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

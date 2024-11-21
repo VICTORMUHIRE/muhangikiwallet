@@ -1,0 +1,18 @@
+# administrateurs/templates/creer_organisation.html
+
+{% extends 'administrateurs/base.html' %}
+
+{% block title %}Créer une Organisation{% endblock %}
+
+{% block content %}
+<h1>Créer une Organisation</h1>
+
+<p>Veuillez remplir le formulaire pour créer une nouvelle organisation.</p>
+
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">Créer l'Organisation</button>
+</form>
+
+{% endblock %}

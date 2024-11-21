@@ -1,0 +1,112 @@
+{% extends 'organisations/base.html' %}
+{% load static %}
+
+{% block title %}Accueil{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="text-center">
+            <span class="mw-color">Bienvenue</span> {{ user.organisation.nom }}
+        </h1>
+    </div>
+</div> 
+
+<div class="row">
+    <div class="col-md-4 offset-md-2">
+        <div class="card h-100 shadow-sm rounded-4 border-0 bg-light"  style="background-color: color(srgb 0 1 0 / 0.1) !important;">
+            <div class="card-body d-flex flex-column align-items-center justify-content-center">
+                <i class="fas fa-wallet fa-3x text-success mb-3"></i> 
+                <h5 class="card-title mt-4 font-weight-bold">Solde Disponible</h5>
+                
+                <h6 class="card-subtitle mb-2 text-muted">CDF : {{ solde_CDF|floatformat:2 }}</h6>
+                <h6 class="card-subtitle text-muted">USD : {{ solde_USD|floatformat:2 }}</h6>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 my-3 my-md-0">
+        <div class="card h-100 shadow-sm rounded-4 border-0 bg-light"  style="background-color: color(srgb 1 0 0 / 0.1) !important;">
+            <div class="card-body d-flex flex-column align-items-center justify-content-center" >
+                <i class="fas fa-hand-holding-usd fa-3x text-danger mb-3"></i> 
+                <h5 class="card-title mt-4 font-weight-bold">Fonds à Débourser</h5>
+                <h6 class="card-subtitle mb-2 text-muted">CDF : {{ total_prêts_CDF|floatformat:2 }}</h6>
+                <h6 class="card-subtitle text-muted">USD : {{ total_prêts_USD|floatformat:2 }}</h6>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row  my-4">
+    <div class="col-12">
+        <div class="d-flex flex-wrap justify-content-center" style="gap: 10px;">
+            <a href="{% url 'organisations:déboursement' %}" class="btn btn-success rounded-pill p-3" style="min-width: 160px;">
+                <i class="fas fa-money-bill-wave me-2"></i>Débourser
+            </a>
+            <a href="{% url 'organisations:remboursement' %}" class="btn btn-danger rounded-pill p-3" style="min-width: 160px;">
+                <i class="fas fa-hand-holding-usd me-2"></i> Rembourser
+            </a>
+            <a href="{% url 'organisations:transfert' %}" class="btn btn-mw rounded-pill p-3" style="min-width: 160px;">
+                <i class="fas fa-exchange-alt me-2"></i> Transférer
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row flex-grow-1">
+    <div class="col-md-6">
+        <div class="card h-100 shadow-sm rounded-4 border-0">
+            <div class="card-header bg-white rounded-top-4">
+                <h5 class="card-title font-weight-bold">
+                    <i class="fas fa-users fa-fw mw-color"></i> Membres
+                </h5>
+            </div>
+            <div class="card-body d-flex flex-column justify-content-between">
+                <ul class="list-group list-group-flush">
+                    {% for membre in membres %}
+                    <li class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="font-weight-bold">{{ membre.nom }} {{ membre.postnom }} {{ membre.prenom }}</span>
+                            </div>
+                        </div>
+                    </li>
+                    {% empty %}
+                    <li class="list-group-item"> Aucun membre enregistré</li>
+                    {% endfor %}
+                </ul>
+                <a href="{% url 'organisations:membres' %}" class="btn btn-sm btn-mw mt-3 rounded-pill">Gérer</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100 shadow-sm rounded-4 border-0">
+            <div class="card-header bg-white rounded-top-4">
+                <h5 class="card-title font-weight-bold">
+                    <i class="fas fa-history fa-fw mw-color"></i> Historique des transactions
+                </h5>
+            </div>
+            <div class="card-body d-flex flex-column justify-content-between">
+                <ul class="list-group list-group-flush">
+                    {% for transaction in transactions %}
+                    <li class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="font-weight-bold">{{ transaction.operation }}</span> de
+                                {{ transaction.montant|floatformat:2 }} {{ transaction.devise }}
+                            </div>
+                            <small class="text-muted">{{ transaction.date }}</small>
+                        </div>
+                    </li>
+                    {% empty %}
+                    <li class="list-group-item"> Aucune transaction pour le moment</li>
+                    {% endfor %}
+                    {% if transactions.length > 4 %}
+                        <a href="{% url 'organisations:transactions' %}" class="btn btn-mw btn-sm mt-3 rounded-pill">Voir plus</a>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

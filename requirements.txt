@@ -1,0 +1,8 @@
+asgiref==3.8.1
+Django==5.1.2
+django-bootstrap5==24.3
+django-crispy-forms==2.3
+mysqlclient==2.2.4
+pillow==11.0.0
+sqlparse==0.5.1
+tzdata==2024.2

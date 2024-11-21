@@ -1,0 +1,19 @@
+{% extends 'agents/base.html' %}
+
+{% block title %}Dépôt sur Objectif{% endblock %}
+
+{% block content %}
+<h1>Dépôt sur Objectif</h1>
+
+<p>Veuillez entrer le montant que vous souhaitez déposer sur l'objectif "{{ objectif.name }}".</p>
+
+<form method="post">
+    {% csrf_token %}
+    <div class="form-group">
+        <label for="montant">Montant (CDF)</label>
+        <input type="number" class="form-control" id="montant" name="montant" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Dépôt</button>
+</form>
+
+{% endblock %}

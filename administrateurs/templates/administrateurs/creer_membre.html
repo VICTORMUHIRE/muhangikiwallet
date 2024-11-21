@@ -1,0 +1,18 @@
+# administrateurs/templates/creer_membre.html
+
+{% extends 'administrateurs/base.html' %}
+
+{% block title %}Créer un Membre{% endblock %}
+
+{% block content %}
+<h1>Créer un Membre</h1>
+
+<p>Veuillez remplir le formulaire pour créer un nouveau membre.</p>
+
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">Créer le Membre</button>
+</form>
+
+{% endblock %}

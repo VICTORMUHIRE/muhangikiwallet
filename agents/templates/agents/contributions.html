@@ -1,0 +1,38 @@
+{% extends 'agents/base.html' %}
+
+{% block title %}Contributions{% endblock %}
+
+{% block content %}
+<h1>Contributions</h1>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="card-title">Liste des Contributions</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Membre</th>
+                            <th>Montant</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for contribution in contributions %}
+                        <tr>
+                            <td>{{ contribution.date }}</td>
+                            <td>{{ contribution.membre.prenom }} {{ contribution.membre.nom }}</td>
+                            <td>{{ contribution.montant|floatformat:2 }} CDF</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

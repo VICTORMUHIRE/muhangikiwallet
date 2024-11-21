@@ -1,0 +1,106 @@
+{% extends 'administrateurs/base.html' %}
+{% load static %}
+
+{% block title %}Tableau de Bord Administrateur{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="text-center">
+            <span class="mw-color">Tableau de Bord Administrateur</span>
+        </h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-3">
+        <div class="card shadow-sm rounded-4 border-0 bg-light">
+            <div class="card-body d-flex flex-column align-items-center justify-content-center">
+                <i class="fas fa-users fa-3x text-primary mb-3"></i>
+                <h5 class="card-title font-weight-bold">Total Membres</h5>
+                <h6 class="card-subtitle mb-2 text-muted">{{ total_membres }}</h6>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm rounded-4 border-0 bg-light">
+            <div class="card-body d-flex flex-column align-items-center justify-content-center">
+                <i class="fas fa-building fa-3x text-success mb-3"></i>
+                <h5 class="card-title font-weight-bold">Total Organisations</h5>
+                <h6 class="card-subtitle mb-2 text-muted">{{ total_organisations }}</h6>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm rounded-4 border-0 bg-light">
+            <div class="card-body d-flex flex-column align-items-center justify-content-center">
+                <i class="fas fa-user-tie fa-3x text-warning mb-3"></i>
+                <h5 class="card-title font-weight-bold">Total Agents</h5>
+                <h6 class="card-subtitle mb-2 text-muted">{{ total_agents }}</h6>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm rounded-4 border-0 bg-light">
+            <div class="card-body d-flex flex-column align-items-center justify-content-center">
+                <i class="fas fa-wallet fa-3x text-info mb-3"></i>
+                <h5 class="card-title font-weight-bold">Solde Total</h5>
+                <h6 class="card-subtitle mb-2 text-muted">CDF : {{ solde_total_CDF|floatformat:2 }}</h6>
+                <h6 class="card-subtitle text-muted">USD : {{ solde_total_USD|floatformat:2 }}</h6>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card shadow-sm rounded-4 border-0 h-100">
+            <div class="card-header bg-white rounded-top-4">
+                <h5 class="card-title font-weight-bold">
+                    <i class="fas fa-tasks fa-fw mw-color"></i> Tâches à realiser
+                </h5>
+            </div><div class="card-body p-0">
+                <ul class="list-group list-group-flush">
+                    {% for inscription in inscriptions %}
+                    <li class="list-group-item p-2 rounded-4">
+                        <a class="btn d-block text-start btn-light" href="{% url 'administrateurs:voir_membre' inscription.membre.pk %}">
+                            <div class="badge bg-warning">Demande d'approbation</div>
+                            <h6 class="text-center">{{ inscription.membre }}</h6>
+                        </a>
+                    </li>
+                    {% empty %}
+                    <li class="list-group-item"> Aucune tâches pour le moment</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm rounded-4 border-0">
+            <div class="card-header bg-white rounded-top-4">
+                <h5 class="card-title font-weight-bold">
+                    <i class="fas fa-history fa-fw mw-color"></i> Dernières Transactions
+                </h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    {% for transaction in transactions %}
+                    <li class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="font-weight-bold">{{ transaction.operation }}</span> de
+                                {{ transaction.montant|floatformat:2 }} {{ transaction.devise }}
+                            </div>
+                            <small class="text-muted">{{ transaction.date }}</small>
+                        </div>
+                    </li>
+                    {% empty %}
+                    <li class="list-group-item"> Aucune transaction pour le moment</li>
+                    {% endfor %}
+                </ul>
+                <a href="{% url 'administrateurs:transactions_cdf' %}" class="btn btn-mw btn-sm mt-3 rounded-pill text-white">Voir toutes les transactions</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

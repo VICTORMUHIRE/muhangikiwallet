@@ -1,0 +1,92 @@
+{% extends 'membres/base.html' %}
+
+{% block title %}Paramètres{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="text-center mb-4">Paramètres</h1>
+
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <a href="{% url 'membres:profil' %}" class="text-decoration-none">
+                <div class="card h-100 shadow-sm rounded-4 border-0 bg-light">
+                    <div class="card-body d-flex flex-column align-items-center justify-content-center">
+                        <i class="fas fa-user fa-3x mb-3 text-mw"></i>
+                        <h5 class="card-title mt-4 font-weight-bold">Profil</h5>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <a href="{% url 'membres:notifications' %}" class="text-decoration-none">
+                <div class="card h-100 shadow-sm rounded-4 border-0 bg-light">
+                    <div class="card-body d-flex flex-column align-items-center justify-content-center">
+                        <i class="fas fa-bell fa-3x mb-3 text-mw"></i>
+                        <h5 class="card-title mt-4 font-weight-bold">Notifications</h5>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <a href="{% url 'membres:notifications' %}" class="text-decoration-none">
+                <div class="card h-100 shadow-sm rounded-4 border-0 bg-light">
+                    <div class="card-body d-flex flex-column align-items-center justify-content-center">
+                        <i class="fas fa-shield-alt fa-3x mb-3 text-mw"></i>
+                        <h5 class="card-title mt-4 font-weight-bold">Sécurité</h5>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <a href="{% url 'membres:notifications' %}" class="text-decoration-none">
+                <div class="card h-100 shadow-sm rounded-4 border-0 bg-light">
+                    <div class="card-body d-flex flex-column align-items-center justify-content-center">
+                        <i class="fas fa-info-circle fa-3x mb-3 text-mw"></i>
+                        <h5 class="card-title mt-4 font-weight-bold">À propos</h5>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <a href="{% url 'membres:notifications' %}" class="text-decoration-none">
+                <div class="card h-100 shadow-sm rounded-4 border-0 bg-light">
+                    <div class="card-body d-flex flex-column align-items-center justify-content-center">
+                        <i class="fas fa-envelope fa-3x mb-3 text-mw"></i>
+                        <h5 class="card-title mt-4 font-weight-bold">Contact</h5>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <a href="{% url 'membres:notifications' %}" class="text-decoration-none">
+                <div class="card h-100 shadow-sm rounded-4 border-0 bg-light">
+                    <div class="card-body d-flex flex-column align-items-center justify-content-center">
+                        <i class="fas fa-headset fa-3x mb-3 text-mw"></i>
+                        <h5 class="card-title mt-4 font-weight-bold">Support</h5>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4 offset-md-4 mb-4">
+                <a href="{% url 'logout' %}" class="text-decoration-none">
+                    <div class="card h-100 shadow-sm rounded-4 border-0 bg-light">
+                        <div class="card-body d-flex flex-column align-items-center justify-content-center">
+                            <i class="fas fa-sign-out-alt fa-3x mb-3 text-mw"></i>
+                            <h5 class="card-title mt-4 font-weight-bold">Déconnexion</h5>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

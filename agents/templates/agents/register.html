@@ -1,0 +1,18 @@
+# agent/templates/register.html
+
+{% extends 'agent/base.html' %}
+
+{% block title %}Inscription{% endblock %}
+
+{% block content %}
+<h1>Inscription</h1>
+
+<p>Veuillez remplir le formulaire pour vous inscrire.</p>
+
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">S'inscrire</button>
+</form>
+
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends 'administrateurs/base.html' %}
+
+{% block title %}Organisations{% endblock %}
+
+{% block content %}
+<h1>Organisations</h1>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="card-title">Liste des Organisations</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Nom</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for organisation in organisations %}
+                        <tr>
+                            <td>{{ organisation.nom }}</td>
+                            <td>
+                                <a href="{% url 'administrateurs:modifier_organisation' organisation.id %}" class="btn btn-sm btn-warning">Modifier</a>
+                                <a href="{% url 'administrateurs:supprimer_organisation' organisation.id %}" class="btn btn-sm btn-danger">Supprimer</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<a href="{% url 'administrateurs:creer_organisation' %}" class="btn btn-primary mt-3">Créer une Organisation</a>
+
+{% endblock %}

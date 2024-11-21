@@ -1,0 +1,195 @@
+muhangiki_wallet/
+├── muhangiki_wallet/
+│   ├── __init__.py
+│   ├── settings.py
+│   ├── urls.py
+│   ├── wsgi.py
+│   └── templates/
+│       └── base.html
+├── static/
+│   ├── css/
+│   │   ├── bootstrap-grid.css
+│   │   ├── bootstrap-grid.css.map
+│   │   ├── bootstrap-grid.min.css
+│   │   ├── bootstrap-grid.min.css.map
+│   │   ├── bootstrap-grid.rtl.css
+│   │   ├── bootstrap-grid.rtl.css.map
+│   │   ├── bootstrap-grid.rtl.min.css
+│   │   ├── bootstrap-grid.rtl.min.css.map
+│   │   ├── bootstrap-reboot.css
+│   │   ├── bootstrap-reboot.css.map
+│   │   ├── bootstrap-reboot.min.css
+│   │   ├── bootstrap-reboot.min.css.map
+│   │   ├── bootstrap-reboot.rtl.css
+│   │   ├── bootstrap-reboot.rtl.css.map
+│   │   ├── bootstrap-reboot.rtl.min.css
+│   │   ├── bootstrap-reboot.rtl.min.css.map
+│   │   ├── bootstrap-utilities.css
+│   │   ├── bootstrap-utilities.css.map
+│   │   ├── bootstrap-utilities.min.css
+│   │   ├── bootstrap-utilities.min.css.map
+│   │   ├── bootstrap-utilities.rtl.css
+│   │   ├── bootstrap-utilities.rtl.css.map
+│   │   ├── bootstrap-utilities.rtl.min.css
+│   │   ├── bootstrap-utilities.rtl.min.css.map
+│   │   ├── bootstrap.css
+│   │   ├── bootstrap.css.map
+│   │   ├── bootstrap.min.css
+│   │   ├── bootstrap.min.css.map
+│   │   ├── bootstrap.rtl.css
+│   │   ├── bootstrap.rtl.css.map
+│   │   ├── bootstrap.rtl.min.css
+│   │   ├── bootstrap.rtl.min.css.map
+│   │   └── test.html
+│   └── js/
+│       ├── bootstrap.bundle.js
+│       ├── bootstrap.bundle.js.map
+│       ├── bootstrap.bundle.min.js
+│       ├── bootstrap.bundle.min.js.map
+│       ├── bootstrap.esm.js
+│       ├── bootstrap.esm.js.map
+│       ├── bootstrap.esm.min.js
+│       ├── bootstrap.esm.min.js.map
+│       ├── bootstrap.js
+│       ├── bootstrap.js.map
+│       ├── bootstrap.min.js
+│       ├── bootstrap.min.js.map
+│       └── map.js
+├── manage.py
+├── requirements.txt
+├── administrateurs/
+│   ├── admin.py
+│   ├── apps.py
+│   ├── forms.py
+│   ├── models.py
+│   ├── tests.py
+│   ├── urls.py
+│   ├── views.py
+│   ├── __init__.py
+│   └── templates/
+│       ├── creer_membre.html
+│       ├── creer_operation.html
+│       ├── creer_organisation.html
+│       ├── creer_transaction_cdf.html
+│       ├── creer_transaction_usd.html
+│       ├── home.html
+│       ├── login.html
+│       ├── membres.html
+│       ├── modifier_membre.html
+│       ├── modifier_organisation.html
+│       ├── operations.html
+│       ├── organisations.html
+│       ├── profile.html
+│       ├── register.html
+│       ├── transactions_cdf.html
+│       └── transactions_usd.html
+├── agent/
+│   ├── admin.py
+│   ├── apps.py
+│   ├── forms.py
+│   ├── models.py
+│   ├── tests.py
+│   ├── urls.py
+│   ├── views.py
+│   ├── __init__.py
+│   └── templates/
+│       ├── base.html
+│       ├── contributions.html
+│       ├── creer_objectif.html
+│       ├── depot_objectif.html
+│       ├── home.html
+│       ├── login.html
+│       ├── modifier_type_pret.html
+│       ├── profile.html
+│       ├── prets.html
+│       ├── register.html
+│       ├── transactions.html
+│       └── types_pret.html
+├── membres/
+│   ├── admin.py
+│   ├── apps.py
+│   ├── forms.py
+│   ├── models.py
+│   ├── tests.py
+│   ├── urls.py
+│   ├── views.py
+│   ├── __init__.py
+│   └── templates/
+│       ├── base.html
+│       ├── creer_objectif.html
+│       ├── demande_pret.html
+│       ├── depot_objectif.html
+│       ├── home.html
+│       ├── home2.html
+│       ├── login.html
+│       ├── parametres.html
+│       ├── register.html
+│       └── transactions.html
+├── objectifs/
+│   ├── admin.py
+│   ├── apps.py
+│   ├── forms.py
+│   ├── models.py
+│   ├── tests.py
+│   ├── urls.py
+│   ├── views.py
+│   ├── __init__.py
+│   └── templates/
+│       ├── base.html
+│       ├── depot_objectif.html
+│       ├── home.html
+│       ├── objectifs.html
+│       ├── objectifs_approuves.html
+│       └── objectifs_atteints.html
+├── organisations/
+│   ├── admin.py
+│   ├── apps.py
+│   ├── forms.py
+│   ├── models.py
+│   ├── tests.py
+│   ├── urls.py
+│   ├── views.py
+│   ├── __init__.py
+│   └── templates/
+│       ├── base.html
+│       ├── contributions.html
+│       ├── creer_objectif.html
+│       ├── depot_objectif.html
+│       ├── home.html
+│       ├── modifier_type_pret.html
+│       ├── profile.html
+│       ├── prets.html
+│       ├── register.html
+│       ├── transaction.html
+│       └── types_pret.html
+├── prets/
+│   ├── admin.py
+│   ├── apps.py
+│   ├── forms.py
+│   ├── models.py
+│   ├── tests.py
+│   ├── urls.py
+│   ├── views.py
+│   ├── __init__.py
+│   └── templates/
+│       ├── base.html
+│       ├── gestion_demandes_pret.html
+│       ├── home.html
+│       ├── prets.html
+│       └── prets_approuves.html
+└── transactions/
+    ├── admin.py
+    ├── apps.py
+    ├── forms.py
+    ├── models.py
+    ├── tests.py
+    ├── urls.py
+    ├── views.py
+    ├── __init__.py
+    └── templates/
+        ├── base.html
+        ├── creer_transaction_cdf.html
+        ├── creer_transaction_usd.html
+        ├── home.html
+        ├── transactions_cdf.html
+        └── transactions_usd.html

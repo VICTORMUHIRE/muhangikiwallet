@@ -1,0 +1,49 @@
+{% extends 'administrateurs/base.html' %}
+
+{% block title %}Transactions CDF{% endblock %}
+
+{% block content %}
+<h1>Transactions CDF</h1>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="card-title">Liste des Transactions CDF</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Client Expéditeur</th>
+                            <th>Client Bénéficiaire</th>
+                            <th>Opération</th>
+                            <th>Montant</th>
+                            <th>Description</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction_cdf in transactions_cdf %}
+                        <tr>
+                            <td>{{ transaction_cdf.date }}</td>
+                            <td>{{ transaction_cdf.client_account_sender }}</td>
+                            <td>{{ transaction_cdf.client_account_receiver }}</td>
+                            <td>{{ transaction_cdf.operations.name }}</td>
+                            <td>{{ transaction_cdf.amount|floatformat:2 }} CDF</td>
+                            <td>{{ transaction_cdf.description }}</td>
+                            <td>
+                                <a href="{% url 'administrateurs:supprimer_transaction_cdf' transaction_cdf.id %}" class="btn btn-sm btn-danger">Supprimer</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}

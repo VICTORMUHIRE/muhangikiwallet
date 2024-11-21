@@ -1,0 +1,48 @@
+{% extends 'administrateurs/base.html' %}
+
+{% block title %}Transactions USD{% endblock %}
+
+{% block content %}
+<h1>Transactions USD</h1>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="card-title">Liste des Transactions USD</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Client Expéditeur</th>
+                            <th>Client Bénéficiaire</th>
+                            <th>Opération</th>
+                            <th>Montant</th>
+                            <th>Description</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction_usd in transactions_usd %}
+                        <tr>
+                            <td>{{ transaction_usd.date }}</td>
+                            <td>{{ transaction_usd.client_account_sender }}</td>
+                            <td>{{ transaction_usd.client_account_receiver }}</td>
+                            <td>{{ transaction_usd.operations.name }}</td>
+                            <td>{{ transaction_usd.amount|floatformat:2 }} USD</td>
+                            <td>{{ transaction_usd.description }}</td>
+                            <td>
+                                <a href="{% url 'administrateurs:supprimer_transaction_usd' transaction_usd.id %}" class="btn btn-sm btn-danger">Supprimer</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

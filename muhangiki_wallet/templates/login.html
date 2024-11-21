@@ -1,0 +1,65 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="{% static 'LOGO MUHANGIKI WALLET PRINCIPALE.png' %}" type="image/png">
+    <title>{% block title %}Muhangiki Wallet - Connexion{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/bootstrap/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/bootstrap-icons/bootstrap-icons.css' %}">
+    <link rel="manifest" href="{% static 'manifest.json' %}">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <script src="{% static 'js/bootstrap/bootstrap.bundle.min.js' %}"></script> 
+    <script src="{% static 'js/script.js' %}"></script>
+    <style>
+        body {
+            background-color: rgba(255, 232, 232, 0.637);
+        }
+        
+        @media screen and (max-width: 768px) {
+            body {
+                background-color: white;
+            }
+            body > div{
+                box-shadow: none !important;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body class="d-flex align-items-center justify-content-center">
+    <div class="card col-md-4 col-lg-3 p-3">
+        <div class="card-body">
+            <div class="text-center mb-4">
+                <img src="{% static 'LOGO MUHANGIKI WALLET PRINCIPALE.png' %}" alt="Logo Muhangiki Wallet" height="120">
+            </div> 
+
+            <h2 class="mw-color text-center mb-4">Connexion</h2>
+            
+            {% if messages %} <p class="alert alert-danger text-center">Nom d'utilisateur incorrect ou mot de passe incorrect</p>{% endif %}
+            
+            <form method="post" class="mb-4">
+                {% csrf_token %}
+                {% for field in form %}
+                    <div class="mb-3">
+                        <!--label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label-->
+                        <input type="{{ field.field.widget.input_type }}" class="form-control {% if field.errors %}is-invalid{% endif %} px-3 bg-light" id="{{ field.id_for_label }}" name="{{ field.name }}" value="{{ field.value|default:'' }}" placeholder="{{ field.label }}"></input>
+                        {% if field.errors %}
+                            <div class="invalid-feedback">
+                                {{ field.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+                <button type="submit" class="btn btn-mw text-white w-100">Se connecter</button>
+            </form>
+            <p class="text-center mt-3">Pas encore de compte? <a href="{% url 'membres:inscription' %}">Inscrivez-vous</a></p>
+            <p class="text-center mt-3">Mot de passe oublié? <a href="{% url 'membres:password_reset' %}">Réinitialiser</a></p>
+            <p class="text-center mb-0">
+                <a href="{% url 'membres:termes_et_conditions' %}">Termes et Conditions</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,58 @@
+{% extends 'membres/base.html' %}
+
+{% block title %}Historique des transactions{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <h1 class="text-center mb-4">Historique des transactions</h1>
+        </div>
+    </div>
+
+    <div class="row">
+        {% for transaction in transactions %}
+        <div class="col-md-12 mb-4"> 
+            <div class="card shadow-sm h-100">
+                <div class="card-body d-flex flex-column justify-content-between"> 
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h5 class="card-title">
+                                <span class="badge bg-{% if transaction.operation == 'Dépôt' %}success
+                                                    {% elif transaction.operation == 'Retrait' %}danger
+                                                    {% elif transaction.operation == 'Transfert' %}primary
+                                                    {% elif transaction.operation == 'Contribution' %}warning
+                                                    {% else %}secondary
+                                                    {% endif %}">{{ transaction.operation }}</span>
+                            </h5>
+                            <p class="card-text">
+                                <span class="font-weight-bold">Montant:</span> 
+                                {{ transaction.montant|floatformat:2 }} {{ transaction.devise }}
+                            </p>
+                            {% if transaction.operation == 'Transfert' %}
+                            <p class="card-text">
+                                <span class="font-weight-bold">Bénéficiaire:</span> 
+                                {{ transaction.beneficiaire }}
+                            </p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4 offset-md-4 text-md-end"> 
+                            <p class="card-text">
+                                <span class="font-weight-bold">Date:</span> {{ transaction.date }}
+                            </p>
+                            <p class="card-text">
+                                <span class="font-weight-bold">Heure:</span> {{ transaction.heure }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-md-12 text-center">
+            <p>Aucune transaction pour le moment.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,18 @@
+# organisations/templates/creer_objectif.html
+
+{% extends 'organisations/base.html' %}
+
+{% block title %}Créer un Objectif{% endblock %}
+
+{% block content %}
+<h1>Créer un Objectif</h1>
+
+<p>Veuillez remplir le formulaire pour créer un nouvel objectif.</p>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">Créer l'Objectif</button>
+</form>
+
+{% endblock %}

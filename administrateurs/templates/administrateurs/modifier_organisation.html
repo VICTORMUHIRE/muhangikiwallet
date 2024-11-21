@@ -1,0 +1,16 @@
+{% extends 'administrateurs/base.html' %}
+
+{% block title %}Modifier une Organisation{% endblock %}
+
+{% block content %}
+<h1>Modifier une Organisation</h1>
+
+<p>Veuillez modifier les informations de l'organisation "{{ organisation.nom }}".</p>
+
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">Enregistrer</button>
+</form>
+
+{% endblock %}

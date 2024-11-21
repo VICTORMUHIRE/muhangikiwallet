@@ -1,0 +1,18 @@
+# organisations/templates/modifier_type_prêt.html
+
+{% extends 'organisations/base.html' %}
+
+{% block title %}Modifier un Type de Prêt{% endblock %}
+
+{% block content %}
+<h1>Modifier un Type de Prêt</h1>
+
+<p>Veuillez modifier les informations du type de prêt "{{ type_prêt.name }}".</p>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">Enregistrer</button>
+</form>
+
+{% endblock %}

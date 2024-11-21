@@ -1,0 +1,187 @@
+load static
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>block titleMuhangiki Walletendblock</title>
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        integrity="sha512-iecdLmaskl7CVkqk1w2/knoG80jUhL7w+r5EFs1hCQC5SoW3VvMYgL9v+TFeMoA+sW/ZfrpK2+c/gSdGoQHzo//w=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="url 'membres:home">
+                <img src="images/logo.png" alt="Logo Muhangiki Wallet" width="150" height="40"
+                    class="d-inline-block align-text-top">
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    if request.user.is_authenticated
+                    <li class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="url 'membres:home">Accueil</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="url 'membres:transaction">Transactions</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="url 'membres:objectifs">Objectifs</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="url 'membres:paramètres">Paramètres</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="url 'membres:logout">Déconnexion</a>
+                    </li>
+                    else
+                    <li class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="url 'membres:login">Connexion</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="url 'membres:register">Inscription</a>
+                    </li>
+                    endif
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-5">
+    <div class="row">
+        <div class="col-md-12">
+            <h1 class="text-center">Bienvenue sur votre espace membre</h1>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-4">
+            <div class="card shadow-sm bg-light">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Solde Disponible</h5>
+                    <h2 class="card-text font-weight-bold">{{ solde|floatformat:2 }} CDF</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm bg-light">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Intérêts Reçus</h5>
+                    <h2 class="card-text font-weight-bold">{{ intérêts_reçus|floatformat:2 }} CDF</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm bg-light">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Total Contributions</h5>
+                    <h2 class="card-text font-weight-bold">{{ total_contributions|floatformat:2 }} CDF</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="card-title"><i class="fas fa-money-bill-wave"></i> Contributions</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Montant</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for contribution in contributions %}
+                            <tr>
+                                <td>{{ contribution.date }}</td>
+                                <td>{{ contribution.montant|floatformat:2 }} CDF</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="card-title"><i class="fas fa-hand-holding-usd"></i> Prêts</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Date de demande</th>
+                                <th>Type de prêt</th>
+                                <th>Montant</th>
+                                <th>Statut</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for prêt in prêts %}
+                            <tr>
+                                <td>{{ prêt.date_demande }}</td>
+                                <td>{{ prêt.type_prêt.name }}</td>
+                                <td>{{ prêt.montant|floatformat:2 }} CDF</td>
+                                <td>{{ prêt.status }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="card-title"><i class="fas fa-flag-checkered"></i> Objectifs</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group">
+                        {% for objectif in objectifs %}
+                        <li class="list-group-item">
+                            <span class="font-weight-bold">{{ objectif.name }}</span> 
+                            <span class="float-right">
+                                <span class="badge badge-pill badge-{{ objectif.get_status_display|lower }}">{{ objectif.get_status_display }}</span>
+                            </span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    <a href="{% url 'membres:objectifs' %}" class="btn btn-primary mt-3">Voir mes Objectifs</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+    <footer class="bg-dark text-light py-3 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-12 text-center">
+                    <p>© {{ year }} Muhangiki Wallet - Tous droits réservés</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/bootstrap.min.js"></script>
+    <script src="js/script.js"></script>
+</body>
+</html>

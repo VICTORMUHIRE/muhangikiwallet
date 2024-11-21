@@ -1,0 +1,67 @@
+{% extends 'administrateurs/base.html' %}
+{% load static %}
+
+{% block title %}Membres{% endblock %}
+
+{% block content %}
+<h1>Membres</h1>
+
+<div class="row mt-4">
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{message.tags}}{% endif %} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="col-12 d-flex justify-content-end mb-3">  </a>
+        <a href="{% url 'administrateurs:creer_membre' %}" class="btn btn-primary">Créer un Membre</a>
+    </div>
+    <div class="col-12">
+        <div class="card shadow-sm rounded-4">
+            <div class="card-body">
+                <table id="membres-table" class="table table-striped" style="width:100%">  </a>
+                    <thead>
+                        <tr>
+                            <th>Prénom</th>
+                            <th>Nom</th>
+                            <th>Postnom</th>
+                            <th>Date de naissance</th>
+                            <th>Sexe</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for membre in membres %}
+                        <tr>
+                            <td>{{ membre.prenom }}</td>
+                            <td>{{ membre.nom }}</td>
+                            <td>{{ membre.postnom }}</td>
+                            <td>{{ membre.date_naissance }}</td>
+                            <td>{{ membre.sexe }}</td>
+                            <td>
+                                <a href="{% url 'administrateurs:modifier_membre' membre.pk %}" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></a> </a>
+                                <a href="{% url 'administrateurs:supprimer_membre' membre.pk %}" class="btn btn-sm btn-danger ms-2"><i class="fas fa-trash-alt"></i></a> </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                            <tr><td colspan="6" class="text-center">Aucun membre trouvé. <a href="{% url 'administrateurs:creer_membre' %}">Créer un membre</a>.</td></tr>
+                        {% endfor %}
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+$(document).ready(function () {
+    $('#membres-table').DataTable();
+});
+</script>
+
+{% endblock %}

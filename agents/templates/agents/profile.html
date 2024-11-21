@@ -1,0 +1,16 @@
+{% extends 'agents/base.html' %}
+
+{% block title %}Profil{% endblock %}
+
+{% block content %}
+<h1>Profil</h1>
+
+<p>Modifiez vos informations personnelles.</p>
+
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">Enregistrer</button>
+</form>
+
+{% endblock %}

@@ -1,0 +1,17 @@
+{% extends 'membres/base.html' %}
+
+{% block content %}
+  <h2>Dépôt d'argent</h2>
+
+  <p>Solde actuel: {{ member.balance|floatformat:2|default:'0.00' }}</p>
+
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="member_id" value="{{ member.id }}">
+    <div class="form-group">
+      <label for="amount">Montant à déposer:</label>
+      <input type="number" class="form-control" name="amount" placeholder="Entrez le montant" id="amount" required>
+    </div>
+    <button type="submit" class="btn btn-mw mt-2">Déposer</button>
+  </form>
+{% endblock %}

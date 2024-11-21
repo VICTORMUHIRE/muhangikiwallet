@@ -1,0 +1,103 @@
+{% extends 'membres/base.html' %}
+
+{% block title %}Transfert{% endblock %}
+
+{% block content %}
+<div class="container mt-5"> 
+    <div class="row justify-content-center">
+        <div class="col-md-6"> 
+            <div class="card shadow px-2">
+                <div class="card-header bg-white text-center">
+                    <h2>Effectuer un Transfert</h2>
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}warning{% endif %} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <form method="post" id="transfer-form"> 
+                        {% csrf_token %}
+                        <div class="row mb-3">
+                            <div class="form-group col-md-8">
+                                <label for="{{ form.montant.id_for_label }}">Montant à transférer:</label>
+                                <input type="number" class="form-control" id="{{ form.montant.id_for_label }}" name="{{ form.montant.html_name }}"value="{{ form.montant.value|default:'' }}" placeholder="Entrez le montant">
+                            </div>
+                            <div class="form-group col-md-4">
+                                <div class="form-group">
+                                    <label for="{{ form.devise.id_for_label }}">Devise:</label>
+                                    <select class="form-select" id="{{ form.devise.id_for_label }}" name="{{ form.devise.html_name }}">
+                                        <option value="CDF" {% if form.devise.value == 'CDF' %}selected{% endif %}>CDF</option>
+                                        <option value="USD" {% if form.devise.value == 'USD' %}selected{% endif %}>USD</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label for="{{ form.numero_destinataire.id_for_label }}">Numéro du destinataire:</label>
+                            <input type="text" class="form-control" id="{{ form.numero_destinataire.id_for_label }}" name="{{ form.numero_destinataire.html_name }}" placeholder="Entrez le numéro du destinataire">
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label for="solde_actuel">Solde disponible: </label>
+                            <span id="solde_actuel" class="font-weight-bold mb-color">
+                                {{ solde_CDF|floatformat:2 }} CDF / {{ solde_USD|floatformat:2 }} USD
+                            </span>
+                        </div>
+
+                        <div class="form-group text-center">
+                            <button type="button" class="btn btn-mw text-white" id="submitTransferBtn" data-bs-toggle="modal" data-bs-target="#passwordConfirmModal">Confirmer le Transfert</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmation du mot de passe -->
+<div class="modal fade" id="passwordConfirmModal" tabindex="-1" aria-labelledby="passwordConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="passwordConfirmModalLabel">Confirmation du mot de passe</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="password" class="form-label">Entrez votre mot de passe:</label>
+                    <input type="password" class="form-control" id="password" name="password" required>
+                </div>
+                <div id="passwordError" class="text-danger"></div> 
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-primary" id="confirmPasswordBtn">Confirmer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Gestionnaire d'événements pour le bouton "Confirmer" dans le modal
+    document.getElementById('confirmPasswordBtn').addEventListener('click', function() {
+        var password = document.getElementById('password').value;
+        var transferForm = document.getElementById('transfer-form');
+
+        // Ajouter le mot de passe au formulaire avant la soumission
+        var passwordInput = document.createElement('input');
+        passwordInput.type = 'hidden';
+        passwordInput.name = 'password'; 
+        passwordInput.value = password;
+        transferForm.appendChild(passwordInput);
+
+        // Soumettre le formulaire
+        transferForm.submit();
+    });
+</script>
+
+{% endblock %}

@@ -1,0 +1,206 @@
+{% extends 'membres/base.html' %}
+{% load static %}
+
+{% block title %}Accueil{% endblock %}
+
+{% block content %}
+
+    <div class="my-5">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{message.tags}}{% endif %} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="card-body">
+            {% if not user.membre.status and form.instance.statut == "Initialisation" %}
+                <p class="alert alert-warning text-center">Votre compte est en cours d'approbation. Veuillez revenir plutard ou contacter l'administrateur</p>
+                <h4 class="text-center p-3">Vos informations</h4>
+                <div class="row">
+                    {% for field in membre_form %}
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                            {% if 'photo' in field.name or 'copy' in field.name %}
+                                <img id="photo-preview" src="{% if field.value %}{{ field.value.url }}{% else %}{% static 'images/default-profile-picture.png' %}{% endif %}" alt="Aperçu de la photo" class="img-fluid rounded" style="max-height: 200px; object-fit: cover;">
+                            {% else %}
+                                <input type="text" class="form-control {% if field.errors %}is-invalid{% endif %}" id="{{ field.id_for_label }}" name="{{ field.name }}" value="{{ field.value|default:'' }}" readonly>
+                            {% endif %}
+                            {% if field.errors %}
+                                <div class="invalid-feedback">
+                                    {{ field.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% elif not user.membre.status and user.membre.reference_code %}
+                <p class="alert alert-danger text-center">Votre compte est désactivé, veuillez contacter l'administrateur.</p>
+            {% elif not user.membre.status and not form.instance.statut == "Réjetté" %}
+                <p class="alert alert-danger text-center">Votre compte n'a pas été approuvé, veuillez contacter l'administrateur.</p>
+            {% elif user.membre.status and form.instance.statut == "Initialisation" %}
+                <p class="alert alert-info text-center">Votre compte a été approuvé, veuillez payer les frais d'adhésion pour finaliser l'Inscription</p>
+                <div class="card">
+                    <div class="card-header text-center p-3">
+                        Paiement des frais d'adhésion ({{ form.montant.value|floatformat:0 }}$ ou {{ form.montant.value|floatformat:0 }}FC)
+                    </div>
+                    <div class="card-body">
+                        <form method="post" enctype="multipart/form-data" id="fraisForm">
+                            {% csrf_token %}
+                            {{ form.non_field_errors }}
+                            <div class="mb-3">
+                                {{ form.numero_agent.errors }}
+                                <label for="{{ form.numero_agent.id_for_label }}" class="form-label">{{ form.numero_agent.label }}</label>
+                                <select class="form-control form-select" id="{{ form.numero_agent.id_for_label }}" name="{{ form.numero_agent.html_name}}">
+                                {% for reseau, numeros in numeros_categories.items %}
+                                    <optgroup label="{{ reseau }}">
+                                    {% for numero, id in numeros %}
+                                        <option value="{{ id }}">{{ numero }}</option>
+                                    {% endfor %}
+                                    </optgroup>
+                                {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="form-group col-8">
+                                    {{ form.montant.errors }}
+                                    <label for="{{ form.montant.id_for_label }}" class="form-label">{{ form.montant.label }}</label>
+                                    {{ form.montant }}
+                                </div>
+                                <div class="form-group col-4">
+                                    {{ form.devise.errors }}
+                                    <label for="{{ form.devise.id_for_label }}" class="form-label">{{ form.devise.label }}</label>
+                                    {{ form.devise }}
+                                </div>
+                            </div>
+                            <div class="mb-3 d-flex flex-column align-items-center justify-content-center">
+                                {{ form.preuve.errors }}
+                                <label for="{{ form.preuve.id_for_label }}" class="form-label">{{ form.preuve.label }}</label>
+                                <input type="file" class="form-control d-none" id="{{ form.preuve.id_for_label }}" name="{{ form.preuve.html_name }}" onchange="previewImage(this);" required>
+                                <div id="imagePreview" class="image-preview text-center" onclick="document.getElementById('{{ form.preuve.id_for_label }}').click();">
+                                    <span class="upload-icon"><i class="fas fa-upload"></i></span>
+                                </div>
+                            </div>
+                            <div class="form-group text-center">
+                                <button type="button" class="btn btn-mw" data-bs-toggle="modal" data-bs-target="#confirmationModal">Confirmer</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            {% elif user.membre.status and form.instance.statut == "En attente" %}
+                <p class="alert alert-success text-center">Votre paiement est en cours de vérification, si cela persiste veuillez contacter l'administrateur !</p>
+                <h4>Details du paiement</h4>
+                <div class="row">
+                    <div class="mb-3">
+                        <label for="{{ form.numero_agent.id_for_label }}" class="form-label">{{ form.numero_agent.label }}</label>
+                        <input type="text" class="form-control" id="{{ form.numero_agent.id_for_label }}" name="{{ form.numero_agent.html_name}}" value="{{ form.numero_agent.value }}" readonly>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="form-group col-8">
+                            <label for="{{ form.montant.id_for_label }}" class="form-label">{{ form.montant.label }}</label>
+                            <input type="text" class="form-control" id="{{ form.montant.id_for_label }}" name="{{ form.montant.html_name}}" value="{{ form.montant.value|floatformat:0 }}" readonly>
+                        </div>
+                        <div class="form-group col-4">
+                            <label for="{{ form.devise.id_for_label }}" class="form-label">{{ form.devise.label }}</label>
+                            <input type="text" class="form-control" id="{{ form.devise.id_for_label }}" name="{{ form.devise.html_name}}" value="{{ form.devise.value }}" readonly>
+                        </div>
+                    </div>
+                    <div class="mb-3 d-flex flex-column align-items-center justify-content-center">
+                        <label for="{{ form.preuve.id_for_label }}" class="form-label">{{ form.preuve.label }}</label>
+                        <img src="{% if form.preuve.value %}{{ form.preuve.value.url }}{% endif %}" class="img-fluid rounded" style="max-height: 200px; object-fit: cover;">
+                    </div>
+                </div>
+            {% else %}
+                <p class="alert alert-danger text-center">Erreur, veuillez contacter l'administrateur !</p>
+            {% endif %}
+                <div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="confirmationModalLabel">Confirmation de paiement</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <form id="passwordForm">
+                                    {% csrf_token %}
+                                    <div class="mb-3">
+                                        <label for="mot_de_passe" class="form-label">Mot de passe</label>
+                                        <input type="password" class="form-control" id="mot_de_passe" name="mot_de_passe" required>
+                                    </div>
+                                    <button type="submit" class="btn btn-mw">Valider</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+        </div>
+    </div>
+
+
+
+        <script>
+            document.getElementById('passwordForm').addEventListener('submit', function(event) {
+                event.preventDefault(); // Empêche l'envoi normal du formulaire
+
+                const password = document.getElementById('mot_de_passe').value;
+                const fraisForm = document.getElementById('fraisForm');
+
+                // Crée un champ caché pour le mot de passe
+                const passwordInput = document.createElement('input');
+                passwordInput.type = 'hidden';
+                passwordInput.name = 'mot_de_passe';
+                passwordInput.value = password;
+                fraisForm.appendChild(passwordInput);
+
+                // Soumet le formulaire des frais
+                fraisForm.submit();
+            });
+
+            document.getElementById('{{ form.devise.id_for_label }}').addEventListener('change', function(event) {
+                const devise = this.value;
+                const montantInput = document.getElementById('{{ form.montant.id_for_label }}');
+            
+                if (devise === 'USD') {
+                    montantInput.value = montantInput.value / 2800; // Montant en USD
+                } else if (devise === 'CDF') {
+                    montantInput.value = montantInput.value * 2800; // Montant en CDF
+                }
+            });
+
+            function previewImage(input) {
+                const previewContainer = document.getElementById('imagePreview');
+                if (input.files && input.files[0]) {
+                    var reader = new FileReader();
+
+                    reader.onload = function(e) {
+                        previewContainer.innerHTML = `<img src="${e.target.result}" style="max-width: 200px; max-height: 200px;" alt="Image Preview">`;
+                    }
+
+                    reader.readAsDataURL(input.files[0]);
+                } else {
+                    previewContainer.innerHTML = '<span class="upload-icon"><i class="fas fa-upload"></i></span>';
+                }
+            }
+        </script>
+
+<style>
+    .image-preview {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 200px; /* Adjust as needed */
+        height: 200px; /* Adjust as needed */
+        border: 1px dashed #ccc;
+        margin-top: 10px; /* Adjust as needed */
+    }
+
+    .upload-icon {
+        font-size: 3em; /* Adjust as needed */
+        color: #ccc;
+    }
+</style>
+{% endblock %}

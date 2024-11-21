@@ -1,0 +1,59 @@
+# organisations/templates/types_prêt.html
+
+{% extends 'organisations/base.html' %}
+
+{% block title %}Types de Prêts{% endblock %}
+
+{% block content %}
+<h1>Types de Prêts</h1>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="card-title">Liste des Types de Prêts</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Nom</th>
+                            <th>Taux d'intérêt</th>
+                            <th>Durée de remboursement</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for type_prêt in types_prêt %}
+                        <tr>
+                            <td>{{ type_prêt.name }}</td>
+                            <td>{{ type_prêt.taux_interet }}%</td>
+                            <td>{{ type_prêt.duree_remboursement }} jours</td>
+                            <td>
+                                <a href="{% url 'organisations:modifier_type_prêt' type_prêt.id %}" class="btn btn-sm btn-warning">Modifier</a>
+                                <a href="{% url 'organisations:supprimer_type_prêt' type_prêt.id %}" class="btn btn-sm btn-danger">Supprimer</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="card-title">Ajouter un Type de Prêt</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    {{ form.as_p }}
+                    <button type="submit" class="btn btn-primary">Ajouter</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

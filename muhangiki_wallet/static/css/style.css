@@ -1,0 +1,135 @@
+/* Couleurs principales */
+:root {
+  --primary-color: #fc9d1b; /* Orange */
+  --secondary-color: #e88b08; /* Orange foncé */
+  --accent-color: #ffc107; /* Jaune (optionnel pour un contraste) */
+}
+
+/* Styles généraux */
+body {
+  font-family: 'Roboto', sans-serif;
+  background-color: white; /* Gris clair neutre */
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* En-tête */
+header {
+  background-color: #ffb754;
+  color: #fff;
+  text-align: center;
+}
+
+/* Pied de page */
+footer {
+  background-color: #333;
+  color: #fff;
+  padding: 1rem 0;
+  text-align: center;
+  margin-top: auto; /* Pour positionner le pied de page en bas */
+}
+
+/* Contenu principal */
+main {
+  flex: 1;
+  min-height: 90vh;
+}
+
+/* Liens */
+a {
+  color: var(--primary-color);
+}
+
+a:hover {
+  color: var(--secondary-color);
+}
+
+/* Boutons */
+.btn-mw {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  color: #111010;
+}
+
+.btn-mw:hover {
+  background-color: var(--secondary-color);
+  border-color: var(--secondary-color);
+}
+
+.btn-mw:disabled {
+  background-color: #ccc;
+  border-color: #ccc;
+  color: #555;
+  cursor: not-allowed;
+}
+
+.mw-color {
+  color: var(--primary-color);
+}
+
+/* Cards */
+
+/* Cartes */
+.card {
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+  background-color: var(--primary-color);
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+}
+
+
+/* Code pour personnaliser la barre de défilement */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--primary-color);
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: darken(var(--primary-color), 10%);
+}
+
+/* Fonctions Sass pour les couleurs */
+@function darken($color, $amount) {
+  @return adjust-color($color, $lightness: -$amount);
+}
+
+@function lighten($color, $amount) {
+  @return adjust-color($color, $lightness: $amount);
+}
+
+/* Styles pour les formulaires */
+.form-control {
+  border: 1px solid #ced4da;
+  border-radius: 5px;
+  padding: 0.5rem;
+}
+
+.form-control:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 0.2rem rgba(var(--primary-color), 0.5);
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  text-align: center;
+  vertical-align: middle;
+}
+
+th {
+  background-color: #f3d59e;
+}
