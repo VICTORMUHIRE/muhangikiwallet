@@ -23,7 +23,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-0n!^rc92pcf=frp0#n&gp8+pqcso4crpd8!cs7_j3y=dh+4l^x')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DJANGO_DEBUG', True)
+DEBUG = eval(os.environ.get('DJANGO_DEBUG', "True"))
 
 ALLOWED_HOSTS = ["muhangiki-wallet.onrender.com", "*"]
 
