@@ -15,7 +15,7 @@ from objectifs.forms import ObjectifsForm
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import login, update_session_auth_hash
 from transactions.models import Transactions, Prêts, TypesPrêt, Contributions, DepotsObjectif, Retraits, Transferts, DepotsInscription
-from transactions.forms import ContributionsForm, PrêtsForm, TransfertsForm, RetraitsForm, DepotsInscriptionForm, TypesPrêtForm, TransactionsForm
+from transactions.forms import ContributionsForm, PrêtsForm, TransfertsForm, RetraitsForm, DepotsInscriptionForm, TypesPrêtForm, TransactionsForm, DepotsObjectifForm
 from datetime import datetime, timedelta
 from django.utils import timezone
 from functools import wraps
@@ -93,7 +93,7 @@ def inscription(request):
 
             membre.user = Users.objects.create_user(
                 username=form.cleaned_data['numero_telephone'],
-                email=form.cleaned_data['email'],
+                # email=form.cleaned_data['email'],
                 password=form.cleaned_data['mot_de_passe'],
                 first_name=form.cleaned_data['nom'],
                 last_name=form.cleaned_data['prenom'] or form.cleaned_data['postnom'],
@@ -187,7 +187,7 @@ def home(request):
 @login_required
 @verifier_membre
 def profil(request):
-    membre = request.user
+    membre = request.user.membre
     if request.method == "POST":
         form = MembresForm(request.POST, request.FILES, instance=membre)
         if form.is_valid():
@@ -207,48 +207,114 @@ def profil(request):
 @verifier_membre
 def contributions(request):
     membre = request.user.membre
-    contributions = Contributions.objects.filter(membre=membre).order_by("-date")
-    contribution_mensuelle = membre.contribution_mensuelle
+    solde_contribution_CDF = Transactions.objects.filter(membre=membre, devise="CDF", statut="Approuvé", type="contribution").aggregate(total=Sum('montant'))['total'] or 0
+    solde_contribution_USD = Transactions.objects.filter(membre=membre, devise="USD", statut="Approuvé", type="contribution").aggregate(total=Sum('montant'))['total'] or 0
 
-    if request.method == "POST":
-        form = ContributionsForm(request.POST)
-        if form.is_valid():
-            form.instance.membre = membre
-            form.save()
-            messages.success(request, "Votre contribution a été enregistrée avec succès.")
-            return redirect("membres:contributions")
+    contributions = Transactions.objects.filter(membre=request.user.membre, type="contribution")
+
+    context = {
+        "contribution_mensuelle": membre.contribution_mensuelle,
+        "historique_contributions": contributions,
+        "solde_contribution_CDF": solde_contribution_CDF,
+        "solde_contribution_USD": solde_contribution_USD,
+    }
+    return render(request, "membres/contributions.html", context)
+
+@login_required
+@verifier_membre
+def contribuer(request):
+    membre = request.user.membre
+    reseaux = NumerosAgent.objects.values_list('reseau', flat=True).distinct()
+    numeros_categories = {reseau: [] for reseau in reseaux}
+    for reseau in reseaux:
+        for numero_agent in NumerosAgent.objects.filter(reseau=reseau):
+            numeros_categories[reseau].append((numero_agent.numero, numero_agent.pk))
+
+    if request.method == 'POST':
+        form = TransactionsForm(request.POST, request.FILES)
+        mot_de_passe = request.POST.get('mot_de_passe')
+
+        if check_password(mot_de_passe, request.user.password):
+            if form.is_valid():
+                try:
+                    contribution_mensuelle = membre.contribution_mensuelle
+                    transaction = form.save(commit=False)
+
+                    transaction.montant = contribution_mensuelle.montant
+                    transaction.devise = contribution_mensuelle.devise
+                    transaction.agent = transaction.numero_agent.agent
+                    transaction.type = "contribution"
+                    transaction.statut = "En attente"
+                    transaction.membre = membre
+                    transaction.save()
+
+                    contribution = Contributions.objects.create(
+                        transaction=transaction,
+                        montant=transaction.montant,
+                        devise=transaction.devise
+                    )
+
+                    messages.success(request, "Votre contribution a été soumise avec succès !")
+                    return redirect('membres:home')
+
+                except Agents.DoesNotExist:
+                    messages.error(request, "Numéro d'agent invalide.")
+            else:
+                messages.error(request, "Veuillez corriger les erreurs du formulaire.")
+
+        else:
+            messages.error(request, "Mot de passe incorrect.")
+
     else:
-        form = ContributionsForm()
+        form = TransactionsForm()
 
     context = {
         "form": form,
-        "contribution_actuelle": contribution_mensuelle,
-        "historique_contributions": contributions,
+        "membre": membre,
+        "numeros_categories": numeros_categories,
+        "contribution_mensuelle": membre.contribution_mensuelle
     }
-    return render(request, "membres/contributions.html", context)
+
+    return render(request, "membres/contribuer.html", context)
 
 # Vue pour la page de demande de prêt du membre
 @login_required
 @verifier_membre
 def demande_prêt(request):
     types_prêt = TypesPrêt.objects.all() # Récupérer tous les types de prêt
-    demandes_prêt = Prêts.objects.filter(membre=request.user.membre).order_by('-date_demande')
+    demandes_prêt = Transactions.objects.filter(membre=request.user.membre, type="prêt")
+
+    reseaux = NumerosAgent.objects.values_list('reseau', flat=True).distinct()
+    numeros_categories = {reseau: [] for reseau in reseaux}
+    for reseau in reseaux:
+        for numero_agent in NumerosAgent.objects.filter(reseau=reseau):
+            numeros_categories[reseau].append((numero_agent.numero, numero_agent.pk))
 
     if request.method == "POST":
         form = PrêtsForm(request.POST)
         if form.is_valid():
             # Vérification du mot de passe
-            password = request.POST.get('password')
-            if check_password(password, request.user.password):
+            mot_de_passe = request.POST.get('password')
+
+            if check_password(mot_de_passe, request.user.password):
                 prêt = form.save(commit=False)  # Créer l'objet prêt sans l'enregistrer
-                prêt.membre = request.user.membre  # Associer le prêt au membre connecté
-                prêt.montant_remboursé = prêt.montant + (prêt.montant * (prêt.type_prêt.taux_interet / 100))  # Calculer le montant remboursé
-                prêt.date_remboursement = datetime.now() + timedelta(days=prêt.type_prêt.delai_remboursement)  # Définir le montant remboursé
-                prêt.transaction = Transactions.objects.create(membre=request.user.membre, montant=prêt.montant, devise=prêt.devise, operation="prêt")
+                prêt.montant = prêt.montant_remboursé - (prêt.montant * (prêt.type_prêt.taux_interet / 100))  # Calculer le montant
+                prêt.date_remboursement = datetime.now() + timedelta(days=prêt.type_prêt.delai_remboursement)  # Définir la date de remboursement
+                
+                prêt.transaction = Transactions.objects.create(
+                    membre=request.user.membre,
+                    numero_agent=form.cleaned_data['numero_agent'],
+                    agent=NumerosAgent.objects.get(pk=form.cleaned_data['numero_agent']).agent,
+                    montant=prêt.montant,
+                    devise=prêt.devise,
+                    type="prêt",
+                    statut="En attente"
+                )
+
                 prêt.save()  # Enregistrer l'objet prêt
                 
                 messages.success(request, 'Votre demande de prêt a été soumise avec succès!')
-                return redirect('membres:demande_prêt')  # Redirigez vers 
+                return redirect('membres:demande_prêt')  # Redirigez vers
             else:
                 # Mot de passe incorrect, afficher un message d'erreur
                 messages.error(request, 'Mot de passe incorrect. Veuillez réessayer.')
@@ -257,7 +323,14 @@ def demande_prêt(request):
 
     else: form = PrêtsForm()
 
-    return render(request, "membres/demande_prêt.html", {"form":form, "types_prêt":types_prêt, "demandes_prêt":demandes_prêt})
+    context = {
+        "form": form,
+        "types_prêt": types_prêt,
+        "demandes_prêt": demandes_prêt,
+        "numeros_categories": numeros_categories,
+    }
+
+    return render(request, "membres/demande_prêt.html", context)
 
 # Vue pour la page de gestion des objectifs du membre
 @login_required
@@ -275,82 +348,124 @@ def objectifs(request):
     
     else: form = ObjectifsForm()
     
+    solde_objectifs_CDF = Transactions.objects.filter(membre=request.user.membre, devise="CDF", statut="Approuvé", type="depot_objectif").aggregate(total=Sum('montant'))['total'] or 0
+    solde_objectifs_USD = Transactions.objects.filter(membre=request.user.membre, devise="USD", statut="Approuvé", type="depot_objectif").aggregate(total=Sum('montant'))['total'] or 0
+
     objectifs = Objectifs.objects.filter(membre=request.user.membre).order_by("-date_debut")
     context = {
         "objectifs": objectifs,
         "form": form,
+        "solde_objectifs_CDF": solde_objectifs_CDF,
+        "solde_objectifs_USD": solde_objectifs_USD
     }
     return render(request, "membres/objectifs.html", context)
+
+# Vue pour la page de dépôt sur objectif du membre
+@login_required
+@verifier_membre
+def dépot_objectif(request, objectif_id):
+    objectif = get_object_or_404(Objectifs, pk=objectif_id, membre=request.user.membre)
+
+    reseaux = NumerosAgent.objects.values_list('reseau', flat=True).distinct()
+    numeros_categories = {reseau: [] for reseau in reseaux}
+    for reseau in reseaux:
+        for numero_agent in NumerosAgent.objects.filter(reseau=reseau):
+            numeros_categories[reseau].append((numero_agent.numero, numero_agent.pk))
+
+    if request.method == "POST":
+        objectif_form = DepotsObjectifForm(request.POST)
+        form = TransactionsForm(request.POST, request.FILES)
+        mot_de_passe = request.POST.get('mot_de_passe')
+        
+        if check_password(mot_de_passe, request.user.password):
+            if form.is_valid():
+                try:
+                    depot_objectif = form.save(commit=False)
+                    depot_objectif.objectif = objectif
+                    depot_objectif.transaction = Transactions.objects.create(
+                        membre=request.user.membre,
+                        numero_agent=form.cleaned_data['numero_agent'],
+                        agent=NumerosAgent.objects.get(pk=form.cleaned_data['numero_agent']).agent,
+                        montant=depot_objectif.montant,
+                        devise=depot_objectif.devise,
+                        type="depot_objectif",
+                        statut="En attente"
+                    )
+                    depot_objectif.save()
+
+                    messages.success(request, "Votre dépôt sur objectif a été soumis avec succès !")
+                    return redirect('membres:dépot_objectif')
+
+                except Agents.DoesNotExist:
+                    messages.error(request, "Numéro d'agent invalide.")
+            else:
+                messages.error(request, "Veuillez corriger les erreurs du formulaire.")
+
+        else:
+            messages.error(request, "Mot de passe incorrect.")
+
+    else:
+        form = TransactionsForm()
+
+    context = {
+        "form": form,
+        "objectif": objectif,
+        "numeros_categories": numeros_categories,
+        "objectif": objectif
+    }
+
+    return render(request, "membres/depot_objectif.html", context)
+
+# Vue pour voir un objectif en details
+@login_required
+@verifier_membre
+def objectif(request, objectif_id):
+    objectif = Objectifs.objects.get(pk=objectif_id)
+    return render(request, "membres/objectif_details.html", {"objectif": objectif})
 
 # Vue pour la page de retrait du membre
 @login_required
 @verifier_membre
 def retrait(request):
     membre = get_object_or_404(Membres, user=request.user)
+    reseaux = NumerosAgent.objects.values_list('reseau', flat=True).distinct()
+    numeros_categories = {reseau: [] for reseau in reseaux}
+    for reseau in reseaux:
+        for numero_agent in NumerosAgent.objects.filter(reseau=reseau):
+            numeros_categories[reseau].append((numero_agent.numero, numero_agent.pk))
+
     if request.method == "POST":
-        form = RetraitsForm(request.POST)
+        form = TransactionsForm(request.POST, request.FILES)
+
         if form.is_valid():
-            montant = form.cleaned_data['montant']
-            devise = form.cleaned_data['devise']
-            numero_agent = form.cleaned_data['numero_agent']  # Récupérer le numéro d'agent
+            transaction = form.save(commit=False)
+            transaction.membre = membre
+            transaction.agent = transaction.numero_agent.agent
+            transaction.type = "retrait"
+            transaction.statut = "En attente"
+            transaction.save()
 
-            # Vérification du mot de passe
-            password = request.POST.get('password')
-            if not check_password(password, request.user.password):
-                messages.error(request, 'Mot de passe incorrect. Veuillez réessayer.')
-                return render(request, "membres/retrait.html", {"form": form, "membre": membre})
+            retrait = Retraits.objects.create(
+                transaction=transaction,
+                montant=transaction.montant,
+                devise=transaction.devise
+            )
 
-            # Vérification du numéro d'agent (à adapter si nécessaire)
-            try:
-                agent = Agents.objects.get(numero_agent=numero_agent)
-            except Agents.DoesNotExist:
-                messages.error(request, "Numéro d'agent invalide.")
-                return render(request, "membres/retrait.html", {"form": form, "membre": membre})
+            messages.success(request, "Votre demande de retrait a été soumise avec succès !")
+            return redirect('membres:home')
 
-            # Calcul du solde (à adapter en fonction de votre logique)
-            solde_disponible = membre.solde_cdf if devise == "CDF" else membre.solde_usd
-
-            if solde_disponible >= montant:
-                try:
-                    # Créer la transaction
-                    transaction = Transactions.objects.create(
-                        membre=membre,
-                        agent=agent,  # Associer l'agent à la transaction
-                        montant=montant,
-                        devise=devise,
-                        description="Retrait",
-                        operation="retrait",
-                        operateur="membre",
-                    )
-
-                    # Créer le retrait
-                    retrait = form.save(commit=False)
-                    retrait.transaction = transaction
-                    retrait.membre = membre
-                    retrait.agent = agent  # Associer l'agent au retrait
-                    retrait.operateur = "membre"
-                    retrait.save()
-
-                    # Mettre à jour le solde du membre (à adapter en fonction de votre logique)
-                    if devise == "CDF":
-                        membre.solde_cdf -= montant
-                    else:
-                        membre.solde_usd -= montant
-                    membre.save()
-
-                    messages.success(request, f"Retrait de {montant} {devise} effectué avec succès.")
-                    return redirect('membres:retrait')  # Redirigez vers une page appropriée
-
-                except Exception as e:
-                    messages.error(request, f"Une erreur s'est produite lors du retrait: {e}")
-            else:
-                messages.error(request, "Solde insuffisant.")
         else:
             messages.error(request, "Veuillez corriger les erreurs dans le formulaire.")
     else:
-        form = RetraitsForm()
+        form = TransactionsForm()
 
-    return render(request, "membres/retrait.html", {"form": form, "membre": membre})
+    context = {
+        "form": form,
+        "membre": membre,
+        "numeros_categories": numeros_categories,
+    }
+
+    return render(request, "membres/retrait.html", context)
 
 # Vue pour la page de gestion des transferts du membre
 @login_required
@@ -445,6 +560,15 @@ def transactions(request):
     }
     
     return render(request, "membres/transactions.html", context)
+
+@login_required
+@verifier_membre
+def transaction(request, transaction_id):
+    transaction = get_object_or_404(Transactions, pk=transaction_id, membre=request.user.membre)
+    context = {
+        "transaction": transaction
+    }
+    return render(request, "membres/transaction.html", context)
 
 # Vue pour la page de gestion des paramètres du membre
 @login_required

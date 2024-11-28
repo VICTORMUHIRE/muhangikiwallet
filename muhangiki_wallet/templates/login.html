@@ -25,15 +25,19 @@
                 box-shadow: none !important;
                 width: 100%;
             }
+            .card{
+                border: none !important;
+            }
+
         }
     </style>
 </head>
-<body class="d-flex align-items-center justify-content-center">
+<body class="row align-items-center justify-content-center">
     <div class="card col-md-4 col-lg-3 p-3">
         <div class="card-body">
             <div class="text-center mb-4">
                 <img src="{% static 'LOGO MUHANGIKI WALLET PRINCIPALE.png' %}" alt="Logo Muhangiki Wallet" height="120">
-            </div> 
+            </div>
 
             <h2 class="mw-color text-center mb-4">Connexion</h2>
             
@@ -55,7 +59,7 @@
                 <button type="submit" class="btn btn-mw text-white w-100">Se connecter</button>
             </form>
             <p class="text-center mt-3">Pas encore de compte? <a href="{% url 'membres:inscription' %}">Inscrivez-vous</a></p>
-            <p class="text-center mt-3">Mot de passe oublié? <a href="{% url 'membres:password_reset' %}">Réinitialiser</a></p>
+            {% comment %} <p class="text-center mt-3">Mot de passe oublié? <a href="{% url 'membres:password_reset' %}">Réinitialiser</a></p> {% endcomment %}
             <p class="text-center mb-0">
                 <a href="{% url 'membres:termes_et_conditions' %}">Termes et Conditions</a>
             </p>

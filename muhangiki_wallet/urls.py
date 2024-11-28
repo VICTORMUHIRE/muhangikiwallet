@@ -17,15 +17,15 @@ urlpatterns = [
     path("administrateurs/", include("administrateurs.urls")),
 ]
 
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 if __name__ == "__main__"  and True:
     from administrateurs.models import ContributionsMensuelles, Administrateurs, NumerosCompte, CodesReference
     from agents.models import NumerosAgent, Agents
     from membres.models import Membres
     from transactions.models import TypesPrêt, Transactions, DepotsInscription
+    from objectifs.models import Objectifs, TypesObjectif
     from administrateurs.models import Users
 
 
@@ -88,8 +88,8 @@ if __name__ == "__main__"  and True:
                 username="0909899999",
                 email="kakule@gmail.com",
                 password="1234",
-                first_name="Kakule",
-                last_name="Rock",
+                first_name="Kahambu",
+                last_name="Nikuze",
                 type="agent",
             )
         )
@@ -134,8 +134,8 @@ if __name__ == "__main__"  and True:
                 username="0909594999",
                 email="kakule@gmail.com",
                 password="1234",
-                first_name="Kakule",
-                last_name="Rock",
+                first_name="Kavira",
+                last_name="Kaghoma",
                 type="membre"
             )
         )
@@ -151,6 +151,35 @@ if __name__ == "__main__"  and True:
                     statut="Approuvé"
                 )
             )
+
+        TypesObjectif.objects.create(name="Éducation", description="Objectif lié à l'éducation")
+        TypesObjectif.objects.create(name="Santé", description="Objectif lié à la santé")
+        TypesObjectif.objects.create(name="Voyage", description="Objectif lié aux voyages")
+        TypesObjectif.objects.create(name="Investissement", description="Objectif lié aux investissements")
+        TypesObjectif.objects.create(name="Achat", description="Objectif lié à l'achat de biens")
+        TypesObjectif.objects.create(name="Autre", description="Autre objectif")
+
+        Objectifs.objects.create(
+            membre=Membres.objects.all().first(),
+            montant_cible=1000,
+            devise="USD",
+            date_debut="2024-01-01",
+            date_fin="2024-12-31",
+            nom="Objectif Éducation",
+            type=TypesObjectif.objects.all()[0],
+            description="Financer les études supérieures"
+        )
+
+        Objectifs.objects.create(
+            membre=Membres.objects.all().first(),
+            montant_cible=500,
+            devise="USD",
+            date_debut="2024-01-01",
+            date_fin="2024-12-31",
+            nom="Objectif Santé",
+            type=TypesObjectif.objects.all()[1],
+            description="Couvrir les frais médicaux"
+        )
 
 
     if len(TypesPrêt.objects.all()) == 0:

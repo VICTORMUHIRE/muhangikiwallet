@@ -137,7 +137,7 @@ class ContributionsMensuelles(models.Model):
     description = models.TextField(max_length=255, blank=True, null=True, verbose_name="Description")
 
     def __str__(self):
-        return f"{self.montant} - {self.devise}"
+        return f"{self.montant} {self.devise}"
 
     class Meta:
         verbose_name = "Contribution mensuelle"

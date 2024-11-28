@@ -3,79 +3,72 @@
 {% block title %}Mes Contributions{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="row">
-        <div class="col-md-12">
-            <h1 class="text-center mb-4">Mes Contributions</h1>
-        </div>
-    </div>
 
-    <h2>Contribution Mensuelle</h2>
-    <div class="card mb-4">
-        <div class="card-body">
-            {% if contribution_actuelle %}
-                <h5 class="card-title">Type: {{ contribution_actuelle.type_contribution.nom }}</h5>
-                <p class="card-text">Montant: {{ contribution_actuelle.montant }} {{ contribution_actuelle.devise }}</p> 
-                <p class="card-text">Date de début: {{ contribution_actuelle.date_debut }}</p>
-            {% else %}
-                <p>Vous n'avez aucune contribution mensuelle active pour le moment.</p>
-            {% endif %}
 
-            <!-- Bouton pour ouvrir le modal de modification -->
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modifierContributionModal">
-                Modifier
-            </button>
-        </div>
-    </div>
-
-    <!-- Modal de modification de la contribution -->
-    <div class="modal fade" id="modifierContributionModal" tabindex="-1" aria-labelledby="modifierContributionModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modifierContributionModalLabel">Modifier la contribution mensuelle</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <div class="row justify-content-center mt-5 mt-sm-0 mb-3 mb-md-5">
+        <div class="col-md-8 text-center">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h3 class="">Contribution Mensuelle</h3>
                 </div>
-                <div class="modal-body">
-                    <form method="post" action="{% url 'membres:contributions' %}"> 
-                        {% csrf_token %}
-                        <div class="mb-3">
-                            <label for="{{ form.type_contribution.id_for_label }}" class="form-label">Type de contribution:</label>
-                            {{ form.type_contribution }}
-                        </div>
-                        <div class="mb-3">
-                            <label for="password" class="form-label">Confirmez votre mot de passe:</label>
-                            <input type="password" class="form-control" id="password" name="password" required>
-                        </div>
-                        <button type="submit" class="btn btn-primary">Enregistrer les modifications</button>
-                    </form>
+                <div class="card-body">
+                    <p class="fs-5 mb-0">Contribution actuelle</p>
+                    <h4 class="mb-3 fw-bolder fs-5">{{ contribution_mensuelle.montant }} {% if contribution_mensuelle.devise == 'CDF' %}FC{% else %}${% endif %} / mois</h4>
+                    
+                    <p class="fs-5 mb-0">Solde total</p>
+                    <h4 class="mb-3 fw-bolder fs-5">{{ solde_contribution_CDF|floatformat:2 }} FC / {{ solde_contribution_USD|floatformat:2 }} $</h4>
+                    
+                    <div>
+                        <a href="" class="btn btn-sm  btn-danger text-white">Retirer tout</a>
+                        <a href="{% url 'membres:contribuer' %}" class="btn btn-sm btn-success text-white">Contribuer</a>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <h2>Historique des Contributions</h2>
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Type</th>
-                <th>Montant</th>
-                <th>Devise</th>
-                <th>Date de début</th>
-                <th>Date de fin</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for contribution in historique_contributions %}
-            <tr>
-                <td>{{ contribution.type_contribution.nom }}</td>
-                <td>{{ contribution.montant }}</td>
-                <td>{{ contribution.devise }}</td>
-                <td>{{ contribution.date_debut }}</td>
-                <td>{{ contribution.date_fin }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+
+        <div class="mt-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h4 class="text-center mb-0">Historique des Contributions</h4>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-bordered table-hover table-striped mb-0">
+                        <thead class="table-success">
+                            <tr>
+                                <th>Montant</th>
+                                <th>Devise</th>
+                                <th>Date</th>
+                                <th>Etat</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for contribution in contributions %}
+                            <tr>
+                                <a href="{% url 'membres:transaction' contribution.transaction.pk %}" class="btn">
+                                    <td>{{ contribution.montant }}</td>
+                                    <td>{{ contribution.devise }}</td>
+                                    <td>{{ contribution.date }}</td>
+                                    <td>
+                                        <span class="badge {% if contribution.statut == 'Approuvé' %}bg-success{% elif contribution.statut == 'Rejeté' %}bg-danger{% else %}bg-warning{% endif %}">
+                                            {{ contribution.statut }}
+                                        </span>
+                                    </td>
+                                </a>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center">Aucune contribution effectuée.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
 </div>
+
+
 {% endblock %}
+

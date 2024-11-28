@@ -112,7 +112,6 @@ class Contributions(models.Model):
     date_approbation = models.DateTimeField(blank=True, null=True, verbose_name="Date d'approbation")
     
     transaction = models.ForeignKey(Transactions, on_delete=models.CASCADE, blank=True, verbose_name="Transaction")
-    operateur = models.CharField(max_length=20, choices=OPERATEURS, verbose_name="Opérateur")
 
     description = models.TextField(blank=True, null=True, verbose_name="Description")
     statut = models.CharField(max_length=20, choices=(("En attente", "En attente"), ("Approuvé", "Approuvé"), ("Rejeté", "Rejeté")), default="En attente", verbose_name="Statut")

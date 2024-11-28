@@ -115,7 +115,7 @@
                     </div>
                 </div>
             {% else %}
-                <p class="alert alert-danger text-center">Erreur, veuillez contacter l'administrateur !</p>
+                <script>window.location.href = "{% url 'membres:home' %}";</script>
             {% endif %}
                 <div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
                     <div class="modal-dialog modal-dialog-centered">

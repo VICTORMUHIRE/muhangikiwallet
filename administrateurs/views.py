@@ -21,7 +21,6 @@ from organisations.forms import OrganisationsForm
 from transactions.forms import TransactionsForm, TypesPrêtForm, ContributionsForm, PrêtsForm, TransfertsForm, RetraitsForm, DepotsInscriptionForm
 from django.utils import timezone
 
-
 # Vue pour la page d'accueil des administrateurs
 @login_required
 def home(request):

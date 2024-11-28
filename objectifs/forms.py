@@ -5,10 +5,10 @@ from .models import Objectifs, TypesObjectif
 class ObjectifsForm(forms.ModelForm):
     class Meta:
         model = Objectifs
-        fields = ["nom", "description", "montant_USD", "montant_CDF", "date_debut", "date_fin", "type_objectif"]
+        fields = ["nom", "montant_cible", "devise", "type", "date_debut", "date_fin", "description"]
 
         widgets = {
-            "date_debut": forms.DateInput(attrs={"type": "date"}),
+            "date_debut": forms.DateInput(attrs={"type": "date", "value": "today"}),
             "date_fin": forms.DateInput(attrs={"type": "date"}),
         }
 

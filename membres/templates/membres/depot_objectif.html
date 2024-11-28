@@ -3,17 +3,152 @@
 {% block title %}Dépôt sur Objectif{% endblock %}
 
 {% block content %}
-<h1>Dépôt sur Objectif</h1>
+    <div class="row mt-5 mt-sm-0 mb-4 mb-md-5 justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-0">
+                <div class="card-header bg-white text-center p-3 fs-4">
+                    Dépôt sur Objectif : {{ objectif.nom }}
+                    <div class="text-center text-muted">
+                        <span id="solde_objectif" class="font-weight-bold mb-color">{{ objectif.montant|stringformat:".2f" }} / {{ objectif.montant_cible|stringformat:".2f" }} {{ objectif.devise }}</span>
+                    </div>
+                </div>
+                <div class="card-body px-1">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}warning{% endif %} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
 
-<p>Veuillez entrer le montant que vous souhaitez déposer sur l'objectif "{{ objectif.name }}".</p>
+                    <form method="post" enctype="multipart/form-data" id="withdraw-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="objectif_id" value="{{ objectif.id }}">
+                        <div class="row mb-3">
+                            <div class="form-group col-md-8">
+                                <label class="form-label" for="{{ form.montant.id_for_label }}">Montant à retirer</label>
+                                <input type="number" class="form-control" id="{{ form.montant.id_for_label }}" name="{{ form.montant.html_name }}" value="{{ form.montant.value|default:'' }}" placeholder="Entrez le montant">
+                            </div>
+                            <div class="form-group col-md-4">
+                                <label class="form-label" for="{{ form.devise.id_for_label }}">Devise</label>
+                                <select class="form-control form-select" id="{{ form.devise.id_for_label }}" name="{{ form.devise.html_name }}">
+                                    <option value="CDF" {% if form.devise.value == 'CDF' %}selected{% endif %}>CDF</option>
+                                    <option value="USD" {% if form.devise.value == 'USD' %}selected{% endif %}>USD</option>
+                                </select>
+                            </div>
+                        </div>
 
-<form method="post">
-    {% csrf_token %}
-    <div class="form-group">
-        <label for="montant">Montant (CDF)</label>
-        <input type="number" class="form-control" id="montant" name="montant" required>
+                        <div class="mb-3">
+                            <label for="{{ form.numero_agent.id_for_label }}" class="form-label">{{ form.numero_agent.label }}</label>
+                            <select class="form-control form-select" id="{{ form.numero_agent.id_for_label }}" name="{{ form.numero_agent.html_name }}">
+                                {% for reseau, numeros in numeros_categories.items %}
+                                    <optgroup label="{{ reseau }}">
+                                        {% for numero, id in numeros %}
+                                            <option value="{{ id }}">{{ numero }}</option>
+                                        {% endfor %}
+                                    </optgroup>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3 d-flex flex-column align-items-center justify-content-center">  <!-- Image preview with click to upload -->
+                            <label for="preuve" class="form-label">Preuve de transaction</label>
+                            <input type="file" class="form-control d-none" id="preuve" name="preuve" onchange="previewImage(this);" required>
+                            <div id="imagePreview" class="image-preview text-center" onclick="document.getElementById('preuve').click();">
+                                <span class="upload-icon"><i class="fas fa-image"></i></span>
+                            </div>
+                        </div>
+
+
+                        <div class="form-group text-center">
+                            <button type="button" class="btn btn-mw" data-bs-toggle="modal" data-bs-target="#confirmationModal">  <!-- Button triggers modal -->
+                                Confirmer
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
-    <button type="submit" class="btn btn-primary">Dépôt</button>
-</form>
 
+    <!-- Modal -->
+    <div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmationModalLabel">Confirmation du retrait</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="passwordForm">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="mot_de_passe" class="form-label">Mot de passe</label>
+                            <input type="password" class="form-control" id="mot_de_passe" name="mot_de_passe" required>
+                        </div>
+                        <button type="submit" class="btn btn-mw">Valider</button>  <!-- Submit button inside modal -->
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+<script>
+        function previewImage(input) {
+            const previewContainer = document.getElementById('imagePreview');
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+
+                reader.onload = function(e) {
+                    previewContainer.innerHTML = `<img src="${e.target.result}" style="max-width: 200px; max-height: 200px;" alt="Image Preview">`;
+                }
+
+                reader.readAsDataURL(input.files[0]);
+            } else {
+                previewContainer.innerHTML = '<span class="upload-icon"><i class="fas fa-upload"></i></span>';
+            }
+        }
+
+    document.getElementById('passwordForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        const password = document.getElementById('mot_de_passe').value;
+        const withdrawForm = document.getElementById('withdraw-form');  // Target the withdraw form
+
+        const passwordInput = document.createElement('input');
+        passwordInput.type = 'hidden';
+        passwordInput.name = 'mot_de_passe';  // Use 'mot_de_passe' as name
+        passwordInput.value = password;
+        withdrawForm.appendChild(passwordInput);
+
+        withdrawForm.submit();  // Submit the withdraw form
+    });
+</script>
+
+    <style>
+        .image-preview {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 200px;
+            height: 200px;
+            border: 1px dashed #ccc;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+
+        .upload-icon {
+            font-size: 3em;
+            color: #ccc;
+        }
+
+        .image-preview img {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+    </style>
 {% endblock %}
+

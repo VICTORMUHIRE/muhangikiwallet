@@ -1,0 +1,50 @@
+{% extends 'membres/base.html' %}
+{% load static %}
+
+{% block title %}Détails de la transaction{% endblock %}
+
+{% block content %}
+
+<div class="row px-2 pt-5 pt-sm-0 mb-3 mb-md-5">
+    <h2 class="text-center fw-bolder">
+        {% if transaction.type == 'retrait' %}Retrait d'argent{% elif transaction.type == 'transfert' %}Transfert d'argent{% elif transaction.type == 'depot_objectif' %}Dépôt sur objectif{% elif transaction.type == 'depot_inscription' %}Dépôt d'inscription{% elif transaction.type == 'contribution' %}Contribution mensuelle{% elif transaction.type == 'prêt' %}Prêt d'argent{% endif %}
+    </h2>
+    <h4 class="text-muted text-center mb-4">Details</h4>
+
+    <!-- {% comment %} {% if transaction.type == 'retrait' %}transaction-retrait{% elif transaction.type == 'transfert' %}transaction-transfert{% elif transaction.type == 'depot_objectif' %}transaction-depot-objectif{% elif transaction.type == 'depot_inscription' %}transaction-depot-inscription{% elif transaction.type == 'contribution' %}transaction-contribution{% elif transaction.type == 'prêt' %}transaction-prêt{% endif %}
+    <i class="{% if transaction.type == 'retrait' %}fas fa-minus-circle{% elif transaction.type == 'transfert' %}fas fa-exchange-alt{% elif transaction.type == 'depot_objectif' %}fas fa-piggy-bank{% elif transaction.type == 'depot_inscription' %}fas fa-sign-in-alt{% elif transaction.type == 'contribution' %}fas fa-donate{% elif transaction.type == 'prêt' %}fas fa-hand-holding-usd{% endif %}"></i> {% endcomment %} -->
+
+    {% if transaction %}
+    <div class="card">
+        <div class="card-body">
+            <dl class="row">
+                <dt class="col-sm-3">Montant:</dt>
+                <dd class="col-sm-9">{{ transaction.montant }}</dd>
+
+                <dt class="col-sm-3">Date:</dt>
+                <dd class="col-sm-9">{{ transaction.date }}</dd>
+
+                <dt class="col-sm-3">Description:</dt>
+                <dd class="col-sm-9">{{ transaction.description }}</dd>
+
+                <dt class="col-sm-3">Utilisateur:</dt>
+                <dd class="col-sm-9"> {{ transaction.user.username }} </dd>
+
+                {% if transaction.objectif %}
+                <dt class="col-sm-3">Objectif:</dt>
+                <dd class="col-sm-9"><a href="{% url 'membres:objectif' transaction.objectif.id %}">{{ transaction.objectif.nom }}</a></dd>
+                {% endif %}
+
+            </dl>
+        </div>
+    </div>
+    {% else %}
+        <p>Aucune transaction trouvée</p>
+    {% endif %}
+
+    <div class="mt-2 text-center">
+        <button href="{% url 'membres:transactions' %}" class="btn btn-secondary" type="button" onclick="window.history.back()">Retour</button>
+    </div>
+</div>
+
+{% endblock %}

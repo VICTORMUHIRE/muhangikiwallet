@@ -62,6 +62,19 @@
             color: #333;
         }
 
+        .bottom-app-bar a i {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .bottom-app-bar a span {
+            display: none;
+        }
+
+        .bottom-app-bar a:hover i {
+            color: #f0ad4e; /* Couleur survolée */
+        }
+
         .bottom-app-bar a.active {
             color: #f0ad4e; /* Couleur active */
         }
@@ -101,8 +114,17 @@
             width: 100%;
             background-color: #fff;
             box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
-            z-index: 100; 
+            z-index: 100;
         }
+
+        .transaction-item { border-bottom: 1px solid #dee2e6; } /* Light gray border */
+        .transaction-icon i { font-size: 1.2rem; }
+        .transaction-retrait { color: #dc3545; } /* Red for withdrawals */
+        .transaction-transfert { color: #007bff; } /* Blue for transfers */
+        .transaction-depot-objectif { color: #28a745; } /* Green for goal deposits */
+        .transaction-depot-inscription { color: #ffc107; } /* Yellow for registration deposits */
+        .transaction-contribution { color: #17a2b8; } /* Teal for contributions */
+        .transaction-prêt { color: #6f42c1; }  /* Purple for loans */
 
         /* Affichage sur mobile */
         @media (max-width: 768px) {
@@ -129,6 +151,7 @@
             <img src="{% static 'LOGO MUHANGIKI WALLET PRINCIPALE.png' %}" alt="Logo Muhangiki Wallet" height="40" class="d-inline-block">
             <h5 class="ms-2">Muhangiki Wallet</h5>
         </a>
+        {% if request.user.is_authenticated %}
         <div class="d-flex align-items-center justify-content-center">
             <a href="#" class="me-3">
                 <span class="material-icons">notifications</span>
@@ -168,6 +191,7 @@
                 </li>
             </span>
         </div>
+        {% endif %}
     </div>
 
     <header>
@@ -224,7 +248,7 @@
                                 {% else %}
                                 <i class="fas fa-user-circle fa-2x"></i>
                                 {% endif %}
-                                <span class="mx-2 text-dark">{{ request.user.first_name }}</span>
+                                <span class="mx-2 text-dark">{{ user.membre.nom }}</span>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
                                 <li><a class="dropdown-item" href="#">
@@ -270,26 +294,30 @@
     </main>
 
     <!-- Barre d'application en bas (pour mobile) -->
+    {% if request.user.is_authenticated %}
     <div class="bottom-app-bar">
-        <a href="{% url 'membres:home' %}" class="nav-link {% if request.path == '/membres/' %}active{% endif %}">
-            <span class="material-icons">home</span>
-            Accueil
-        </a>
-        <a href="{% url 'membres:contributions' %}" class="nav-link {% if '/contributions/' in request.path %}active{% endif %}">
-            <span class="material-icons">monetization_on
-</span>
-            Contributions
-        </a>
-        <a href="{% url 'membres:objectifs' %}" class="nav-link {% if '/objectifs/' in request.path %}active{% endif %}">
-            <span class="material-icons">flag</span>
-</span>
-            Transactions
-        </a>
-        <a href="{% url 'membres:paramètres' %}" class="nav-link {% if '/paramètres/' in request.path %}active{% endif %}">
-            <span class="material-icons">account_circle</span>
-            Profile
-        </a>
-    </div>
+            <a href="{% url 'membres:home' %}" class="nav-link {% if request.path == '/membres/' %}active{% endif %}">
+                <i class="fa fa-home"></i> 
+                <span>Accueil</span>
+            </a>
+            <a href="{% url 'membres:contributions' %}" class="nav-link {% if '/contributions/' in request.path %}active{% endif %}">
+                <i class="fa fa-donate"></i>
+                <span>Contributions</span>
+            </a>
+            <a href="{% url 'membres:objectifs' %}" class="nav-link {% if '/objectifs/' in request.path %}active{% endif %}">
+                <i class="fa fa-trophy"></i>
+                <span>Objectifs</span>
+            </a>
+            <a href="{% url 'membres:transactions' %}" class="nav-link {% if '/transactions/' in request.path %}active{% endif %}">
+                <i class="fa fa-exchange-alt"></i>
+                <span>Transactions</span>
+            </a>
+            <a href="{% url 'membres:paramètres' %}" class="nav-link {% if '/paramètres/' in request.path %}active{% endif %}">
+                <i class="fa fa-user-cog"></i>
+                <span>Paramètres</span>
+            </a>
+        </div>
+    {% endif %}
 
     <!-- Menu de profil (caché par défaut) -->
     <div class="profile-menu" id="profileMenu">
@@ -317,14 +345,14 @@
                     Êtes-vous sûr(e) de vouloir vous déconnecter ?
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                    <a href="{% url 'logout' %}" class="btn btn-danger">Déconnexion</a>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Non</button>
+                    <a href="{% url 'logout' %}" class="btn btn-danger">Oui</a>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="{% static 'js/bootstrap/bootstrap.bundle.min.js' %}"></script> 
+    <script src="{% static 'js/bootstrap/bootstrap.bundle.min.js' %}"></script>
     <script src="{% static 'js/script.js' %}"></script>
 
     <script>

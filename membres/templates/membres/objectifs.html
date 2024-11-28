@@ -3,100 +3,76 @@
 {% block title %}Mes Objectifs{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="row">
-        <div class="col-md-12">
-            <h1 class="text-center mb-4">Mes Objectifs</h1>
+
+    <div class="row justify-content-center mt-5 mt-sm-0 mb-5">
+
+        <div class="col-md-8 text-center">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h3 class="">Mes Objectifs</h3>
+                </div>
+                <div class="card-body text-enter">
+                    <p class="fs-5 mb-0">Solde total</p>
+                    <h4 class="mb-3 fw-bolder fs-5">{{ solde_objectifs_CDF|floatformat:2 }} FC / {{ solde_objectifs_USD|floatformat:2 }} $</h4>
+                    
+                    <button type="button" class="btn btn-sm  btn-primary text-white" data-bs-toggle="modal" data-bs-target="#ajouterObjectifModal">
+                        Ajouter un objectif
+                    </button>
+                </div>
+            </div>
         </div>
-    </div>
-    <div class="row">
-        <div class="col-md-12">
-            {% for message in messages %}
+
+
+        <div class="col-md-8"> <!-- Column for goals display -->
+            {% for message in messages %}  <!-- Messages display -->
                 <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{message.tags}}{% endif %} alert-dismissible fade show" role="alert">
                     {{ message }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             {% endfor %}
-        </div>
-    </div>
-    <div class="row mb-3">
-        <div class="col-md-12 text-end">
-            <button type="button" class="btn btn-mw text-white" data-bs-toggle="modal" data-bs-target="#ajouterObjectifModal">
-                Ajouter un objectif
-            </button>
-        </div>
-    </div>
 
-    <div class="row">
-        {% for objectif in objectifs %}
-        <div class="col-md-4 mb-4">
-            <div class="card">
-                <div class="card-header bg-light">
-                    <h5 class="card-title font-weight-bold">{{ objectif.nom }}</h5>
+            {% for objectif in objectifs %}
+            <div class="card shadow-sm mb-3">  <!-- Card for each goal -->
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="card-title fw-bold mb-0">{{ objectif.nom }}</h5>
+                    <div>  <!-- Edit/Delete buttons grouped -->
+                        <a href="{% url 'membres:objectif' objectif.id %}" class="btn btn-secondary btn-sm">Détails</a>
+                    </div>
                 </div>
                 <div class="card-body">
-                    <div class="progress color-mw mb-3" style="height: 20px;">
+                    <div class="progress color-mw mb-3" style="height: 25px;">  <!-- Enhanced progress bar -->
                         <div class="progress-bar" role="progressbar" 
-                             style="width: {{ objectif.pourcentage_atteint }}%;" 
-                             aria-valuenow="{{ objectif.montant_epargne }}" 
-                             aria-valuemin="0" 
-                             aria-valuemax="{{ objectif.montant_cible }}">
-                            {{ objectif.pourcentage_atteint|floatformat:2 }}%
+                            style="width: {{ objectif.pourcentage_atteint }}%"
+                            aria-valuenow="{{ objectif.montant }}" 
+                            aria-valuemin="0" 
+                            aria-valuemax="{{ objectif.montant_cible }}">
+                            {{ objectif.pourcentage_atteint|stringformat:".1f" }}%
                         </div>
                     </div>
-                    <p class="card-text">
-                        <span class="font-weight-bold">Montant cible :</span> 
-                        {{ objectif.montant_cible|floatformat:2 }} {{ objectif.devise }}
-                    </p>
-                    <p class="card-text">
-                        <span class="font-weight-bold">Montant épargné :</span> 
-                        {{ objectif.montant_epargne|floatformat:2 }} {{ objectif.devise }}
-                    </p>
-                    <p class="card-text">
-                        <span class="font-weight-bold">Date limite :</span> 
-                        {{ objectif.date_limite }}
-                    </p> 
 
-                    <div class="d-flex justify-content-between">
-                        <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#depotModal{{ objectif.id }}">
-                            Déposer
-                        </button>
-                        <div>
-                            <a href="{% url 'membres:objectifs' %}" class="btn btn-secondary btn-sm">Modifier</a>
-                            <a href="{% url 'membres:objectifs' %}" class="btn btn-danger btn-sm">Supprimer</a>
-                        </div>
+                    <!-- Clearer display of amounts and date -->
+                    <p class="card-text fw-bold">Montant cible : {{ objectif.montant|floatformat:2 }} {{ objectif.devise }}</p>
+                    <p class="card-text fw-bold">Montant épargné : {{ objectif.montant_epargne|floatformat:2 }} {{ objectif.devise }}</p>
+                    <p class="card-text fw-bold">Date de début : {{ objectif.date_debut }}</p>
+                    <p class="card-text fw-bold">Date limite : {{ objectif.date_fin }}</p>
+
+                    <div class="text-center mt-2"> <!-- Centered Deposit button -->
+                        <a href="{% url 'membres:dépot_objectif' objectif.id %}" class="btn btn-primary btn-sm">Déposer</a>
                     </div>
+
                 </div>
             </div>
-        </div>
-
-        <!-- Modal de dépôt -->
-        <div class="modal fade" id="depotModal{{ objectif.id }}" tabindex="-1" aria-labelledby="depotModalLabel{{ objectif.id }}" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="depotModalLabel{{ objectif.id }}">Effectuer un dépôt pour {{ objectif.nom }}</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <form method="post" action="{% url 'membres:objectifs' %}">
-                            {% csrf_token %}
-                            <div class="mb-3">
-                                <label for="montant" class="form-label">Montant du dépôt ({{ objectif.devise }}):</label>
-                                <input type="number" class="form-control" id="montant" name="montant" required>
-                            </div>
-                            <button type="submit" class="btn btn-primary">Déposer</button>
-                        </form>
+            {% empty %}
+                <div class="card shadow-sm">
+                    <div class="card-body text-center">
+                        <p>Aucun objectif pour le moment.</p>
                     </div>
                 </div>
-            </div>
-        </div>
-        {% empty %}
-        <div class="col-md-12 text-center">
-            <p>Aucun objectif pour le moment.</p>
-        </div>
-        {% endfor %}
-    </div>
+            {% endfor %}
+
+        </div> <!-- End of goals display column -->
+    </div> <!-- End of outer row -->
+
 
     <!-- Modal d'ajout d'objectif -->
     <div class="modal fade" id="ajouterObjectifModal" tabindex="-1" aria-labelledby="ajouterObjectifModalLabel" aria-hidden="true">
@@ -128,11 +104,11 @@
                                 {% endif %}
                             </div>
                         {% endfor %}
-                        <button type="submit" class="btn btn-primary">Ajouter</button>
+                        <button type="submit" class="btn btn-primary w-100">Ajouter</button>
                     </form>
                 </div>
             </div>
         </div>
     </div>
-</div>
+
 {% endblock %}

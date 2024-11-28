@@ -1,0 +1,53 @@
+{% extends "membres/base.html" %}
+
+{% block content %}
+
+<div class="objectif-detail-container">
+
+    <h1 class="objectif-title">{{ objectif.nom }}</h1>
+
+    <div class="objectif-details">
+
+        <div class="detail-group">
+            <p><strong>Description:</strong> {{ objectif.description }}</p>
+        </div>
+
+        <div class="detail-group">
+            <p><strong>Dépot:</strong> {{ objectif.depot.nom }}</p>
+        </div>
+
+
+        <div class="detail-group">
+            <p><strong>Montant:</strong> {{ objectif.montant|floatformat:2 }}</p>  </div>
+
+        <div class="detail-group">
+            <p><strong>Date de création:</strong> {{ objectif.date_creation|date:"d/m/Y" }}</p>
+        </div>
+
+        {% if objectif.date_echeance %}
+        <div class="detail-group">
+            <p><strong>Date d'échéance:</strong> {{ objectif.date_echeance|date:"d/m/Y" }}</p>
+        </div>
+        {% endif %}
+
+        {% if objectif.related_items.exists %}
+        <div class="detail-group related-items">
+            <h2>Items associés</h2>
+            <ul>
+                {% for item in objectif.related_items.all %}
+                    <li><a href="#">{{ item.name }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <div class="detail-group actions">
+            <a href="{% url 'membres:dépot_objectif' objectif.pk %}" class="btn btn-primary edit-button">Dépot</a>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+
+

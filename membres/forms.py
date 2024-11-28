@@ -7,7 +7,7 @@ from administrateurs.models import CodesReference, Users
 
 # Formulaire d'inscription de membre
 class MembresForm(forms.ModelForm):
-    email = forms.EmailField()
+    # email = forms.EmailField()
     mot_de_passe = forms.CharField(widget=forms.PasswordInput())
     confirmation_mot_de_passe = forms.CharField(widget=forms.PasswordInput())
     class Meta:
