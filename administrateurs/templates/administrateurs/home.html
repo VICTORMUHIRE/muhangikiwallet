@@ -97,7 +97,7 @@
                         {% endfor %}
                         {% for demande_inscription in demandes_inscription %}
                         <li class="list-group-item p-2 rounded-4">
-                            <a class="btn d-block text-start btn-light d-flex justify-content-between" href="{% url 'administrateurs:voir_membre' inscription.membre.pk %}">
+                            <a class="btn d-block text-start btn-light d-flex justify-content-between" href="{% url 'administrateurs:voir_membre' demande_inscription.membre.pk %}">
                                 <div>
                                     <div class="badge bg-primary">Demande d'approbation</div>
                                     <h6 class="text-center">{{ demande_inscription.membre }}</h6>
