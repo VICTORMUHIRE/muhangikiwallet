@@ -15,9 +15,13 @@
         <div class="col-md-4">
             <div class="card mb-3">
                 <div class="card-body text-center">
-                    <img src="{% static 'Photos/Membres/profil2.jpg' %}" alt="Photo de profil" class="rounded-circle mx-auto d-block" style="width: 150px; height: 150px;">
-                    <h5 class="card-title mt-3">{{ request.user.username }}</h5>
-                    <p class="card-text">Membre depuis le {{ request.user.date_joined|date:"d F Y" }}</p>
+                    {% if user.membre.photo %}
+                    <img src="{{ user.membre.photo.url }}" alt="Photo de profil" class="img-fluid rounded-circle mb-3" style="max-width: 150px;">
+                    {% else %}
+                    <i class="fas fa-user-circle fa-8x text-secondary mb-3"></i>
+                    {% endif %}
+                    <h5 class="card-title mt-3">{{ user.membre }}</h5>
+                    <p class="card-text">Membre depuis le {{ user.date_joined|date:"d E Y" }}</p>
                     <button type="button" class="btn btn-mw text-white btn-sm" data-bs-toggle="modal" data-bs-target="#modifierPhotoProfil">
                         Modifier la photo de profil
                     </button>

@@ -44,7 +44,7 @@
                 <p class="alert alert-info text-center">Votre compte a été approuvé, veuillez payer les frais d'adhésion pour finaliser l'Inscription</p>
                 <div class="card">
                     <div class="card-header text-center p-3">
-                        Paiement des frais d'adhésion ({{ form.montant.value|floatformat:0 }}$ ou {{ form.montant.value|floatformat:0 }}FC)
+                        Paiement des frais d'adhésion ({{ form.montant.value|stringformat:".2f" }}$ ou <span id="FC">{{ form.montant.value|stringformat:".2f" }}</span>FC)
                     </div>
                     <div class="card-body">
                         <form method="post" enctype="multipart/form-data" id="fraisForm">
@@ -102,7 +102,7 @@
                     <div class="row mb-3">
                         <div class="form-group col-8">
                             <label for="{{ form.montant.id_for_label }}" class="form-label">{{ form.montant.label }}</label>
-                            <input type="text" class="form-control" id="{{ form.montant.id_for_label }}" name="{{ form.montant.html_name}}" value="{{ form.montant.value|floatformat:0 }}" readonly>
+                            <input type="text" class="form-control" id="{{ form.montant.id_for_label }}" name="{{ form.montant.html_name}}" value="{{ form.montant.value|stringformat:".2f" }}" readonly>
                         </div>
                         <div class="form-group col-4">
                             <label for="{{ form.devise.id_for_label }}" class="form-label">{{ form.devise.label }}</label>
@@ -159,6 +159,8 @@
                 // Soumet le formulaire des frais
                 fraisForm.submit();
             });
+
+            document.getElementById('FC').textContent = {{ form.montant.value|stringformat:".2f" }} * 2800;
 
             document.getElementById('{{ form.devise.id_for_label }}').addEventListener('change', function(event) {
                 const devise = this.value;

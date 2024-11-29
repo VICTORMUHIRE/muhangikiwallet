@@ -18,6 +18,8 @@ STATUS_CHOICES = [
     ('En attente', 'En attente'),
     ('Approuvé', 'Approuvé'),
     ('Rejeté', 'Rejeté'),
+    ('Remboursé', 'Remboursé'),
+    ('Annulé', 'Annulé')
 ]
 
 OPERATEURS = [
@@ -79,10 +81,10 @@ class TypesPrêt(models.Model):
 
 # Modèle pour les prêts
 class Prêts(models.Model):
-    administrateur = models.ForeignKey(Administrateurs, on_delete=models.CASCADE, blank=True, verbose_name="Administrateur")
+    administrateur = models.ForeignKey(Administrateurs, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Administrateur")
 
     type_prêt = models.ForeignKey(TypesPrêt, on_delete=models.CASCADE, verbose_name="Type de prêt")
-    transaction = models.ForeignKey(Transactions, on_delete=models.CASCADE, blank=True, verbose_name="Transaction")
+    transaction = models.ForeignKey(Transactions, on_delete=models.CASCADE, blank=True, related_name="prêt", verbose_name="Transaction")
 
     montant = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Montant du prêt")
     montant_remboursé = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Montant remboursé")

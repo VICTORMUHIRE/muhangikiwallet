@@ -1,0 +1,76 @@
+{% extends 'administrateurs/base.html' %}
+{% load static %}
+
+{% block title %}Détails du prêt{% endblock %}
+
+{% block content %}
+<div class="card mt-5">
+    <div class="card-header bg-white text-center">
+        <h5 class="card-title mb-0">Détails du prêt</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Membre:</strong> {{ prêt.transaction.membre }}</p>
+                <p><strong>Montant:</strong> {{ prêt.montant }} {{ prêt.devise }}</p>
+                <p><strong>Date de la demande:</strong> {{ prêt.date_demande }}</p>
+                <p><strong>Statut:</strong>
+                    {% if prêt.statut == 'Approuvé' %}
+                        <span class="badge bg-success">{{ prêt.statut }}</span>
+                    {% elif prêt.statut == 'Rejeté' %}
+                        <span class="badge bg-danger">{{ prêt.statut }}</span>
+                    {% else %}
+                        <span class="badge bg-warning text-dark">{{ prêt.statut }}</span>
+                    {% endif %}
+                </p>
+                {% if prêt.date_approbation %}
+                    <p><strong>Date d'approbation:</strong> {{ prêt.date_approbation }}</p>
+                {% endif %}
+                {% if prêt.raison_rejet %}
+                    <p><strong>Raison du rejet:</strong> {{ prêt.raison_rejet }}</p>
+                {% endif %}
+
+
+            </div>
+            </div>
+            {% if prêt.statut == 'En attente' %}
+            <div class="col-md-12 mt-4">
+            <form method="post">
+                {% csrf_token %}
+                {% for field in form %}
+                <input type="hidden" name="id" value="{{ prêt.pk }}">
+                <input type="hidden" id="{{ field.id_for_label }}" name="{{ field.name }}" value="{{ field.value|default:'' }}">
+                {% endfor %}
+                <div class="d-flex justify-content-center">
+                    <button type="submit" name="statut" value="Approuvé" class="btn btn-success me-2">Approuver</button>
+                    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#rejetModal">Rejeter</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Modal pour le rejet -->
+        <div class="modal fade" id="rejetModal" tabindex="-1" aria-labelledby="rejetModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                <h5 class="modal-title" id="rejetModalLabel">Raison du rejet</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="post">
+                    {% csrf_token %}
+                <div class="modal-body">
+                    <textarea name="raison_rejet" class="form-control" rows="3" placeholder="Indiquez la raison du rejet"></textarea>              
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" name="rejeter" value="rejeter" class="btn btn-danger">Rejeter</button>
+                </div>
+                </form>
+            </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

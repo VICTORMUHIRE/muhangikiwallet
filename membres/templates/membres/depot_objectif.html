@@ -24,7 +24,7 @@
 
                     <form method="post" enctype="multipart/form-data" id="withdraw-form">
                         {% csrf_token %}
-                        <input type="hidden" name="objectif_id" value="{{ objectif.id }}">
+                        <input type="hidden" id="{{ depot_objectif_form.objectif.id_for_label }}" name="{{ depot_objectif_form.objectif.html_name }}" value="{{ depot_objectif_form.objectif.value }}">
                         <div class="row mb-3">
                             <div class="form-group col-md-8">
                                 <label class="form-label" for="{{ form.montant.id_for_label }}">Montant à retirer</label>

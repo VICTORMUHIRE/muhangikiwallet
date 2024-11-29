@@ -30,7 +30,7 @@
     <link rel="shortcut icon" href="{% static 'LOGO MUHANGIKI WALLET PRINCIPALE.png' %}" type="image/x-icon">
     <link rel="manifest" href="{% static 'manifest.json' %}">
 
-    <title>{% block title %}Muhangiki Wallet{% endblock %}</title>
+    <title>{% block title %}Muhangiki Wallet - Administration{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'css/bootstrap/bootstrap.min.css' %}">
     <link rel="stylesheet" href="{% static 'css/bootstrap-icons/bootstrap-icons.css' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
@@ -60,19 +60,6 @@
             padding: 15px 0;
             text-decoration: none;
             color: #333;
-        }
-
-        .bottom-app-bar a i {
-            font-size: 24px;
-            margin-bottom: 5px;
-        }
-
-        .bottom-app-bar a span {
-            display: none;
-        }
-
-        .bottom-app-bar a:hover i {
-            color: #f0ad4e; /* Couleur survolée */
         }
 
         .bottom-app-bar a.active {
@@ -114,17 +101,8 @@
             width: 100%;
             background-color: #fff;
             box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
-            z-index: 100;
+            z-index: 100; 
         }
-
-        .transaction-item { border-bottom: 1px solid #dee2e6; } /* Light gray border */
-        .transaction-icon i { font-size: 1.2rem; }
-        .transaction-retrait { color: #dc3545; } /* Red for withdrawals */
-        .transaction-transfert { color: #007bff; } /* Blue for transfers */
-        .transaction-depot-objectif { color: #28a745; } /* Green for goal deposits */
-        .transaction-depot-inscription { color: #ffc107; } /* Yellow for registration deposits */
-        .transaction-contribution { color: #17a2b8; } /* Teal for contributions */
-        .transaction-prêt { color: #6f42c1; }  /* Purple for loans */
 
         /* Affichage sur mobile */
         @media (max-width: 768px) {
@@ -147,51 +125,18 @@
 
     <!-- Top App Bar (pour mobile) -->
     <div class="top-app-bar bg-white p-2 d-flex align-items-center justify-content-between">
-        <a class="navbar-brand d-flex align-items-center justify-content-center" href="{% url 'administrateurs:home' %}">
-            <img src="{% static 'LOGO MUHANGIKI WALLET PRINCIPALE.png' %}" alt="Logo Muhangiki Wallet" height="40" class="d-inline-block">
-            <h5 class="ms-2">Muhangiki Wallet</h5>
+        <a class="navbar-brand align-middle" href="{% url 'administrateurs:home' %}">
+            <img src="{% static 'LOGO MUHANGIKI WALLET NOIR.png' %}" alt="Logo Muhangiki Wallet" height="40" class="d-inline-block">
+            <span class="ms-2">Muhangiki Wallet - Administration</span>
         </a>
-        {% if request.user.is_authenticated %}
-        <div class="d-flex align-items-center justify-content-center">
+        <div>
             <a href="#" class="me-3">
                 <span class="material-icons">notifications</span>
             </a>
-            <span class="navbar-nav rounded-4">
-                <li class="nav-item dropdown">
-                    <a class="nav-link text-dark d-flex align-items-center justify-content-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        {% if user.admin.photo_profil %}
-                        <img src="/static/{{user.admin.photo_profil}}" alt="Photo de profil" class="rounded-circle" height="30"> 
-                        {% elif user.admin.sexe == 'M' %}
-                        <i class="fas fa-user-circle fa-2x"></i>
-                        {% else %}
-                        <i class="fas fa-user-circle fa-2x"></i>
-                        {% endif %}
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                        <li><a class="dropdown-item" href="#">
-                            <i class="fa fa-user"></i>
-                            Mon profil
-                        </a></li>
-                        <li><a class="dropdown-item" href="#">
-                            <i class="fa fa-bell"></i>
-                            Notifications
-                            <span class="badge bg-secondary">3</span>
-                        </a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <!-- <li><a class="dropdown-item text-danger" href="{% url 'logout' %}">
-                            <i class="fa fa-sign-out-alt"></i>
-                            Déconnexion
-                        </a></li> -->
-                        <li>
-                            <a href="#" class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#logoutModal">
-                                <i class="fa fa-sign-out-alt"></i> Déconnexion
-                            </a>
-                        </li>
-                    </ul>
-                </li>
-            </span>
+            <a href="#" id="openProfileMenu">
+                <img src="{% static 'Photos/Membres/profil2.jpg' %}" alt="Photo de profil" class="rounded-circle" height="40"> 
+            </a>
         </div>
-        {% endif %}
     </div>
 
     <header>
@@ -208,7 +153,7 @@
                     <ul class="navbar-nav d-flex justify-content-center flex-grow-1">
                         {% if request.user.is_authenticated %}
                         <li class="nav-item">
-                            <a class="nav-link {% if request.path == '/membres/' %}active{% endif %}" aria-current="page" href="{% url 'administrateurs:home' %}">
+                            <a class="nav-link {% if request.path == '/administrateurs/' %}active{% endif %}" aria-current="page" href="{% url 'administrateurs:home' %}">
                                 <i class="fa fa-home"></i>
                                 Accueil
                             </a>
@@ -220,44 +165,36 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if '/agents/' in request.path %}active{% endif %}" href="{% url 'administrateurs:home' %}">
-                                <i class="fa-solid fa-user-tie"></i>
-                                Agents
-                            </a>
-                        </li>
-                        <!-- <li class="nav-item">
                             <a class="nav-link {% if '/organisations/' in request.path %}active{% endif %}" href="{% url 'administrateurs:organisations' %}">
                                 <i class="fa fa-building"></i>
                                 Organisations
                             </a>
-                        </li> -->
-                        <li class="nav-item">
-                            <a class="nav-link {% if '/transactions/' in request.path %}active{% endif %}" href="{% url 'administrateurs:transactions' %}">
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle {% if '/transactions_cdf/' in request.path or '/transactions_usd/' in request.path %}active{% endif %}" href="#" id="transactionsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="fa fa-exchange-alt"></i>
                                 Transactions
                             </a>
+                            <ul class="dropdown-menu" aria-labelledby="transactionsDropdown">
+                                <li><a class="dropdown-item" href="{% url 'administrateurs:transactions_cdf' %}">Transactions CDF</a></li>
+                                <li><a class="dropdown-item" href="{% url 'administrateurs:transactions_usd' %}">Transactions USD</a></li>
+                            </ul>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if '/paramètres/' in request.path %}active{% endif %}" href="{% url 'membres:paramètres' %}">
-                                <i class="fa fa-cog"></i>
-                                Paramètres
+                            <a class="nav-link {% if '/opérations/' in request.path %}active{% endif %}" href="{% url 'administrateurs:opérations' %}">
+                                <i class="fa fa-chart-line"></i>
+                                Opérations
                             </a>
                         </li>
                     </ul>
                     <ul class="navbar-nav rounded-4" style="background-color: #ffdeba;">
                         <li class="nav-item dropdown">
-                            <a class="nav-link text-dark d-flex align-items-center justify-content-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                {% if user.admin.photo_profil %}
-                                <img src="/static/{{user.admin.photo_profil}}" alt="Photo de profil" class="rounded-circle" height="30"> 
-                                {% elif user.admin.sexe == 'M' %}
-                                <i class="fas fa-user-circle fa-2x"></i>
-                                {% else %}
-                                <i class="fas fa-user-circle fa-2x"></i>
-                                {% endif %}
-                                <span class="mx-2 text-dark">{{ user.admin.nom }}</span>
+                            <a class="nav-link dropdown-togglee text-dark" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <img src="{% static 'Photos/Membres/profil2.jpg' %}" alt="Photo de profil" class="rounded-circle" height="30"> 
+                                <!-- <span class="ms-2 text-dark">{{ request.user.username }}</span> -->
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                                <li><a class="dropdown-item" href="#">
+                                <li><a class="dropdown-item" href="{% url 'administrateurs:profile' %}">
                                     <i class="fa fa-user"></i>
                                     Mon profil 
                                 </a></li>
@@ -272,7 +209,7 @@
                                     Déconnexion
                                 </a></li> -->
                                 <li>
-                                    <a href="#" class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#logoutModal">
+                                    <a class="dropdown-item text-danger" href="#" data-bs-toggle="modal" data-bs-target="#logoutModal">
                                         <i class="fa fa-sign-out-alt"></i> Déconnexion
                                     </a>
                                 </li>
@@ -282,10 +219,10 @@
                     </ul>
                     <ul class="navbar-nav">
                         <li class="nav-item">
-                            <a class="nav-link active btn btn-sm py-1" href="{% url 'login' %}">Connexion</a>
+                            <a class="nav-link text-light" href="{% url 'administrateurs:login' %}">Connexion</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link active btn btn-sm ms-3 py-1" href="{% url 'administrateurs:inscription' %}">Inscription</a>
+                            <a class="nav-link text-light" href="{% url 'administrateurs:register' %}">Inscription</a>
                         </li>
                     {% endif %}
                     </ul>
@@ -300,32 +237,34 @@
     </main>
 
     <!-- Barre d'application en bas (pour mobile) -->
-    {% if request.user.is_authenticated %}
     <div class="bottom-app-bar">
-            <a href="{% url 'administrateurs:home' %}" class="nav-link {% if request.path == '/membres/' %}active{% endif %}">
-                <i class="fa fa-home"></i> 
-                <span>Accueil</span>
-            </a>
-            <a href="{% url 'administrateurs:agents' %}" class="nav-link {% if '/agents/' in request.path %}active{% endif %}">
-                <i class="fa-solid fa-user-tie"></i>
-                <span>Agents</span>
-            </a>
-            <a href="{% url 'administrateurs:membres' %}" class="nav-link {% if '/membres/' in request.path %}active{% endif %}">
-                <i class="fa fa-users"></i>
-                <span>Membres</span>
-            </a>
-            <!-- <a href="{% url 'administrateurs:transactions' %}" class="nav-link {% if '/transactions/' in request.path %}active{% endif %}">
-                <i class="fa fa-exchange-alt"></i>
-                <span>Transactions</span>
-            </a> -->
-            <a href="{% url 'membres:paramètres' %}" class="nav-link {% if '/paramètres/' in request.path %}active{% endif %}">
-                <i class="fa fa-cog"></i>
-                <span>Paramètres</span>
-            </a>
-        </div>
-    {% endif %}
+        <a href="{% url 'administrateurs:home' %}" class="nav-link {% if request.path == '/administrateurs/' %}active{% endif %}">
+            <span class="material-icons">home</span>
+            Accueil
+        </a>
+        <a href="{% url 'administrateurs:membres' %}" class="nav-link {% if '/membres/' in request.path %}active{% endif %}">
+            <span class="material-icons">groups</span>
+            Membres
+        </a>
+        <a href="{% url 'administrateurs:transactions_cdf' %}" class="nav-link {% if '/transactions_cdf/' in request.path or '/transactions_usd/' in request.path %}active{% endif %}">
+            <span class="material-icons">receipt</span>
+            Transactions
+        </a>
+        <a href="{% url 'administrateurs:profile' %}" class="nav-link {% if '/profile/' in request.path %}active{% endif %}">
+            <span class="material-icons">settings</span>
+            Profil
+        </a>
+    </div>
 
-    <!-- Boîte de déconnexion -->
+    <!-- Menu de profil (caché par défaut) -->
+    <div class="profile-menu" id="profileMenu">
+        <ul>
+            <li><a href="{% url 'administrateurs:profile' %}"><i class="fa fa-user"></i> Mon profil</a></li>
+            <li><a href="{% url 'logout' %}"><i class="fa fa-sign-out-alt"></i> Déconnexion</a></li>
+        </ul>
+    </div>
+
+    <!-- Confirmation de déconnexion -->
     <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -337,14 +276,14 @@
                     Êtes-vous sûr(e) de vouloir vous déconnecter ?
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Non</button>
-                    <a href="{% url 'logout' %}" class="btn btn-danger">Oui</a>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <a href="{% url 'logout' %}" class="btn btn-danger">Déconnexion</a>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="{% static 'js/bootstrap/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'js/bootstrap/bootstrap.bundle.min.js' %}"></script> 
     <script src="{% static 'js/script.js' %}"></script>
 
     <script>

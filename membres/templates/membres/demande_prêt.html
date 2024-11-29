@@ -53,8 +53,8 @@
                         </div>
     
                         <div class="mb-3">
-                            <label for="numero_agent" class="form-label">Numéro de l'agent</label>
-                            <select class="form-control form-select" id="numero_agent" name="numero_agent">
+                            <label for="{{ transaction_form.numero_agent.id_for_label }}" class="form-label">Numéro de l'agent</label>
+                            <select class="form-control form-select" id="{{ transaction_form.numero_agent.id_for_label }}" name="{{ transaction_form.numero_agent.html_name }}">
                                 {% for reseau, numeros in numeros_categories.items %}  <!-- Use existing context variable -->
                                     <optgroup label="{{ reseau }}">
                                         {% for numero, id in numeros %}
@@ -64,18 +64,24 @@
                                 {% endfor %}
                             </select>
                         </div>
+
+                        <h4 class="text-center">Details du prêt</h4>
     
                         <div class="mb-3">
                             <label for="taux_interet">Taux d'intérêt: </label>
-                            <span id="taux_interet" class="font-weight-bold mb-color">-</span>
+                            <strong id="taux_interet" class="font-weight-bold mb-color">-</strong>
                         </div>
                         <div class="mb-3">
                             <label for="delai_remboursement">Délai de remboursement: </label>
-                            <span id="delai_remboursement" class="font-weight-bold mb-color">-</span>
+                            <strong id="delai_remboursement" class="font-weight-bold mb-color">-</strong>
                         </div>
                         <div class="mb-3">
-                            <label for="montant_rembourser">Montant total à rembourser: </label>
-                            <span id="montant_rembourser" class="font-weight-bold mb-color">-</span>
+                            <label for="montant_rembourser">Montant à recevoir: </label>
+                            <strong id="montant" class="font-weight-bold mb-color">-</strong>
+                        </div>
+                        <div class="mb-3">
+                            <label for="montant_rembourser">Montant à rembourser: </label>
+                            <strong id="montant_rembourser" class="font-weight-bold mb-color">-</strong>
                         </div>
     
                         <div class="form-group text-center">
@@ -97,14 +103,14 @@
                     <div class="card-body">
                         {% for demande in demandes_prêt %}
                             <div class="card mb-3">
-                                <div class="card-body">
-                                    <h5 class="card-title">
+                                <div class="card-body d-flex align-items-center justify-content-between">
+                                    <div class="card-title">
                                         <span class="badge bg-{% if demande.statut == 'Approuvé' %}success{% elif demande.statut == 'Rejeté' %}danger{% else %}warning{% endif %}">
                                             {{ demande.get_statut_display }}
                                         </span>
-                                    </h5>
-                                    <p class="card-text"><strong>Montant:</strong> {{ demande.montant }} {{ demande.devise }}</p>
-                                    <p class="card-text"><strong>Date de la demande:</strong> {{ demande.date_demande }}</p>
+                                        <p class="card-text fs-6"><strong>Montant:</strong> {{ demande.montant }} {{ demande.devise }}</p>
+                                    </div>
+                                <p class="card-text">{{ demande.date }}</p>
                                 </div>
                             </div>
                         {% empty %}
@@ -132,11 +138,11 @@
                             <label for="mot_de_passe" class="form-label">Mot de passe</label>
                             <input type="password" class="form-control" id="mot_de_passe" name="mot_de_passe" required>
                         </div>
+                        <div class="modal-footer">  <!-- Submit in footer -->
+                            <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Annuler</button>
+                            <button type="submit" class="btn btn-mw">Confirmer</button>
+                        </div>
                     </form>
-                </div>
-                <div class="modal-footer">  <!-- Submit in footer -->
-                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Annuler</button>
-                    <button type="submit" form="passwordForm" id="confirmPasswordBtn" class="btn btn-mw">Confirmer</button>
                 </div>
             </div>
         </div>
@@ -158,12 +164,13 @@
         // Vérifier si les valeurs sont valides avant de calculer
         if (tauxInteret > 0 && delaiRemboursement > 0) {
             // Calcul du montant à rembourser (intérêts simples)
-            var montantInterets = montant * (tauxInteret / 100); 
-            var montantRembourser = montant + montantInterets;
+            var montantRecevoir = montant * (1 - tauxInteret / 100);
+            var montantRembourser = montant;
 
             // Mettre à jour les champs dans le formulaire
             document.getElementById("taux_interet").textContent = tauxInteret + "%";
             document.getElementById("delai_remboursement").textContent = delaiRemboursement + " jours";
+            document.getElementById("montant").textContent = montantRecevoir.toFixed(2)+(devise == "CDF" ? " FC" : " $");
             document.getElementById("montant_rembourser").textContent = montantRembourser.toFixed(2)+(devise == "CDF" ? " FC" : " $");
         } else {
             // Afficher des tirets si les valeurs ne sont pas valides
@@ -180,14 +187,16 @@
     window.addEventListener("load", updateLoanDetails);
 
     // Gestionnaire d'événements pour le bouton "Confirmer" dans le modal
-    document.getElementById('confirmPasswordBtn').addEventListener('click', function() {
-        var password = document.getElementById('password').value;
+    document.getElementById('passwordForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        var password = document.getElementById('mot_de_passe').value;
         var loanForm = document.getElementById('loan-form');
 
         // Ajouter le mot de passe au formulaire avant la soumission
         var passwordInput = document.createElement('input');
         passwordInput.type = 'hidden';
-        passwordInput.name = 'password'; 
+        passwordInput.name = 'password';
         passwordInput.value = password;
         loanForm.appendChild(passwordInput);
 

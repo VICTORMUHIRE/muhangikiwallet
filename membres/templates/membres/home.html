@@ -81,40 +81,7 @@
     </div>
 </div>
 
-<div class="row flex-grow-1 mb-2 pb-5 mb-sm-0 pb-sm-0">
-    <div class="col-md-6 d-none d-sm-block">
-        <div class="card h-100 shadow-sm rounded-4 border-0">
-            <div class="card-header bg-white rounded-top-4">
-                <h5 class="card-title font-weight-bold">
-                    <i class="fas fa-bullseye fa-fw mw-color"></i> Vos Objectifs
-                </h5>
-            </div>
-            <div class="card-body d-flex flex-column justify-content-between">
-                <ul class="list-group list-group-flush">
-                    {% for objectif in objectifs %}
-                    <a href="{% url 'membres:objectif' objectif.id %}" class="d-block btn btn-light bg-white objectif-item mb-2">  <!-- Anchor tag styled as button -->
-                        <div class="d-flex align-items-center justify-content-between">
-                            <div class="d-flex align-items-center gap-3">  <!-- Align icon and text -->
-                                <i class="fas fa-bullseye"></i>  <!-- Use a relevant icon -->
-                                <div class="text-dark fw-bold">  <!-- Style text -->
-                                    {{ objectif.nom }}
-                                    <div>
-                                        <span class="text-muted small mb-0">{{ objectif.montant|stringformat:".2f" }} / {{ objectif.montant_cible|stringformat:".2f" }} {{ objectif.devise }}</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <span class="badge {% if objectif.statut == 'Terminé' %}bg-success{% elif objectif.statut == 'En cours' %}bg-warning{% else %}bg-danger{% endif %}">{{ objectif.statut }}</span>
-                        </div>
-                    </a>
-                    {% empty %}
-                    <li class="list-group-item"> Aucun objectif enregistré</li>
-                    {% endfor %}
-                </ul>
-                <a href="{% url 'membres:objectifs' %}" class="btn btn-sm btn-mw mt-3 rounded-pill">Gérer</a>
-            </div>
-        </div>
-    </div>
-
+<div class="row flex-grow-1 mb-2 pb-5 mb-sm-0 pb-sm-0 gap-4 gap-md-0">
     <div class="col-md-6">
         <div class="card h-100 shadow-sm rounded-4 border-0">
             <div class="card-header bg-white rounded-top-4">
@@ -128,7 +95,7 @@
                     <div class="d-flex align-items-center justify-content-between">
                         <div class="d-flex align-items-center gap-3">
                             <i class="{% if transaction.type == 'retrait' %}fas fa-minus-circle{% elif transaction.type == 'transfert' %}fas fa-exchange-alt{% elif transaction.type == 'depot_objectif' %}fas fa-piggy-bank{% elif transaction.type == 'depot_inscription' %}fas fa-sign-in-alt{% elif transaction.type == 'contribution' %}fas fa-donate{% elif transaction.type == 'prêt' %}fas fa-hand-holding-usd{% endif %}"></i>
-                            <div class="text-dark fw-bold">
+                            <div class="text-dark fw-bold text-start">
                                 {% if transaction.type == 'retrait' %}Retrait d'argent{% elif transaction.type == 'transfert' %}Transfert d'argent{% elif transaction.type == 'depot_objectif' %}Dépôt sur objectif{% elif transaction.type == 'depot_inscription' %}Dépôt d'inscription{% elif transaction.type == 'contribution' %}Contribution mensuelle{% elif transaction.type == 'prêt' %}Prêt d'argent{% endif %}
                                 <div>
                                     <span class="text-muted small mb-0">{{ transaction.montant|stringformat:".2f" }} {{ transaction.devise }}</span>
@@ -145,13 +112,46 @@
                     </div>
                 </a>
                 {% empty %}
-                <span class="list-group-item">Aucune transaction récente.</span>
+                <span class="list-group-item">Aucune transaction récente</span>
                 {% endfor %}
-                {% if transactions.length > 5 %}
+                {% if transactions.count > 5 %}
                 <div class="mt-3 text-center">
-                    <a href="{% url 'membres:transactions' %}" class="btn btn-mw btn-sm rounded-pill">Voir l'historique complet</a>
+                    <a href="{% url 'membres:transactions' %}" class="btn btn-link mw-color">Voir plus</a>
                 </div>
                 {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card h-100 shadow-sm rounded-4 border-0">
+            <div class="card-header bg-white rounded-top-4">
+                <h5 class="card-title font-weight-bold">
+                    <i class="fas fa-bullseye fa-fw text-primary"></i> Vos Objectifs
+                </h5>
+            </div>
+            <div class="card-body d-flex flex-column justify-content-between">
+                <ul class="list-group list-group-flush">
+                    {% for objectif in objectifs %}
+                    <a href="{% url 'membres:objectif' objectif.id %}" class="d-block btn btn-light bg-white objectif-item mb-2">  <!-- Anchor tag styled as button -->
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center gap-3">  <!-- Align icon and text -->
+                                <i class="fas fa-bullseye text-primary"></i>  <!-- Use a relevant icon -->
+                                <div class="text-dark fw-bold text-start">  <!-- Style text -->
+                                    {{ objectif.nom }}
+                                    <div>
+                                        <span class="text-muted small mb-0">{{ objectif.montant|stringformat:".2f" }} / {{ objectif.montant_cible|stringformat:".2f" }} {{ objectif.devise }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <span class="badge {% if objectif.statut == 'Terminé' %}bg-success{% elif objectif.statut == 'En cours' %}bg-warning{% else %}bg-danger{% endif %}">{{ objectif.statut }}</span>
+                        </div>
+                    </a>
+                    {% empty %}
+                    <li class="list-group-item"> Aucun objectif enregistré</li>
+                    {% endfor %}
+                </ul>
+                <a href="{% url 'membres:objectifs' %}" class="btn btn-sm btn-secondary mt-3 rounded-pill">Gérer</a>
             </div>
         </div>
     </div>

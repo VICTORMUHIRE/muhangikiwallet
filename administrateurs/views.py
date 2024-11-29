@@ -37,12 +37,12 @@ def home(request):
     nombre_organisations = Organisations.objects.count()
     nombre_agents = Agents.objects.count()
 
-
     transactions = Transactions.objects.all().order_by("-date")
     prets = Prêts.objects.filter(statut="En attente")
 
-    transactions_inscriptions = Transactions.objects.filter(type="depot_inscription", statut="Initialisation", date_approbation=None)
-
+    demandes_prêt = Transactions.objects.filter(type="prêt", statut="En attente"),
+    demandes_inscription = Transactions.objects.filter(type="depot_inscription", statut="Initialisation")
+    
     context = {
         'solde_total_entreprise_cdf': solde_total_entreprise_cdf,
         'solde_total_entreprise_usd': solde_total_entreprise_usd,
@@ -53,7 +53,8 @@ def home(request):
         'nombre_agents': nombre_agents,
         "transactions": transactions,
         "prets": prets,
-        "inscriptions": transactions_inscriptions
+        "demandes_prêt": demandes_prêt,
+        "demandes_inscription": demandes_inscription,
     }
     return render(request, 'administrateurs/home.html', context)
 
@@ -233,23 +234,12 @@ def supprimer_organisation(request, organisation_id):
 
 # Vue pour la page de gestion des transactions en CDF
 @login_required
-def transactions_cdf(request):
-    transactions = Transactions.objects.filter(devise="CDF").order_by("-date")
+def transactions(request):
+    transactions = Transactions.objects.filter().order_by("-date")
     context = {
         "transactions": transactions,
     }
-    return render(request, "administrateurs/transactions_cdf.html", context)
-
-# Vue pour la page de gestion des transactions en USD
-@login_required
-def transactions_usd(request):
-    transactions = Transactions.objects.filter(devise="USD").order_by("-date")
-    context = {
-        "transactions": transactions,
-    }
-    return render(request, "administrateurs/transactions_usd.html", context)
-
-# ... (autres vues)
+    return render(request, "administrateurs/transactions.html", context)
 
 # Vue pour la page de gestion des types de prêt
 @login_required
@@ -329,26 +319,6 @@ def creer_transaction_usd(request):
         form = TransactionsForm(initial={'devise': 'USD'})  # Pré-remplir la devise avec USD
     return render(request, "administrateurs/creer_transaction.html", {"form": form})
 
-# Vue pour la page de gestion des opérations (exemple)
-@login_required
-def opérations(request):
-    # Logique pour récupérer les opérations (à adapter selon vos besoins)
-    opérations = []  # Remplacez par votre logique de récupération des opérations
-    context = {
-        "opérations": opérations,
-    }
-    return render(request, "administrateurs/opérations.html", context)
-
-# Vue pour la page de création d'une opération (exemple)
-@login_required
-def creer_opération(request):
-    # Logique pour créer une opération (à adapter selon vos besoins)
-    if request.method == "POST":
-        # Logique de traitement du formulaire
-        return redirect("administrateurs:opérations")  # Rediriger vers la page des opérations
-    else:
-        # Logique pour afficher le formulaire de création d'opération
-        return render(request, "administrateurs/creer_opération.html")
 
 # Agents Views
 @login_required
@@ -476,3 +446,32 @@ def supprimer_administrateur(request, administrateur_id):
     messages.success(request, "L'administrateur a été supprimé avec succès.")
     return redirect("administrateurs:administrateurs")
 
+@login_required
+def prêts(request):
+    prêts = Prêts.objects.all().order_by("-date")
+    context = {"prêts": prêts}
+    return render(request, "administrateurs/prêts.html", context)
+
+@login_required
+def voir_prêt(request, transaction_id):
+    prêt = Prêts.objects.filter(transaction=get_object_or_404(Transactions, pk=transaction_id)).first()
+    prêt = Prêts.objects.all().first()
+    
+    if request.method == "POST":
+        if "id" in request.POST:
+            prêt = get_object_or_404(Prêts, pk=request.POST["id"])
+            prêt.statut = prêt.transaction.statut = request.POST["statut"]
+            prêt.date = prêt.transaction.date = timezone.now()
+
+            if prêt.statut == "Approuvé":
+                prêt.date_approbation = prêt.transaction.date_approbation = timezone.now()
+                prêt.administrateur = request.user.admin
+
+            prêt.save()
+            messages.success(request, "Le prêt a été approuvé avec succès.")
+            return redirect("administrateurs:voir_prêt", transaction_id=prêt.transaction.pk)
+    else:
+        form = PrêtsForm(instance=prêt)
+    print(form.errors)
+    context = {"form": form, "prêt": prêt}
+    return render(request, "administrateurs/voir_prêt.html", context)

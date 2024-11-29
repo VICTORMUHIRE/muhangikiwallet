@@ -1,124 +1,126 @@
 {% extends 'agents/base.html' %}
 {% load static %}
 
-{% block title %}Accueil Agent{% endblock %}
+{% block title %}Tableau de Bord Administrateur{% endblock %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col-12">
-        <h1 class="text-center">
-            <span class="mw-color">Bienvenu {% if user.agent.sexe == "Femme" %}e{% endif %}</span> {% if user.agent.sexe == "Homme" %}cher{% else %}chère{% endif %}  {{ user.agent.nom }} {{ user.agent.postnom }}
-        </h1>
-    </div>
-</div> 
+<div class="row mt-5 mt-sm-0 mb-5 mb-sm-3 justify-content-center">
+    <h1 class="text-center mb-4">
+        Tableau de Bord
+    </h1>
 
-<div class="row">
-    <div class="col-md-4 my-3 my-md-0">
-        <div class="card h-100 shadow-sm rounded-4 border-0 bg-light"  style="background-color: color(srgb 1 0 0 / 0.1) !important;">
-            <div class="card-body d-flex flex-column align-items-center justify-content-center" >
-                <i class="fas fa-hand-holding-usd fa-3x text-danger mb-3"></i> 
-                <h5 class="card-title mt-4 font-weight-bold">Total Prêts Octroyés</h5>
-                <h6 class="card-subtitle mb-2 text-muted">CDF : {{ total_prêts_octroyés_CDF|default:0 }}</h6>
-                <h6 class="card-subtitle text-muted">USD : {{ total_prêts_octroyés_USD|default:0 }}</h6>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card h-100 shadow-sm rounded-4 border-0 bg-light"  style="background-color: color(srgb 1 0.65 0 / 0.1) !important;">
+    <div class="col-6 col-md-3 my-3 my-md-0 h-100">
+        <div class="card h-100 shadow-sm rounded-4 border-0 bg-light" style="background-color: color(srgb 0 1 0 / 0.05) !important;">
             <div class="card-body d-flex flex-column align-items-center justify-content-center">
-                <i class="fas fa-donate fa-3x text-warning mb-3"></i> 
-                <h5 class="card-title mt-4 font-weight-bold">Total Contributions</h5>
-                <h6 class="card-subtitle mb-2 text-muted">CDF : {{ total_contributions_CDF|floatformat:2|default:0 }}</h6>
-                <h6 class="card-subtitle text-muted">USD : {{ total_contributions_USD|floatformat:2|default:0 }}</h6> 
+                <i class="fas fa-wallet fa-3x text-success"></i>
+                <h5 class="card-title my-3 font-weight-bold text-center">Capital total</h5>
+                <h6 class="card-subtitle mb-2 text-muted">CDF : {{ solde_CDF|stringformat:".2f" }}</h6>
+                <h6 class="card-subtitle text-muted">USD : {{ solde_USD|stringformat:".2f" }}</h6>
             </div>
+            <a href="{% url 'membres:contributions' %}" class="card-footer text-center text-white bg-success btn btn-success rounded-4 rounded-top-0 btn-sm">Contributions</a>
         </div>
     </div>
-    
-    <div class="col-md-4">
-        <div class="card h-100 shadow-sm rounded-4 border-0 bg-light"  style="background-color: color(srgb 0 1 0 / 0.1) !important;">
+
+    <div class="col-6 col-md-3 my-3 my-md-0 h-100">
+        <div class="card h-100 shadow-sm rounded-4 border-0 bg-light" style="background-color: color(srgb 1 0 0 / 0.05) !important;">
             <div class="card-body d-flex flex-column align-items-center justify-content-center">
-                <i class="fas fa-wallet fa-3x text-success mb-3"></i> 
-                <h5 class="card-title mt-4 font-weight-bold">Total Objectifs</h5>
-                <h6 class="card-subtitle mb-2 text-muted">CDF : {{ total_contributions_CDF|floatformat:2|default:0 }}</h6>
-                <h6 class="card-subtitle text-muted">USD : {{ total_contributions_USD|floatformat:2|default:0 }}</h6> 
+                <i class="fas fa-hand-holding-usd fa-3x text-danger"></i>
+                <h5 class="card-title my-3 font-weight-bold text-center">Crédits</h5>
+                <h6 class="card-subtitle mb-2 text-muted">CDF : {{ total_prêts_CDF|stringformat:".2f" }}</h6>
+                <h6 class="card-subtitle text-muted">USD : {{ total_prêts_USD|stringformat:".2f" }}</h6>
             </div>
+            <a href="{% url 'membres:demande_prêt' %}" class="card-footer text-center text-white bg-danger btn btn-danger rounded-4 rounded-top-0 btn-sm">Emprunt</a>
         </div>
     </div>
 
-</div>
-
-<div class="row  my-4">
-    <div class="col-12">
-        <div class="d-flex flex-wrap justify-content-center" style="gap: 10px;">
-            <a href="{% url 'agents:contributions' %}" class="btn btn-success rounded-pill p-3" style="min-width: 160px;">
-                <i class="fas fa-donate me-2"></i> Contributions
-            </a>
-            <a href="{% url 'agents:prêts' %}" class="btn btn-danger rounded-pill p-3" style="min-width: 160px;">
-                <i class="fas fa-hand-holding-usd me-2"></i> Remboursements
-            </a>
-            <a href="{% url 'agents:objectifs' %}" class="btn btn-mw rounded-pill p-3" style="min-width: 160px;">
-                <i class="fas fa-bullseye me-2"></i> Objectifs
-            </a>
-            <a href="{% url 'agents:retraits' %}" class="btn btn-info rounded-pill p-3" style="min-width: 160px;">
-                <i class="fas fa-file-alt me-2"></i> Retraits
-            </a>
-
+    {% comment %} <div class="col-6 col-md-3 my-3 my-md-0 h-100">  <!-- New card for Bénéfices -->
+        <div class="card h-100 shadow-sm rounded-4 border-0 bg-light"  style="background-color: color(srgb 1 0.65 0 / 0.05) !important;">
+            <div class="card-body d-flex flex-column align-items-center justify-content-center">
+                <i class="fas fa-chart-line fa-3x mw-color"></i>
+                <h5 class="card-title my-3 font-weight-bold text-center">Bénéfices</h5>
+                <h6 class="card-subtitle mb-2 text-muted">CDF : {{ benefices_credits_cdf|stringformat:".2f" }}</h6>
+                <h6 class="card-subtitle text-muted">USD : {{ benefices_credits_usd|stringformat:".2f" }}</h6>
+            </div>
+            <a href="{% url 'membres:retrait' %}" class="card-footer text-center text-white bg-mw btn btn-mw rounded-4 rounded-top-0 btn-sm">Retrait</a>
         </div>
     </div>
-</div>
 
-<div class="row flex-grow-1">
-    <div class="col-md-6">
-        <div class="card h-100 shadow-sm rounded-4 border-0">
-            <div class="card-header bg-white rounded-top-4">
-                <h5 class="card-title font-weight-bold">
-                    <i class="fas fa-list fa-fw mw-color"></i> Liste des tâches
-                </h5>
+    <div class="col-6 col-md-3 my-3 my-md-0 col-md-3 h-100">  <!-- New card for Objectifs -->
+        <div class="card h-100 shadow-sm rounded-4 border-0 bg-light"  style="background-color: color(srgb 0 0 1 / 0.05) !important;">
+            <div class="card-body d-flex flex-column align-items-center justify-content-center">
+                <i class="fas fa-bullseye fa-3x text-primary"></i>
+                <h5 class="card-title my-3 font-weight-bold text-center">{{ objectifs.count }} {{objectifs.count|pluralize:"Objectif, Objectifs"}}</h5>
+                <h6 class="card-subtitle mb-2 text-muted">CDF : {{ benefices_credits_cdf|stringformat:".2f" }}</h6>
+                <h6 class="card-subtitle text-muted">USD : {{ benefices_credits_usd|stringformat:".2f" }}</h6>
             </div>
-            <div class="card-body d-flex flex-column justify-content-between">
-                <ul class="list-group list-group-flush">
-                    {% for tache in taches %}                    
-                    <li class="list-group-item p-2 rounded-4">
-                        <a class="btn d-flex align-items-end btn-light" href="{% url 'agents:voir_depot_inscription' tache.pk %}">
-                            <div class="badge bg-primary mb-4">{{ tache.get_type_display }}</div>
-                            <div class="d-flex justify-content-between mt-3 flex-grow-1">
-                                <h6 class="text-center">{{ tache.membre }} - {{ tache.montant|floatformat:0 }} {{ tache.devise }}</h6> 
-                                <small class="text-muted">{{ tache.date }}</small>
-                            </div>
-                        </a>
-                    </li>
+            <a href="{% url 'membres:objectifs' %}" class="card-footer text-center text-white bg-secondary btn btn-primary rounded-4 rounded-top-0 btn-sm">Gérer</a>
+        </div>
+    </div> {% endcomment %}
+
+
+    <div class="row mt-4 gap-3 gap-md-0 justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm rounded-4 border-0 h-100">
+                <div class="card-header bg-white rounded-top-4">
+                    <h5 class="card-title font-weight-bold">
+                        <i class="fas fa-tasks fa-fw mw-color"></i> Tâches à realiser
+                    </h5>
+                </div><div class="card-body p-0">
+                    <ul class="list-group list-group-flush">
+                        {% for tache in taches %}
+                        <li class="list-group-item p-2 rounded-4">
+                            <a class="btn d-flex align-items-end btn-light" href="{% url 'agents:voir_depot_inscription' tache.pk %}">
+                                <div class="badge bg-primary mb-4">{{ tache.get_type_display }}</div>
+                                <div class="d-flex justify-content-between mt-3 flex-grow-1">
+                                    <h6 class="text-center">{{ tache.membre }} - {{ tache.montant|floatformat:0 }} {{ tache.devise }}</h6> 
+                                    <small class="text-muted">{{ tache.date }}</small>
+                                </div>
+                            </a>
+                        </li>
                     {% empty %}
-                    <li class="list-group-item"> Aucune transaction effectuée pour le moment</li>
+                    <li class="list-group-item"> Aucune tâches pour le moment</li>
                     {% endfor %}
-                </ul>
-                <a href="{% url 'agents:prêts' %}" class="btn btn-sm btn-mw mt-3 rounded-pill">Voir plus</a>
+                    </ul>
+                </div>
             </div>
         </div>
-    </div>
-    <div class="col-md-6">
-        <div class="card h-100 shadow-sm rounded-4 border-0">
-            <div class="card-header bg-white rounded-top-4">
-                <h5 class="card-title font-weight-bold">
-                    <i class="fas fa-history fa-fw mw-color"></i> Historique des transactions
-                </h5>
-            </div>
-            <div class="card-body d-flex flex-column justify-content-between">
-                <ul class="list-group list-group-flush">
-                    {% for transaction in transactions %}
-                    <li class="list-group-item">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <span class="font-weight-bold">{{ transaction.operation }}</span> -
-                                {{ transaction.montant|floatformat:2 }} {{ transaction.devise }}
+        <div class="col-md-6">
+            <div class="card shadow-sm rounded-4 border-0">
+                <div class="card-header bg-white rounded-top-4">
+                    <h5 class="card-title font-weight-bold">
+                        <i class="fas fa-history fa-fw mw-color"></i> Dernières Transactions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% for transaction in transactions|slice:":5" %}
+                <a href="{% url 'membres:transaction' transaction.id %}" class="d-block btn btn-light bg-white transaction-item {% if transaction.type == 'retrait' %}transaction-retrait{% elif transaction.type == 'transfert' %}transaction-transfert{% elif transaction.type == 'depot_objectif' %}transaction-depot-objectif{% elif transaction.type == 'depot_inscription' %}transaction-depot-inscription{% elif transaction.type == 'contribution' %}transaction-contribution{% elif transaction.type == 'prêt' %}transaction-prêt{% endif %}">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center gap-3">
+                            <i class="{% if transaction.type == 'retrait' %}fas fa-minus-circle{% elif transaction.type == 'transfert' %}fas fa-exchange-alt{% elif transaction.type == 'depot_objectif' %}fas fa-piggy-bank{% elif transaction.type == 'depot_inscription' %}fas fa-sign-in-alt{% elif transaction.type == 'contribution' %}fas fa-donate{% elif transaction.type == 'prêt' %}fas fa-hand-holding-usd{% endif %}"></i>
+                            <div class="text-dark fw-bold text-start">
+                                {% if transaction.type == 'retrait' %}Retrait d'argent{% elif transaction.type == 'transfert' %}Transfert d'argent{% elif transaction.type == 'depot_objectif' %}Dépôt sur objectif{% elif transaction.type == 'depot_inscription' %}Dépôt d'inscription{% elif transaction.type == 'contribution' %}Contribution mensuelle{% elif transaction.type == 'prêt' %}Prêt d'argent{% endif %}
+                                <div>
+                                    <span class="text-muted small mb-0">{{ transaction.montant|stringformat:".2f" }} {{ transaction.devise }}</span>
+                                    <span class="transaction-status">
+                                        <span class="badge {% if transaction.statut == 'Approuvé' %}bg-success{% elif transaction.statut == 'Rejeté' %}bg-danger{% else %}bg-warning{% endif %}">{{ transaction.statut }}</span>
+                                    </span>
+                                </div>
                             </div>
-                            <small class="text-muted">{{ transaction.date }}</small>
                         </div>
-                    </li>
-                    {% empty %}
-                    <li class="list-group-item"> Aucune transaction pour le moment</li>
-                    {% endfor %}
-                </ul>
-                <a href="{% url 'agents:transactions' %}" class="btn btn-mw btn-sm mt-3 rounded-pill">Voir plus</a>
+                        <div class="transaction-date text-muted small text-center">
+                            <span>{{ transaction.date|date:"d M Y" }}</span>
+                            <span class="ms-2">{{ transaction.date|date:"H:i" }}</span>
+                        </div>
+                    </div>
+                </a>
+                {% empty %}
+                <span class="list-group-item">Aucune transaction récente</span>
+                {% endfor %}
+                {% if transactions.count > 5 %}
+                <div class="mt-3 text-center">
+                    <a href="{% url 'agents:transactions' %}" class="btn btn-link mw-color">Voir plus</a>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
