@@ -159,8 +159,8 @@
             <span class="navbar-nav rounded-4">
                 <li class="nav-item dropdown">
                     <a class="nav-link text-dark d-flex align-items-center justify-content-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        {% if user.admin.photo_profil %}
-                        <img src="/static/{{user.admin.photo_profil}}" alt="Photo de profil" class="rounded-circle" height="30"> 
+                        {% if user.admin.photo_passport %}
+                        <img src="/static/{{user.admin.photo_passport}}" alt="Photo de profil" class="rounded-circle" height="30"> 
                         {% elif user.admin.sexe == 'M' %}
                         <i class="fas fa-user-circle fa-2x"></i>
                         {% else %}
@@ -247,8 +247,8 @@
                     <ul class="navbar-nav rounded-4" style="background-color: #ffdeba;">
                         <li class="nav-item dropdown">
                             <a class="nav-link text-dark d-flex align-items-center justify-content-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                {% if user.admin.photo_profil %}
-                                <img src="/static/{{user.admin.photo_profil}}" alt="Photo de profil" class="rounded-circle" height="30"> 
+                                {% if user.admin.photo_passport %}
+                                <img src="/static/{{user.admin.photo_passport}}" alt="Photo de profil" class="rounded-circle" height="30"> 
                                 {% elif user.admin.sexe == 'M' %}
                                 <i class="fas fa-user-circle fa-2x"></i>
                                 {% else %}

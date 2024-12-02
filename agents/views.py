@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.hashers import check_password
 from django.contrib import messages
 from .models import Agents
 from .forms import AgentsForm
@@ -54,12 +55,51 @@ def depot_inscription(request):
     }
     return render(request, "agents/depot_inscription.html", context)
 
-def voir_depot_inscription(request, transaction_id):
-    form = TransactionsForm(instance=get_object_or_404(Transactions, pk=transaction_id))
+def voir_transaction(request, transaction_id):
+    transaction = get_object_or_404(Transactions, pk=transaction_id)
+
+    if request.method == "POST":
+        form = TransactionsForm(request.POST, instance=transaction)
+        mot_de_passe = request.POST.get('mot_de_passe')
+        
+        if check_password(mot_de_passe, request.user.password):
+            if form.is_valid():
+                transaction = form.save(commit=False)
+                transaction.date_approbation = timezone.now()
+                transaction.statut = "Approuvé"
+
+                match transaction.type:
+                    case"contribution":
+                        transaction.contribution.statut = "Approuvé"
+
+                    case"prêt":
+                        transaction.prêt.statut = "Approuvé"
+
+                    case"depot_objectif":
+                        transaction.depot_objectif.statut = "Approuvé"
+
+                    case "depot_inscription":
+                        transaction.depot_inscription.statut = "Approuvé"
+
+                    case"retrait":
+                        transaction.retrait.statut = "Approuvé"
+
+                transaction.save()
+                messages.success(request, "La transaction a été approuvée avec succès")
+            
+                return redirect("agents:home")
+            else:
+                messages.error(request, "Veuillez corriger les erreurs du formulaire")
+        else:
+            messages.error(request, "Mot de passe incorrect")
+
+    else:
+        form = TransactionsForm(instance=transaction)
+
     context = {
         "form": form
     }
-    return render(request, "agents/voir_depot_inscription.html", context)
+    return render(request, "agents/voir_transaction.html", context)
 
 def approuver_depot_inscription(request, transaction_id):
     # depot = DepotsInscription.objects.filter(transaction=get_object_or_404(Transactions, pk=transaction_id)).first()
@@ -74,19 +114,41 @@ def approuver_depot_inscription(request, transaction_id):
     # depot.save()
     # depot.transaction.save()
     transaction.save()
-    messages.success(request, "Le dépôt d'inscription a été approuvé avec succès.")
-    return redirect("agents:depot_inscription")
+    # messages.success(request, "Le dépôt d'inscription a été approuvé avec succès")
+    messages.success(request, "La transaction a été approuvée avec succès")
+    return redirect("agents:home")
 
 def rejetter_depot_inscription(request, transaction_id):
-    depot = DepotsInscription.objects.filter(transaction=get_object_or_404(Transactions, pk=transaction_id)).first()
-    
-    depot.statut = depot.transaction.statut = "Rejeté"
-    depot.date_approbation = depot.transaction.date_approbation = timezone.now()
+    # depot = DepotsInscription.objects.filter(transaction=get_object_or_404(Transactions, pk=transaction_id)).first()
+    transaction=get_object_or_404(Transactions, pk=transaction_id)
 
-    depot.save()
-    depot.transaction.save()
-    messages.success(request, "Le dépôt d'inscription a été refusé avec succès.")
-    return redirect("agents:depot_inscription")
+    # depot.statut = depot.transaction.statut = "Rejeté"
+    # depot.date_approbation = depot.transaction.date_approbation = timezone.now()
+
+    transaction.statut = "Rejeté"
+    transaction.date = timezone.now()
+
+    match transaction.type:
+        case "contribution":
+            transaction.contribution.statut = "Rejeté"
+        case "prêt":
+            transaction.prêt.statut = "Rejeté"
+        case "depot_objectif":
+            transaction.depot_objectif.statut = "Rejeté"
+        case "depot_inscription":
+            transaction.depot_inscription.statut = "Rejeté"
+        case "retrait":
+            transaction.retrait.statut = "Rejeté"
+        case _:
+            pass
+
+
+    # depot.save()
+    # depot.transaction.save()
+    transaction.save()
+    # messages.success(request, "Le dépôt d'inscription a été refusé avec succès")
+    messages.success(request, "La transaction a été refusée avec succès")
+    return redirect("agents:home")
 
 # Vue pour la page de la liste des transactions de l'agent
 def transactions(request):

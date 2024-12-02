@@ -37,6 +37,9 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Icons" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <style>
         /* Styles pour la barre d'application en bas */
@@ -143,7 +146,7 @@
 
     </style>
 </head>
-<body>
+<body class="roboto-light">
 
     <!-- Top App Bar (pour mobile) -->
     <div class="top-app-bar bg-white p-2 d-flex align-items-center justify-content-between">
@@ -159,8 +162,8 @@
             <span class="navbar-nav rounded-4">
                 <li class="nav-item dropdown">
                     <a class="nav-link text-dark d-flex align-items-center justify-content-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        {% if request.user.membre.photo_profil %}
-                        <img src="/static/{{request.user.membre.photo_profil}}" alt="Photo de profil" class="rounded-circle" height="30"> 
+                        {% if request.user.membre.photo_passport %}
+                        <img src="/static/{{request.user.membre.photo_passport}}" alt="Photo de profil" class="rounded-circle" height="30">
                         {% elif request.user.membre.sexe == 'M' %}
                         <i class="fas fa-user-circle fa-2x"></i>
                         {% else %}
@@ -241,8 +244,8 @@
                     <ul class="navbar-nav rounded-4" style="background-color: #ffdeba;">
                         <li class="nav-item dropdown">
                             <a class="nav-link text-dark d-flex align-items-center justify-content-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                {% if request.user.membre.photo_profil %}
-                                <img src="/static/{{request.user.membre.photo_profil}}" alt="Photo de profil" class="rounded-circle" height="30"> 
+                                {% if request.user.membre.photo_passport %}
+                                <img src="/static/{{request.user.membre.photo_passport}}" alt="Photo de profil" class="rounded-circle" height="30"> 
                                 {% elif request.user.membre.sexe == 'M' %}
                                 <i class="fas fa-user-circle fa-2x"></i>
                                 {% else %}
@@ -251,7 +254,7 @@
                                 <span class="mx-2 text-dark">{{ user.membre.nom }}</span>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                                <li><a class="dropdown-item" href="#">
+                                <li><a class="dropdown-item" href="{% url 'membres:profil' %}">
                                     <i class="fa fa-user"></i>
                                     Mon profil 
                                 </a></li>

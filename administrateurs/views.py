@@ -337,7 +337,6 @@ def creer_transaction_usd(request):
         form = TransactionsForm(initial={'devise': 'USD'})  # Pré-remplir la devise avec USD
     return render(request, "administrateurs/creer_transaction.html", {"form": form})
 
-
 # Agents Views
 @login_required
 def agents(request):
@@ -346,7 +345,6 @@ def agents(request):
         "agents": agents,
     }
     return render(request, "administrateurs/agents.html", context)
-
 
 @login_required
 def creer_agent(request):
@@ -359,7 +357,6 @@ def creer_agent(request):
     else:
         form = AgentsForm()
     return render(request, "administrateurs/creer_agent.html", {"form": form})
-
 
 @login_required
 def voir_agent(request, agent_id):
@@ -378,7 +375,6 @@ def voir_agent(request, agent_id):
     }
     return render(request, "administrateurs/voir_agent.html", context)
 
-
 @login_required
 def modifier_agent(request, agent_id):
     agent = get_object_or_404(Agents, pk=agent_id)
@@ -396,14 +392,12 @@ def modifier_agent(request, agent_id):
     }
     return render(request, "administrateurs/modifier_agent.html", context)
 
-
 @login_required
 def supprimer_agent(request, agent_id):
     agent = get_object_or_404(Agents, pk=agent_id)
     agent.delete()
     messages.success(request, "L'agent a été supprimé avec succès.")
     return redirect("administrateurs:agents")
-
 
 # View for Organisations Detail
 @login_required

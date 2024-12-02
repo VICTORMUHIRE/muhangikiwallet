@@ -8,7 +8,7 @@
     <div class="my-5">
         {% if messages %}
             {% for message in messages %}
-                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{message.tags}}{% endif %} alert-dismissible fade show" role="alert">
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{message.tags}}{% endif %} alert-dismissible fade show text-center" role="alert">
                     {{ message }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
@@ -17,9 +17,17 @@
 
         <div class="card-body">
             {% if not user.membre.status and form.instance.statut == "Initialisation" %}
-                <p class="alert alert-warning text-center">Votre compte est en cours d'approbation. Veuillez revenir plutard ou contacter l'administrateur</p>
-                <h4 class="text-center p-3">Vos informations</h4>
-                <div class="row">
+                <p class="alert alert-warning text-center">Votre compte est en cours d'approbation. Veuillez contacter l'administrateur si la vérification persiste</p>
+                <div class=" text-center">
+                    <a href="#" class="btn btn-mw" onclick="window.location.reload()"><i class="fas fa-sync-alt"></i>>Actualiser</a>
+                </div>
+                <script>
+                    setTimeout(function() {
+                            window.location.reload();
+                        }, 5000); // Ce script sera exécuté après 5 secondes
+                </script>
+                <!-- <h4 class="text-center p-3">Vos informations</h4> -->
+                <!-- <div class="row">
                     {% for field in membre_form %}
                         <div class="col-md-4 mb-3">
                             <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
@@ -35,7 +43,7 @@
                             {% endif %}
                         </div>
                     {% endfor %}
-                </div>
+                </div> -->
             {% elif not user.membre.status and user.membre.reference_code %}
                 <p class="alert alert-danger text-center">Votre compte est désactivé, veuillez contacter l'administrateur.</p>
             {% elif not user.membre.status and not form.instance.statut == "Réjetté" %}

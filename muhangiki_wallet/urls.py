@@ -20,7 +20,7 @@ urlpatterns = [
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
-if __name__ == "__main__"  and True:
+if __name__ == "__main__" and True:
     from administrateurs.models import ContributionsMensuelles, Administrateurs, NumerosCompte, CodesReference
     from agents.models import NumerosAgent, Agents
     from membres.models import Membres

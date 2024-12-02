@@ -60,7 +60,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-CSRF_TRUSTED_ORIGINS = ['https://muhangiki-wallet.onrender.com']
+CSRF_TRUSTED_ORIGINS = ['https://muhangiki-wallet.onrender.com', 'http://192.168.1.70', 'http://localhost']
 
 
 ROOT_URLCONF = 'muhangiki_wallet.urls'

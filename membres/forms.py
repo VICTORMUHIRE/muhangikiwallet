@@ -50,6 +50,7 @@ class MembresForm(forms.ModelForm):
         
         try: validate_password(mot_de_passe)
         except ValidationError as error:
+            pass
             self.add_error("mot_de_passe", error)
 
         code_invitation = self.cleaned_data.get("invitation_code")

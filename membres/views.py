@@ -216,7 +216,7 @@ def contributions(request):
 
     context = {
         "contribution_mensuelle": membre.contribution_mensuelle,
-        "historique_contributions": contributions,
+        "contributions": contributions,
         "solde_contribution_CDF": solde_contribution_CDF,
         "solde_contribution_USD": solde_contribution_USD,
     }
@@ -283,9 +283,16 @@ def contribuer(request):
 @login_required
 @verifier_membre
 def demande_prêt(request):
-    print(request.method)
     types_prêt = TypesPrêt.objects.all() # Récupérer tous les types de prêt
     demandes_prêt = Transactions.objects.filter(membre=request.user.membre, type="prêt")
+
+    # Solde contribution
+    solde_contribution_CDF = Transactions.objects.filter(membre=request.user.membre, devise="CDF", statut="Approuvé", type="contribution").aggregate(total=Sum('montant'))['total'] or 0
+    solde_contribution_USD = Transactions.objects.filter(membre=request.user.membre, devise="USD", statut="Approuvé", type="contribution").aggregate(total=Sum('montant'))['total'] or 0
+
+    # Convert USD to CDF for consistent comparison (using an exchange rate, adjust as needed)
+    taux_de_change = 2800
+    solde_total_contribution = solde_contribution_CDF + (solde_contribution_USD * taux_de_change)
 
     reseaux = NumerosAgent.objects.values_list('reseau', flat=True).distinct()
     numeros_categories = {reseau: [] for reseau in reseaux}
@@ -310,15 +317,27 @@ def demande_prêt(request):
                 transaction.statut="En attente"
 
                 prêt.montant_remboursé = prêt.montant
-                transaction.montant = prêt.montant = prêt.montant_remboursé - (prêt.montant * (prêt.type_prêt.taux_interet / 100))
+                transaction.montant = prêt.montant = float(prêt.montant_remboursé) - (float(prêt.montant) * 0.15) #(prêt.montant * (prêt.type_prêt.taux_interet / 100))
 
-                prêt.date_remboursement = datetime.now() + timedelta(days=prêt.type_prêt.delai_remboursement)  # Définir la date de remboursement                    
+                prêt.date_remboursement = datetime.now() + timedelta(days=120) #timedelta(days=prêt.type_prêt.delai_remboursement)  # Définir la date de remboursement
 
-                transaction.save()
-                prêt.transaction = transaction
-                prêt.save()  # Enregistrer l'objet prêt
-                messages.success(request, 'Votre demande de prêt a été soumise avec succès!')
-                return redirect('membres:demande_prêt')  # Redirigez vers
+                if not Prêts.objects.filter(transaction__membre=request.user.membre, statut="En attente").exists():
+                    if not Prêts.objects.filter(transaction__membre=request.user.membre, statut="Approuvé").exists():
+                        if prêt.montant > 0 and prêt.montant * (2800 if prêt.devise == "USD" else 1) <= 3*solde_total_contribution:
+                            # Solde suffisant, enregistrer la transaction et le prêt
+                            transaction.save()
+                            prêt.transaction = transaction
+                            prêt.save()  # Enregistrer l'objet prêt
+                            messages.success(request, 'Votre demande de prêt a été soumise avec succès !')
+                            return redirect('membres:demande_prêt')  # Redirigez vers
+                        else:
+                            # Solde insuffisant ou prêts en cours, afficher un message d'erreur
+                            messages.error(request, f'Vous ne pouvez demander plus de 3x votre contribution actuelle')
+                    else:
+                        messages.error(request, 'Vous avez déjà un prêt approuvé, veuillez le rembourser')
+                else:
+                    messages.error(request, 'Vous avez déjà une demande de prêt en cours, veuillez patienter qu\'elle soit traitée')
+            
             else:
                 # Mot de passe incorrect, afficher un message d'erreur
                 messages.error(request, 'Mot de passe incorrect. Veuillez réessayer.')
@@ -335,6 +354,9 @@ def demande_prêt(request):
         "types_prêt": types_prêt,
         "demandes_prêt": demandes_prêt,
         "numeros_categories": numeros_categories,
+        "taux_change": taux_de_change,
+        "solde_total_contribution_cdf": solde_total_contribution * 3,
+        "solde_total_contribution_usd": solde_total_contribution * 3 / taux_de_change
     }
 
     return render(request, "membres/demande_prêt.html", context)
@@ -452,7 +474,7 @@ def retrait(request):
             if form.is_valid():
                 transaction = form.save(commit=False)
 
-                if transaction.montant <= montant_benefices:
+                if transaction.montant > 0 and transaction.montant <= montant_benefices:
                     transaction.membre = membre
                     transaction.agent = transaction.numero_agent.agent
                     transaction.type = "retrait"

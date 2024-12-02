@@ -19,7 +19,7 @@ urlpatterns = [
     # path("retraits/<int:retrait_id>/approuver/", views.approuver_retrait, name="approuver_retrait"),
     # path("retraits/<int:retrait_id>/rejetter/", views.rejetter_retrait, name="rejetter_retrait"),
 
-    path("depot_inscription/<int:transaction_id>/", views.voir_depot_inscription, name="voir_depot_inscription"),
+    path("voir_transaction/<int:transaction_id>/", views.voir_transaction, name="voir_transaction"),
     path("depot_inscription/approuver/<int:transaction_id>/", views.approuver_depot_inscription, name="approuver_depot_inscription"),
     path("depot_inscription/rejetter/<int:transaction_id>/", views.rejetter_depot_inscription, name="rejetter_depot_inscription"),
 

@@ -45,7 +45,7 @@
                         <tbody>
                             {% for contribution in contributions %}
                             <tr>
-                                <a href="{% url 'membres:transaction' contribution.transaction.pk %}" class="btn">
+                                <a href="{% url 'membres:transaction' contribution.pk %}" class="btn">
                                     <td>{{ contribution.montant }}</td>
                                     <td>{{ contribution.devise }}</td>
                                     <td>{{ contribution.date }}</td>

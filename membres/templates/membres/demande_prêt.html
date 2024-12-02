@@ -18,6 +18,9 @@
             <div class="card border-0 px-2">
                 <div class="card-header bg-white text-center fs-4">  <!-- Consistent styling with other forms -->
                     Demande de Prêt
+                    <div class="fs-6">
+                        Montant max : <span class="roboto-regular">{{ solde_total_contribution_cdf|stringformat:".2f" }} FC ou {{ solde_total_contribution_usd|stringformat:".2f" }} $</span>
+                    </div>
                 </div>
                 <div class="card-body px-1">
                     <form method="post" id="loan-form" enctype="multipart/form-data">  <!-- Added enctype for file uploads -->
@@ -37,7 +40,7 @@
                             </div>
                         </div>
     
-                        <div class="mb-3">
+                        <!-- <div class="mb-3">
                             <label class="form-label" for="{{ form.type_prêt.id_for_label }}">Type de crédit</label>
                             <select class="form-select" id="{{ form.type_prêt.id_for_label }}" name="{{ form.type_prêt.html_name }}">
                                 <option value="">-- Choisissez un type de crédit --</option>
@@ -50,7 +53,7 @@
                                     </option>
                                 {% endfor %}
                             </select>
-                        </div>
+                        </div> -->
     
                         <div class="mb-3">
                             <label for="{{ transaction_form.numero_agent.id_for_label }}" class="form-label">Numéro de l'agent</label>
@@ -69,7 +72,7 @@
     
                         <div class="mb-3">
                             <label for="taux_interet">Taux d'intérêt: </label>
-                            <strong id="taux_interet" class="font-weight-bold mb-color">-</strong>
+                            <strong id="taux_interet" class="font-weight-bold mb-color">15%</strong>
                         </div>
                         <div class="mb-3">
                             <label for="delai_remboursement">Délai de remboursement: </label>
@@ -155,11 +158,10 @@
         // Récupérer les valeurs du formulaire
         var montant = parseFloat(document.getElementById("{{ form.montant.id_for_label }}").value) || 0;
         var selectTypeCredit = document.getElementById("{{ form.type_prêt.id_for_label }}");
-        var selectedOption = selectTypeCredit.options[selectTypeCredit.selectedIndex];
-        var tauxInteret = parseFloat(selectedOption.getAttribute('data-taux').replace(',', '.')) || 0;
-        var delaiRemboursement = parseInt(selectedOption.getAttribute('data-delai')) || 0;
+        var selectedOption = selectTypeCredit?.options[selectTypeCredit.selectedIndex];
+        var tauxInteret = parseFloat(selectedOption?.getAttribute('data-taux').replace(',', '.')) || 15;
+        var delaiRemboursement = parseInt(selectedOption?.getAttribute('data-delai')) || 120;
         var devise = document.getElementById("{{ form.devise.id_for_label }}").value;
-
 
         // Vérifier si les valeurs sont valides avant de calculer
         if (tauxInteret > 0 && delaiRemboursement > 0) {
@@ -169,7 +171,7 @@
 
             // Mettre à jour les champs dans le formulaire
             document.getElementById("taux_interet").textContent = tauxInteret + "%";
-            document.getElementById("delai_remboursement").textContent = delaiRemboursement + " jours";
+            document.getElementById("delai_remboursement").textContent = delaiRemboursement + " jours" + " ou " + delaiRemboursement / 30 + " mois";
             document.getElementById("montant").textContent = montantRecevoir.toFixed(2)+(devise == "CDF" ? " FC" : " $");
             document.getElementById("montant_rembourser").textContent = montantRembourser.toFixed(2)+(devise == "CDF" ? " FC" : " $");
         } else {
@@ -182,7 +184,7 @@
 
     // Ajouter des écouteurs d'événements pour mettre à jour les calculs
     document.getElementById("{{ form.montant.id_for_label }}").addEventListener("input", updateLoanDetails);
-    document.getElementById("{{ form.type_prêt.id_for_label }}").addEventListener("change", updateLoanDetails);
+    document.getElementById("{{ form.type_prêt.id_for_label }}")?.addEventListener("change", updateLoanDetails);
     document.getElementById("{{ form.devise.id_for_label }}").addEventListener("change", updateLoanDetails);
     window.addEventListener("load", updateLoanDetails);
 

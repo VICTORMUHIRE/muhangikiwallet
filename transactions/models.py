@@ -83,7 +83,7 @@ class TypesPrêt(models.Model):
 class Prêts(models.Model):
     administrateur = models.ForeignKey(Administrateurs, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Administrateur")
 
-    type_prêt = models.ForeignKey(TypesPrêt, on_delete=models.CASCADE, verbose_name="Type de prêt")
+    type_prêt = models.ForeignKey(TypesPrêt, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Type de prêt")
     transaction = models.ForeignKey(Transactions, on_delete=models.CASCADE, blank=True, related_name="prêt", verbose_name="Transaction")
 
     montant = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Montant du prêt")
@@ -124,7 +124,7 @@ class Contributions(models.Model):
     date = models.DateField(auto_now_add=True, verbose_name="Date")
     date_approbation = models.DateTimeField(blank=True, null=True, verbose_name="Date d'approbation")
     
-    transaction = models.ForeignKey(Transactions, on_delete=models.CASCADE, blank=True, verbose_name="Transaction")
+    transaction = models.ForeignKey(Transactions, on_delete=models.CASCADE, blank=True, related_name="contribution", verbose_name="Transaction")
 
     description = models.TextField(blank=True, null=True, verbose_name="Description")
     statut = models.CharField(max_length=20, choices=(("En attente", "En attente"), ("Approuvé", "Approuvé"), ("Rejeté", "Rejeté")), default="En attente", verbose_name="Statut")
@@ -165,7 +165,7 @@ class Retraits(models.Model):
     date = models.DateField(auto_now_add=True, verbose_name="Date")
     date_approbation = models.DateTimeField(blank=True, null=True, verbose_name="Date d'approbation")
 
-    transaction = models.ForeignKey(Transactions, on_delete=models.CASCADE, blank=True, verbose_name="Transaction")
+    transaction = models.ForeignKey(Transactions, on_delete=models.CASCADE, blank=True, related_name="retrait", verbose_name="Transaction")
 
     description = models.TextField(blank=True, null=True, verbose_name="Description")
     statut = models.CharField(max_length=20, choices=(("En attente", "En attente"), ("Approuvé", "Approuvé"), ("Rejeté", "Rejeté")), default="En attente", verbose_name="Statut")
@@ -210,7 +210,7 @@ class Transferts(models.Model):
     date = models.DateField(auto_now_add=True, verbose_name="Date")
     date_approbation = models.DateTimeField(blank=True, null=True, verbose_name="Date d'approbation")
     
-    transaction = models.ForeignKey(Transactions, on_delete=models.CASCADE, blank=True, verbose_name="Transaction")
+    transaction = models.ForeignKey(Transactions, on_delete=models.CASCADE, blank=True, related_name="transfert", verbose_name="Transaction")
 
     expediteur = models.CharField(max_length=20, choices=OPERATEURS, verbose_name="Opérateur")
     destinataire = models.CharField(max_length=20, choices=OPERATEURS, verbose_name="Opérateur")
@@ -232,8 +232,10 @@ class Notifications(models.Model):
 
     type_notification = models.CharField(max_length=50, choices=TRANSACTION_CHOICES+[(None, None)], default=None, verbose_name= "Type de notification")
     date_creation = models.DateTimeField(auto_now_add=True, verbose_name="Date de création")
+    
     lu = models.BooleanField(default=False, verbose_name="Confirmation de lecture")
     utilisateur = models.ForeignKey(Users, on_delete=models.CASCADE)
+    transaction = models.ForeignKey(Transactions, on_delete=models.CASCADE, blank=True, null=True, related_name="notification", verbose_name="Transaction")
 
     description = models.TextField(blank=True, null=True, verbose_name="Description")
 

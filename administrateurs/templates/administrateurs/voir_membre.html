@@ -8,7 +8,7 @@
 
 <!-- <form method="post" enctype="multipart/form-data" novalidate> -->
     {% csrf_token %}
-    <div class="row">
+    <div class="row mt-5 mt-sm-0 mb-4 mb-md-5">
         {% for field in form %}
             <div class="col-md-4 mb-3">
                 <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>

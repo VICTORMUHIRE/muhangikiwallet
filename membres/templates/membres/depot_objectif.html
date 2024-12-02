@@ -95,37 +95,37 @@
     </div>
 
 
-<script>
-        function previewImage(input) {
-            const previewContainer = document.getElementById('imagePreview');
-            if (input.files && input.files[0]) {
-                var reader = new FileReader();
+    <script>
+            function previewImage(input) {
+                const previewContainer = document.getElementById('imagePreview');
+                if (input.files && input.files[0]) {
+                    var reader = new FileReader();
 
-                reader.onload = function(e) {
-                    previewContainer.innerHTML = `<img src="${e.target.result}" style="max-width: 200px; max-height: 200px;" alt="Image Preview">`;
+                    reader.onload = function(e) {
+                        previewContainer.innerHTML = `<img src="${e.target.result}" style="max-width: 200px; max-height: 200px;" alt="Image Preview">`;
+                    }
+
+                    reader.readAsDataURL(input.files[0]);
+                } else {
+                    previewContainer.innerHTML = '<span class="upload-icon"><i class="fas fa-upload"></i></span>';
                 }
-
-                reader.readAsDataURL(input.files[0]);
-            } else {
-                previewContainer.innerHTML = '<span class="upload-icon"><i class="fas fa-upload"></i></span>';
             }
-        }
 
-    document.getElementById('passwordForm').addEventListener('submit', function(event) {
-        event.preventDefault();
+        document.getElementById('passwordForm').addEventListener('submit', function(event) {
+            event.preventDefault();
 
-        const password = document.getElementById('mot_de_passe').value;
-        const withdrawForm = document.getElementById('withdraw-form');  // Target the withdraw form
+            const password = document.getElementById('mot_de_passe').value;
+            const withdrawForm = document.getElementById('withdraw-form');  // Target the withdraw form
 
-        const passwordInput = document.createElement('input');
-        passwordInput.type = 'hidden';
-        passwordInput.name = 'mot_de_passe';  // Use 'mot_de_passe' as name
-        passwordInput.value = password;
-        withdrawForm.appendChild(passwordInput);
+            const passwordInput = document.createElement('input');
+            passwordInput.type = 'hidden';
+            passwordInput.name = 'mot_de_passe';  // Use 'mot_de_passe' as name
+            passwordInput.value = password;
+            withdrawForm.appendChild(passwordInput);
 
-        withdrawForm.submit();  // Submit the withdraw form
-    });
-</script>
+            withdrawForm.submit();  // Submit the withdraw form
+        });
+    </script>
 
     <style>
         .image-preview {
