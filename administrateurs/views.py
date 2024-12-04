@@ -11,21 +11,28 @@ from django.db.models import Q
 from membres.models import Membres
 from organisations.models import Organisations
 from agents.models import Agents
-from .models import Administrateurs, ContributionsMensuelles, CodesReference
+from .models import Administrateurs, ContributionsMensuelles, CodesReference, NumerosCompte, Users
 from agents.models import Agents, NumerosAgent
-from agents.forms import AgentsForm
+from agents.forms import AgentsForm, ModifierAgentsForm
 from organisations.models import Organisations
 from organisations.forms import OrganisationsForm
 from transactions.models import Transactions, Prêts, TypesPrêt, Contributions, DepotsObjectif, Retraits, Transferts, DepotsInscription, Benefices
 
 from .forms import AdministrateurForm
-from membres.forms import MembresForm
+from membres.forms import MembresForm, ModifierMembresForm
 from organisations.forms import OrganisationsForm
 from transactions.forms import TransactionsForm, TypesPrêtForm, ContributionsForm, PrêtsForm, TransfertsForm, RetraitsForm, DepotsInscriptionForm
 from objectifs.models import Objectifs
 from django.utils import timezone
 from functools import wraps
 
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.db.models import Sum
+from random import randint
+from datetime import datetime, timedelta
+from django.utils import timezone
+from functools import wraps
 
 def verifier_admin(func):
     def verify(request, *args, **kwargs):
@@ -71,17 +78,16 @@ def home(request):
     nombre_agents = Agents.objects.count()
 
     transactions = Transactions.objects.all().order_by("-date")
-    prets = Prêts.objects.filter(statut="En attente")
     objectifs = Objectifs.objects.filter()
 
     demandes_prêt = Prêts.objects.filter(statut="En attente"),
-    demandes_inscription = Transactions.objects.filter(type="depot_inscription", statut="Initialisation")
+    demandes_inscription = DepotsInscription.objects.filter(statut="En attente")
     
     context = {
         'solde_total_entreprise_cdf': solde_total_entreprise_cdf,
         'solde_total_entreprise_usd': solde_total_entreprise_usd,
-        'total_dettes_cdf': total_dettes_cdf,
-        'total_dettes_usd': total_dettes_usd,
+        'total_dettes_cdf': total_montant_dettes_rembouser_cdf,
+        'total_dettes_usd': total_montant_dettes_rembouser_usd,
         'total_depots_objectifs_cdf': total_depots_objectifs_cdf,
         'total_depots_objectifs_usd': total_depots_objectifs_usd,
         'total_benefices_cdf': total_benefices_cdf,
@@ -90,7 +96,6 @@ def home(request):
         'nombre_organisations': nombre_organisations,
         'nombre_agents': nombre_agents,
         "transactions": transactions,
-        "prets": prets,
         "demandes_prêt": demandes_prêt,
         "demandes_inscription": demandes_inscription,
     }
@@ -133,7 +138,7 @@ def membres(request):
                 
     # Convert USD contributions to CDF for a common currency
     total_contributions_CDF += total_contributions_USD * 2800
-                
+            
     membres_actifs = Membres.objects.filter(status=True)
 
     for membre in membres:
@@ -165,7 +170,30 @@ def creer_membre(request):
     if request.method == "POST":
         form = MembresForm(request.POST, request.FILES)
         if form.is_valid():
-            form.save()
+            membre = form.save(commit=False)
+
+            membre.user = Users.objects.create_user(
+                username=form.cleaned_data['numero_telephone'],
+                # email=form.cleaned_data['email'],
+                password=form.cleaned_data['mot_de_passe'],
+                first_name=form.cleaned_data['nom'],
+                last_name=form.cleaned_data['prenom'] or form.cleaned_data['postnom'],
+                type="membre"
+            )
+
+            def generate_unique_numero():
+                while True:
+                    numero = f"MW-{str(randint(1000, 9999)).ljust(4, '0')}-{str(randint(1000, 9999)).ljust(4, '0')}-{str(randint(1, 99)).ljust(2, '0')}"
+                    if not NumerosCompte.objects.filter(numero=numero).exists(): break
+                return numero
+        
+            membre.compte_CDF = NumerosCompte.objects.create(numero=generate_unique_numero(), devise="CDF")
+            membre.compte_USD = NumerosCompte.objects.create(numero=generate_unique_numero(), devise="USD")
+            
+            membre.save()
+
+            DepotsInscription.objects.create(membre=membre)
+
             messages.success(request, "Le membre a été créé avec succès.")
             return redirect("administrateurs:membres")
     else:
@@ -198,16 +226,17 @@ def voir_membre(request, membre_id):
 def modifier_membre(request, membre_id):
     membre = get_object_or_404(Membres, pk=membre_id)
     if request.method == "POST":
-        form = MembresForm(request.POST, request.FILES, instance=membre)
+        form = ModifierMembresForm(request.POST, request.FILES, instance=membre)
         if form.is_valid():
             form.save()
             messages.success(request, "Le membre a été modifié avec succès.")
             return redirect("administrateurs:membres")
+            
     else:
-        form = MembresForm(instance=membre)
+        form = ModifierMembresForm(instance=membre)
     context = {
         "form": form,
-        "membre": membre,
+        "membre": membre
     }
     return render(request, "administrateurs/modifier_membre.html", context)
 
@@ -228,22 +257,18 @@ def accepter_membre(request, membre_id):
             request.POST,
             instance=get_object_or_404(
                 DepotsInscription,
-                transaction=Transactions.objects.filter(
-                    membre=membre,
-                    type="depot_inscription"
-                ).first()
+                membre=membre
             )
         )
 
         if form.is_valid():
             depot = form.save(commit=False)
-            depot.transaction.date_approbation = timezone.now()
-            depot.statut = "En attente"
+            depot.statut = "Approuvé"
+            depot.date = timezone.now()
             membre.status = True
 
             membre.save()
             depot.save()
-            depot.transaction.save()
 
             messages.success(request, "Le membre a été accepté avec succès.")
         else:
@@ -320,6 +345,14 @@ def transactions(request):
         "transactions": transactions,
     }
     return render(request, "administrateurs/transactions.html", context)
+
+@login_required
+def transaction(request, transaction_id):
+    transaction = get_object_or_404(Transactions, pk=transaction_id)
+    context = {
+        "transaction": transaction
+    }
+    return render(request, "administrateurs/transaction.html", context)
 
 # Vue pour la page de gestion des types de prêt
 @login_required
@@ -413,7 +446,19 @@ def creer_agent(request):
     if request.method == "POST":
         form = AgentsForm(request.POST, request.FILES)
         if form.is_valid():
-            form.save()
+            agent = form.save(commit=False)
+
+            agent.user = Users.objects.create_user(
+                username=form.cleaned_data['numero_telephone'],
+                # email=form.cleaned_data['email'],
+                password=form.cleaned_data['mot_de_passe'],
+                first_name=form.cleaned_data['nom'],
+                last_name=form.cleaned_data['prenom'] or form.cleaned_data['postnom'],
+                type="agent"
+            )
+
+            agent.save()
+
             messages.success(request, "L'agent a été créé avec succès.")
             return redirect("administrateurs:agents")
     else:
@@ -441,13 +486,13 @@ def voir_agent(request, agent_id):
 def modifier_agent(request, agent_id):
     agent = get_object_or_404(Agents, pk=agent_id)
     if request.method == "POST":
-        form = AgentsForm(request.POST, request.FILES, instance=agent)
+        form = ModifierAgentsForm(request.POST, request.FILES, instance=agent)
         if form.is_valid():
             form.save()
             messages.success(request, "L'agent a été modifié avec succès.")
             return redirect("administrateurs:agents")
     else:
-        form = AgentsForm(instance=agent)
+        form = ModifierAgentsForm(instance=agent)
     context = {
         "form": form,
         "agent": agent,
@@ -522,20 +567,34 @@ def prêts(request):
     return render(request, "administrateurs/prêts.html", context)
 
 @login_required
-def voir_prêt(request, transaction_id):
-    prêt = Prêts.objects.filter(transaction=get_object_or_404(Transactions, pk=transaction_id)).first()
+def voir_prêt(request, prêt_id):
+    prêt = get_object_or_404(Prêts, pk=prêt_id)
+
+    reseaux = NumerosAgent.objects.values_list('reseau', flat=True).distinct()
+    numeros_categories = {reseau: [] for reseau in reseaux}
+    for reseau in reseaux:
+        for numero_agent in NumerosAgent.objects.filter(reseau=reseau):
+            numeros_categories[reseau].append((numero_agent.numero, numero_agent.pk))
     
     if request.method == "POST":
         mot_de_passe = request.POST.get("password")
+        transaction_form = TransactionsForm(request.POST)
 
         if check_password(mot_de_passe, request.user.password):
-            prêt.statut = "Approuvé" #if request.POST["action"] == "Approuver" else "Rejeté"
-            prêt.transaction.statut = "En attente"
-            prêt.date = prêt.transaction.date = timezone.now()
-
-            if prêt.statut == "Approuvé":
-                prêt.date_approbation = prêt.transaction.date_approbation = timezone.now()
+            if transaction_form.is_valid():
+                prêt.date_approbation = timezone.now()
                 prêt.administrateur = request.user.admin
+
+                transaction = transaction_form.save(commit=False)
+
+                transaction.membre = prêt.membre
+                transaction.agent = transaction.numero_agent.agent
+                transaction.type = "prêt"
+                transaction.statut = "En attente"
+                prêt.statut = "Approuvé"
+                
+                prêt.transaction = transaction
+
                 prêt.transaction.save()
                 prêt.save()
             
@@ -575,18 +634,15 @@ def voir_prêt(request, transaction_id):
                         print(f"{total_contributions_USD = } {total_contributions_CDF = } {contributions_membre_CDF = } {contributions_membre_USD = } {contributions_membre_CDF = } {montant_benefice = } {proportion =  } {benefice_membre = }")
                 
                 messages.success(request, "Le prêt a été approuvé et les bénéfices distribués avec succès.")
-                return redirect("administrateurs:voir_prêt", transaction_id=prêt.transaction.pk)
+                return redirect("administrateurs:voir_prêt", prêt_id=prêt.pk)
             
-            else:
-                prêt.date = prêt.transaction.date = timezone.now()
-                prêt.save()
-                messages.success(request, "Le prêt a été rejeté avec succès.")
-                return redirect("administrateurs:voir_prêt", transaction_id=prêt.transaction.pk)
         else:
             messages.error(request, "Mot de passe incorrect")
     
     context = {
         "form": PrêtsForm(instance=prêt),
+        "transaction_form": TransactionsForm(),
+        "numeros_categories": numeros_categories,
         "prêt": prêt
     }
     
@@ -596,8 +652,8 @@ def voir_prêt(request, transaction_id):
 def rejeter_prêt(request, prêt_id):
     prêt = get_object_or_404(Prêts, pk=prêt_id)
 
-    prêt.statut = prêt.transaction.statut = "Rejeté"
-    prêt.date = prêt.transaction.date = timezone.now()
+    prêt.statut = "Rejeté"
+    prêt.date = timezone.now()
     prêt.save()
     messages.success(request, "Le prêt a été rejeté avec succès.")
-    return redirect("administrateurs:voir_prêt", transaction_id=prêt.transaction.pk)
+    return redirect("administrateurs:voir_prêt", prêt_id=prêt.pk)

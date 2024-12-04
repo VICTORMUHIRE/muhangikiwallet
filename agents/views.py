@@ -70,7 +70,7 @@ def voir_transaction(request, transaction_id):
     transaction = get_object_or_404(Transactions, pk=transaction_id)
 
     if request.method == "POST":
-        form = TransactionsForm(request.POST, instance=transaction)
+        form = TransactionsForm(request.POST, request.FILES, instance=transaction)
         mot_de_passe = request.POST.get('mot_de_passe')
         
         if check_password(mot_de_passe, request.user.password):
@@ -113,9 +113,14 @@ def voir_transaction(request, transaction_id):
 
                     case"depot_objectif":
                         depot_objectif = DepotsObjectif.objects.filter(transaction=transaction).first()
+                        objectif = depot_objectif.objectif
+
                         depot_objectif.statut = "Approuvé"
                         depot_objectif.date_approbation = timezone.now()
-                        depot_objectif.objectif.montant += float(depot_objectif.objectif.montant) + float(transaction.montant)
+                        objectif.montant = float(objectif.montant) + float(transaction.montant)
+                        
+                        if objectif.montant >= objectif.montant_cible: objectif.statut = "Atteint"
+                        
                         depot_objectif.objectif.save()
                         depot_objectif.save()
 
@@ -206,6 +211,14 @@ def transactions(request):
         "transactions": transactions,
     }
     return render(request, "agents/transactions.html", context)
+
+@login_required
+def transaction(request, transaction_id):
+    transaction = get_object_or_404(Transactions, pk=transaction_id)
+    context = {
+        "transaction": transaction
+    }
+    return render(request, "agents/transaction.html", context)
 
 # Vue pour la page de profil de l'agent
 @login_required

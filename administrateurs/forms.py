@@ -15,6 +15,7 @@ class AdministrateurForm(forms.ModelForm):
             "sexe",
             "type_carte_identite",
             "num_carte_identite",
+            "photo_passport",
             "province_residence",
             "ville_residence",
             "quartier_residence",

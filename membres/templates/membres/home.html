@@ -106,7 +106,7 @@
                         <div class="d-flex align-items-center gap-3">
                             <i class="{% if transaction.type == 'retrait' %}fas fa-minus-circle{% elif transaction.type == 'transfert' %}fas fa-exchange-alt{% elif transaction.type == 'depot_objectif' %}fas fa-piggy-bank{% elif transaction.type == 'depot_inscription' %}fas fa-sign-in-alt{% elif transaction.type == 'contribution' %}fas fa-donate{% elif transaction.type == 'prêt' %}fas fa-hand-holding-usd{% elif transaction.type == 'remboursement_prêt' %}fas fa-money-bill-wave{% endif %}"></i>
                             <div class="text-dark fw-bold text-start">
-                                {% if transaction.type == 'retrait' %}Retrait d'argent{% elif transaction.type == 'transfert' %}Transfert d'argent{% elif transaction.type == 'depot_objectif' %}Dépôt sur objectif{% elif transaction.type == 'depot_inscription' %}Dépôt d'inscription{% elif transaction.type == 'contribution' %}Contribution mensuelle{% elif transaction.type == 'prêt' %}Prêt d'argent{% elif transaction.type == 'remboursement_prêt' %}Remboursement de prêt{% endif %}
+                                {% if transaction.type == 'retrait' %}Retrait d'argent{% elif transaction.type == 'transfert' %}Transfert d'argent{% elif transaction.type == 'depot_objectif' %}Dépôt sur objectif{% elif transaction.type == 'depot_inscription' %}Dépôt d'inscription{% elif transaction.type == 'contribution' %}Contribution mensuelle{% elif transaction.type == 'prêt' %}Prêt d'argent{% elif transaction.type == 'remboursement_prêt' %}Remboursement{% endif %}
                                 <div>
                                     <span class="text-muted small mb-0">{{ transaction.montant|stringformat:".2f" }} {{ transaction.devise }}</span>
                                     <span class="transaction-status">
@@ -116,7 +116,7 @@
                             </div>
                         </div>
                         <div class="transaction-date text-muted small text-center">
-                            <span>{{ transaction.date|date:"d M Y" }}</span>
+                            <span>{{ transaction.date|date:"d/m/Y" }}</span>
                             <span class="ms-2">{{ transaction.date|date:"H:i" }}</sp>
                         </div>
                     </div>
@@ -154,7 +154,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <span class="badge {% if objectif.statut == 'Terminé' %}bg-success{% elif objectif.statut == 'En cours' %}bg-warning{% else %}bg-danger{% endif %}">{{ objectif.statut }}</span>
+                            <span class="badge {% if objectif.statut == 'Atteint' %}bg-success{% elif objectif.statut == 'En cours' %}bg-warning{% else %}bg-danger{% endif %}">{{ objectif.statut }}</span>
                         </div>
                     </a>
                     {% empty %}

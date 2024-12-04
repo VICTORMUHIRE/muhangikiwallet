@@ -20,10 +20,11 @@
     <div class="card-body">
         <div class="row">
             <div class="col-md-6">
-                <p><strong>Membre:</strong> {{ prêt.transaction.membre }}</p>
-                <p><strong>Montant:</strong> {{ prêt.montant }} {{ prêt.devise }}</p>
-                <p><strong>Date de la demande:</strong> {{ prêt.date_demande }}</p>
-                <p><strong>Statut:</strong>
+                <p><strong>Membre :</strong> {{ prêt.transaction.membre }}</p>
+                <p><strong>Montant :</strong> {{ prêt.montant }} {{ prêt.devise }}</p>
+                <p><strong>Montant à rembourser :</strong> {{ prêt.montant_remboursé }} {{ prêt.devise }}</p>
+                <p><strong>Date de la demande :</strong> {{ prêt.date_demande }}</p>
+                <p><strong>Statut :</strong>
                     {% if prêt.statut == 'Approuvé' %}
                         <span class="badge bg-success">{{ prêt.statut }}</span>
                     {% elif prêt.statut == 'Rejeté' %}
@@ -37,14 +38,26 @@
                 {% endif %}
             </div>
             </div>
-            {% if prêt.statut == 'En attente' %}
+            {% if prêt.statut == "En attente" %}
             <div class="col-md-12 mt-4">
             <form method="post" id="form">
                 {% csrf_token %}
-                {% for field in form %}
-                <input type="hidden" name="id" value="{{ prêt.pk }}">
-                <input type="hidden" id="{{ field.id_for_label }}" name="{{ field.name }}" value="{{ field.value|default:'' }}">
-                {% endfor %}
+                <input type="hidden" class="form-control" id="{{ form.montant.id_for_label }}" name="{{ form.montant.html_name }}" value="{{ form.montant.value|stringformat:'.2f' }}" placeholder="Entrez le montant">
+                <input type="hidden" class="form-select" id="{{ form.devise.id_for_label }}" name="{{ form.devise.html_name }}" value="{{ form.devise.value }}">
+
+                <div class="mb-3">
+                    <label for="{{ transaction_form.numero_agent.id_for_label }}" class="form-label">Numéro de l'agent</label>
+                    <select class="form-control form-select" id="{{ transaction_form.numero_agent.id_for_label }}" name="{{ transaction_form.numero_agent.html_name }}">
+                        {% for reseau, numeros in numeros_categories.items %}  <!-- Use existing context variable -->
+                            <optgroup label="{{ reseau }}">
+                                {% for numero, id in numeros %}
+                                    <option value="{{ id }}">{{ numero }}</option>
+                                {% endfor %}
+                            </optgroup>
+                        {% endfor %}
+                    </select>
+                </div>
+
                 <div class="d-flex justify-content-center">
                     <input type="button" value="Approuver" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#passwordConfirmModal">
                     <!-- <input type="button" value="Rejeter" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#passwordConfirmModal" onclick="this.name = 'action';"> -->

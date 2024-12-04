@@ -4,7 +4,7 @@
 {% block title %}Membres{% endblock %}
 
 {% block content %}
-<h1>Membres</h1>
+<h1>Membres : {{ membres|length }} {{ membres.count|pluralize:"s" }}</h1>
 
 <div class="row mt-4">
     {% if messages %}
@@ -20,7 +20,7 @@
         <form class="d-flex" role="search" method="get">
             <input class="form-control me-2 form-control-sm" type="search" placeholder="Rechercher" aria-label="Search" name="q" value="{{ request.GET.q }}">
             <button class="btn btn-outline-success btn-sm" type="submit">Rechercher</button>
-          </form>
+        </form>
         {% comment %} <a href="{% url 'administrateurs:creer_membre' %}" class="btn btn-success btn-sm">Créer un Membre</a> {% endcomment %}
     </div>
 
@@ -53,7 +53,7 @@
                             <td>{{ membre.sexe }}</td>
                             <td>{{ membre.solde_contributions }} {{ membre.devise }}</td> {# Replace with actual field or method #}
                             <td>{{ membre.benefice_membre|stringformat:".2f" }} {% if membre.contribution_mensuelle.devise == "CDF" %} FC {% else %} $ {% endif %}</td> {# Replace with actual field or method #}
-                            <td>{{ membre.dette.montant_remboursé }}  {{ membre.devise }}</td> {# Replace with actual field or method #}
+                            <td>{{ membre.dette.montant_remboursé|default:0 }}  {{ membre.dette.devise|default:"$" }}</td> {# Replace with actual field or method #}
                             <td>{{ membre.pourcentage|default:0|stringformat:".2f" }}%</td> {# Replace with actual field or method #}
                             <td>{{ membre.status|yesno:"Actif, Inactif" }}</td>
                             <td>

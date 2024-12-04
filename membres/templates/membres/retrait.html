@@ -4,6 +4,14 @@
 
 {% block content %}
     <div class="row mt-5 mt-sm-0 mb-4 mb-md-5 justify-content-center">
+        {% if messages %}  <!-- Moved messages inside card body -->
+            {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}warning{% endif %} alert-dismissible fade show text-center" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        {% endif %}
         <div class="col-md-8">  <!-- Added container for responsiveness -->
             <div class="card border-0">
                 <div class="card-header bg-white text-center p-3 fs-4">  <!-- Consistent styling with contribuer.html -->
@@ -17,14 +25,6 @@
                     <div class="alert alert-warning fade show text-center fw-bold" role="alert">
                         Les retraits ne sont disponibles qu'en Décembre
                     </div>
-                    {% endif %}
-                    {% if messages %}  <!-- Moved messages inside card body -->
-                        {% for message in messages %}
-                            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}warning{% endif %} alert-dismissible fade show text-center" role="alert">
-                                {{ message }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                            </div>
-                        {% endfor %}
                     {% endif %}
                     <form method="post" enctype="multipart/form-data" id="withdraw-form">
                         {% csrf_token %}

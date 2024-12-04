@@ -1,36 +1,53 @@
 {% extends "administrateurs/base.html" %}
 
 {% block content %}
-  <h1>Gestion des Agents</h1>
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{message.tags}}{% endif %} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endfor %}
+{% endif %}
 
-  <p><a href="{% url 'administrateurs:creer_agent' %}" class="btn btn-primary">Créer un nouvel agent</a></p>
+<h1>Agents : {{ agents|length }} {{ agents.count|pluralize:"s" }}</h1>
 
-  <h2>Liste des Agents</h2>
+<p class="text-end"><a href="{% url 'administrateurs:creer_agent' %}" class="btn btn-primary">Créer un nouvel agent</a></p>
 
-  <table class="table">
-    <thead>
-      <tr>
-        <th>Nom</th>
-        <th>Prénom</th>
-        <th>Email</th>
-        <th>Statut</th>  <!-- Example, adapt as needed -->
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for agent in agents %}
-      <tr>
-        <td>{{ agent.nom }}</td>
-        <td>{{ agent.prenom }}</td>
-        <td>{{ agent.email }}</td>
-        <td>{{ agent.statut }}</td> <!-- Example, adapt as needed -->
-        <td>
-          <a href="{% url 'administrateurs:modifier_agent' agent.pk }" class="btn btn-sm btn-secondary">Modifier</a>
-          <a href="{% url 'administrateurs:supprimer_agent' agent.pk %}" class="btn btn-sm btn-danger" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet agent ?')">Supprimer</a>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+<div class="table-responsive"> <!-- Added for responsiveness -->
+    <table class="table table-striped">  <!-- Added Bootstrap styling -->
+        <thead>
+            <tr>
+                <th>Nom</th>
+                <th>Prénom</th>
+                <th>Email</th>
+                <th>Téléphone</th>
+                <th>Adresse</th>
+                <th>Statut</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for agent in agents %}
+            <tr>
+                <td>{{ agent.nom }}</td>
+                <td>{{ agent.prenom }}</td>
+                <td>{{ agent.email }}</td>
+                <td>{{ agent.telephone }}</td>
+                <td>{{ agent.adresse }}</td>
+                <td>{{ agent.statut }}</td>
+                <td>
+                    <a href="{% url 'administrateurs:modifier_agent' agent.pk %}" class="btn btn-sm btn-secondary">Modifier</a>
+                    <a href="{% url 'administrateurs:supprimer_agent' agent.pk %}" class="btn btn-sm btn-danger" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet agent ?')">Supprimer</a>
+                </td>
+            </tr>
+            {% empty %}  <!-- Added empty case -->
+            <tr>
+                <td colspan="7" class="text-center">Aucun agent trouvé.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 
 {% endblock %}

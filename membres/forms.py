@@ -4,7 +4,6 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from administrateurs.models import CodesReference, Users
 
-
 # Formulaire d'inscription de membre
 class MembresForm(forms.ModelForm):
     # email = forms.EmailField()
@@ -47,11 +46,10 @@ class MembresForm(forms.ModelForm):
         if mot_de_passe and confirmation_mot_de_passe and mot_de_passe != confirmation_mot_de_passe:
             self.add_error("confirmation_mot_de_passe", "Les mots de passe doivent correspondent")
 
-        
         try: validate_password(mot_de_passe)
         except ValidationError as error:
             pass
-            self.add_error("mot_de_passe", error)
+            # self.add_error("mot_de_passe", error)
 
         if len(mot_de_passe) < 4:
             self.add_error("mot_de_passe", "Le mot de passe doit contenir au minimum 4 caractères")
@@ -76,4 +74,31 @@ class MembresForm(forms.ModelForm):
             self.add_error("invitation_code", "Code d'invitation invalide")
 
         return self.cleaned_data
-    
+
+class ModifierMembresForm(forms.ModelForm):
+    class Meta:
+        model = Membres
+        fields = [
+            "nom",
+            "postnom",
+            "prenom",
+            "sexe",
+            "lieu_naissance",
+            "date_naissance",
+            "etat_civil",
+            "type_carte_identite",
+            "num_carte_identite",
+            "carte_identite_copy",
+            "photo_passport",
+            "province_residence",
+            "ville_residence",
+            "quartier_residence",
+            "avenue_residence",
+            "numero_telephone",
+            "contribution_mensuelle",
+            "status"
+        ]
+
+        widgets = {
+            "date_naissance": forms.DateInput(attrs={"type": "date"})
+        }

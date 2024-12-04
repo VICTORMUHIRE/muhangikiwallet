@@ -13,16 +13,16 @@
 
     <div class="row justify-content-center mt-5 mt-sm-0 mb-3 mb-md-5">
         <div class="col-md-8 text-center">
-            <div class="card shadow-sm">
+            <div class="">
                 <div class="card-header bg-white">
                     <h3 class="">Contribution Mensuelle</h3>
                 </div>
                 <div class="card-body">
                     <p class="fs-5 mb-0"><span class="mb-3 fw-bolder fs-5">{{ membre.mois_contribution|date:"E" }}</span></p>
-                    <p class="fs-5 mb-0">Actuelle : <span class="mb-3 fw-bolder fs-5">{{ contribution_actuelle }} / {{ contribution_mensuelle.montant }} {% if contribution_mensuelle.devise == 'CDF' %}FC{% else %}${% endif %}</span></p>
+                    <p class="fs-5 mb-0">Etat : <span class="mb-3 fw-bolder fs-5">{{ contribution_actuelle }} / {{ contribution_mensuelle.montant }} {% if contribution_mensuelle.devise == 'CDF' %}FC{% else %}${% endif %}</span></p>
                     <p class="fs-5 mb-0">Restant : <span class="mb-3 fw-bolder fs-5">{{ montant_restant|floatformat:2 }} {% if contribution_mensuelle.devise == 'CDF' %}FC{% else %}${% endif %}</span></p>
                     <div class="mt-4">
-                        <a href="" class="btn btn-sm  btn-danger text-white">Retirer tout</a>
+                        {% comment %} <a href="" class="btn btn-sm  btn-danger text-white">Retirer tout</a> {% endcomment %}
                         <a href="{% url 'membres:contribuer' %}" class="btn btn-sm btn-success text-white">Contribuer</a>
                     </div>
                 </div>
@@ -32,11 +32,11 @@
 
         <div class="mt-4">
             <div class="card shadow-sm">
-                <div class="card-header bg-white">
+                <!-- <div class="card-header bg-white">
                     <h4 class="text-center mb-0">Historique des Contributions</h4>
-                </div>
+                </div> -->
                 <div class="card-body p-0">
-                    <table class="table table-bordered table-hover table-striped mb-0">
+                    <table class="table table-hover mb-0">
                         <thead class="table-success">
                             <tr>
                                 <th>Montant</th>
@@ -47,17 +47,19 @@
                         </thead>
                         <tbody>
                             {% for contribution in contributions %}
-                            <tr>
-                                <a href="{% url 'membres:transaction' contribution.pk %}" class="btn">
-                                    <td>{{ contribution.montant }}</td>
-                                    <td>{{ contribution.devise }}</td>
-                                    <td>{{ contribution.date }}</td>
-                                    <td>
-                                        <span class="badge {% if contribution.statut == 'Approuvé' %}bg-success{% elif contribution.statut == 'Rejeté' %}bg-danger{% else %}bg-warning{% endif %}">
-                                            {{ contribution.statut }}
-                                        </span>
-                                    </td>
-                                </a>
+                            <tr style="cursor: pointer;" onclick="location.href='{% url 'membres:transaction' contribution.pk %}'">
+                                <td>{{ contribution.montant }}</td>
+                                <td>{{ contribution.devise }}</td>
+                                <td>
+                                    <small class="d-none d-md-inline">{{ contribution.date|date:"d E Y" }}</small>
+                                    <small class="d-md-none">{{ contribution.date|date:"d/m/Y" }}</small>
+                                    <small class="d-none d-md-inline">{{ contribution.date|date:"H:i" }}</small>
+                                </td>
+                                <td>
+                                    <span class="badge {% if contribution.statut == 'Approuvé' %}bg-success{% elif contribution.statut == 'Rejeté' %}bg-danger{% else %}bg-warning{% endif %}">
+                                    {{ contribution.statut }}
+                                    </span>
+                                </td>
                             </tr>
                             {% empty %}
                             <tr>

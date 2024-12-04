@@ -25,6 +25,7 @@ urlpatterns = [
 
     path("contributions/", views.contributions, name="contributions"),
     path("transactions/", views.transactions, name="transactions"),
+    path("transaction/<int:transaction_id>", views.transaction, name="transaction"),
     path("prêts/", views.prêts, name="prêts"),
     path("objectifs/", views.objectifs, name="objectifs"),
     path("retraits/", views.retraits, name="retraits"),

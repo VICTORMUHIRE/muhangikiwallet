@@ -1,0 +1,89 @@
+
+{% extends 'agents/base.html' %}
+{% load static %}
+
+{% block title %}Détails de la transaction{% endblock %}
+
+{% block content %}
+
+<div class="container mt-5 mt-sm-0 mb-5">
+  <div class="card">
+    <div class="card-header">
+      <h2 class="text-center fw-bolder">Détails de la Transaction</h2>
+    </div>
+    <div class="card-body">
+      {% if transaction %}
+        <h3>
+          {% if transaction.type == 'retrait' %}Retrait d'argent
+          {% elif transaction.type == 'transfert' %}Transfert d'argent
+          {% elif transaction.type == 'depot_objectif' %}Dépôt sur objectif
+          {% elif transaction.type == 'depot_inscription' %}Dépôt d'inscription
+          {% elif transaction.type == 'contribution' %}Contribution mensuelle
+          {% elif transaction.type == 'prêt' %}Prêt d'argent
+          {% elif transaction.type == 'remboursement_prêt' %}Remboursement de prêt
+          {% else %}Transaction Inconnue
+          {% endif %}
+        </h3>
+
+        <dl class="row">
+          <dt class="col-sm-3">Montant:</dt>
+          <dd class="col-sm-9">{{ transaction.montant|floatformat:2 }} {{ transaction.devise }}</dd>  <!-- Format amount -->
+
+          <dt class="col-sm-3">Date:</dt>
+          <dd class="col-sm-9">{{ transaction.date|date:"d/m/Y H:i" }}</dd>  <!-- Format date and time -->
+
+          <dt class="col-sm-3">Utilisateur:</dt>
+          <dd class="col-sm-9">{{ transaction.membre }}</dd>
+
+          {% if transaction.objectif %}
+            <dt class="col-sm-3">Objectif:</dt>
+            <dd class="col-sm-9">
+              {% if transaction.objectif.id %}  <!-- Check if objectif.id exists -->
+                <a href="{% url 'membres:objectif' transaction.objectif.id %}">{{ transaction.objectif.nom }}</a>
+              {% else %}
+                -
+              {% endif %}
+            </dd>
+          {% endif %}
+
+          {% if transaction.type == 'transfert' and transaction.destinataire %} <!-- Check if destinataire exists -->
+            <dt class="col-sm-3">Destinataire:</dt>
+            <dd class="col-sm-9">{{ transaction.destinataire.username }}</dd>
+          {% endif %}
+
+          {% if transaction.type == 'prêt' %}
+            <dt class="col-sm-3">Taux d'intérêt:</dt>
+            <dd class="col-sm-9">10%</dd>  <!-- Format interest rate -->
+
+            <dt class="col-sm-3">Délai de remboursement:</dt>
+            <dd class="col-sm-9">120 jours</dd>
+          {% endif %}
+
+          {% if transaction.preuve %}
+            <dt class="col-sm-3">Preuve:</dt>
+            <dd class="col-sm-9">
+              {% if transaction.preuve.url|slice:":4" in "http" or transaction.preuve.url|slice:":5" in "https" %} <!--- more robust URL handling -->
+                <a href="{{ transaction.preuve.url }}" target="_blank" rel="noopener noreferrer">Voir la preuve (Lien externe)</a>  <!-- Added rel attribute for security -->
+              {% else %}
+                <a href="{{ transaction.preuve.url }}" target="_blank" rel="noopener noreferrer">  <!-- Added rel attribute for security -->
+                  <img src="{{ transaction.preuve.url }}" alt="Preuve de transaction" style="max-width: 200px;" onerror="this.src='{% static 'images/placeholder.png' %}'">  <!-- Placeholder image -->
+                </a>
+              {% endif %}
+
+            </dd>
+          {% endif %}
+
+
+        </dl>
+      {% else %}
+        <p>Aucune transaction trouvée.</p>
+      {% endif %}
+    </div>
+    <div class="card-footer text-center">
+        <a href="{% url 'membres:transactions' %}" class="btn btn-secondary">Retour</a>  <!-- Corrected link -->
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}

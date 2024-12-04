@@ -7,13 +7,13 @@
     <div class="row justify-content-center mt-5 mt-sm-0 mb-5">
 
         <div class="col-md-8 text-center">
-            <div class="card shadow-sm mb-4">
+            <div class="mb-4">
                 <div class="card-header bg-white">
                     <h3 class="">Mes Objectifs</h3>
                 </div>
                 <div class="card-body text-enter">
                     <p class="fs-5 mb-0">Solde total</p>
-                    <h4 class="mb-3 fw-bolder fs-5">{{ solde_objectifs_CDF|stringformat:".2f" }} FC / {{ solde_objectifs_USD|stringformat:".2f" }} $</h4>
+                    <h4 class="mb-3 fw-bolder fs-5">{{ solde_objectifs_CDF|stringformat:".2f" }} FC - {{ solde_objectifs_USD|stringformat:".2f" }} $</h4>
                     
                     <button type="button" class="btn btn-sm  btn-primary text-white" data-bs-toggle="modal" data-bs-target="#ajouterObjectifModal">
                         Ajouter un objectif
@@ -33,11 +33,8 @@
 
             {% for objectif in objectifs %}
             <div class="card shadow-sm mb-3">  <!-- Card for each goal -->
-                <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                    <h5 class="card-title fw-bold mb-0">{{ objectif.nom }}</h5>
-                    <div>  <!-- Edit/Delete buttons grouped -->
-                        <a href="{% url 'membres:objectif' objectif.id %}" class="btn btn-secondary btn-sm">Détails</a>
-                    </div>
+                <div class="card-header bg-white text-center">
+                    <h5 class="card-title mb-0">{{ objectif.nom }}</h5>
                 </div>
                 <div class="card-body">
                     <div class="progress position-relative mb-3" style="height: 25px;">  <!-- Enhanced progress bar -->
@@ -46,13 +43,18 @@
                     </div>
 
                     <!-- Clearer display of amounts and date -->
-                    <p class="card-text fw-bold">Montant cible : {{ objectif.montant_cible|stringformat:".2f" }} {{ objectif.devise }}</p>
-                    <p class="card-text fw-bold">Montant épargné : {{ objectif.montant|stringformat:".2f" }} {{ objectif.devise }}</p>
-                    <p class="card-text fw-bold">Date de début : {{ objectif.date_debut }}</p>
-                    <p class="card-text fw-bold">Date limite : {{ objectif.date_fin }}</p>
+                    <p class="card-text">Montant cible : <span class="fw-bold">{{ objectif.montant_cible|stringformat:".2f" }} {{ objectif.devise }}</span></p>
+                    <p class="card-text">Montant déposé : <span class="fw-bold">{{ objectif.montant|stringformat:".2f" }} {{ objectif.devise }}</span></p>
+                    <p class="card-text">Date de création : <span class="fw-bold">{{ objectif.date_creation|date:"d/m/Y" }}</span></p>
+                    <p class="card-text">Date d'échéance : <span class="fw-bold">{{ objectif.date_fin|date:"d/m/Y" }}</span></p>
+                    <p class="card-text">Statut : <span class="badge {% if objectif.statut == 'Atteint' %}bg-success{% elif objectif.statut == 'En cours' %}bg-warning{% else %}bg-danger{% endif %}">{{ objectif.statut }}</span></p>
+                    
 
                     <div class="text-center mt-2"> <!-- Centered Deposit button -->
+                        <a href="{% url 'membres:objectif' objectif.id %}" class="btn btn-secondary btn-sm">Détails</a>
+                        {% if objectif.statut == 'En cours' %}
                         <a href="{% url 'membres:dépot_objectif' objectif.id %}" class="btn btn-primary btn-sm">Déposer</a>
+                        {% endif %}
                     </div>
 
                 </div>

@@ -26,7 +26,7 @@ from random import randint
 def verifier_membre(func):
     def verify(request, *args, **kwargs):
         if request.user.is_membre():
-            if request.user.membre.status and Transactions.objects.filter(membre=request.user.membre, type="depot_inscription").first().statut == "Approuvé":
+            if request.user.membre.status and Transactions.objects.filter(membre=request.user.membre, type="depot_inscription", statut="Approuvé").exists():
                 return func(request, *args, **kwargs)
             else : return redirect("membres:statut")
 
@@ -37,6 +37,8 @@ def verifier_membre(func):
 # Vue pour la page de statut des membres
 @login_required
 def statut(request):
+    depot_inscription = DepotsInscription.objects.filter(membre=request.user.membre).first()
+
     reseaux = NumerosAgent.objects.values_list('reseau', flat=True).distinct()
     numeros_categories = {reseau: [] for reseau in reseaux}
     for reseau in reseaux:
@@ -44,7 +46,7 @@ def statut(request):
             numeros_categories[reseau].append((numero_agent.numero, numero_agent.pk))
 
     if request.method == 'POST':
-        form = TransactionsForm(request.POST, request.FILES, instance=Transactions.objects.filter(membre=request.user.membre, type="depot_inscription").first())
+        form = TransactionsForm(request.POST, request.FILES)
         mot_de_passe = request.POST.get('mot_de_passe')
 
         if check_password(mot_de_passe, request.user.password):
@@ -52,15 +54,15 @@ def statut(request):
                 try:
                     transaction = form.save(commit=False)
 
-                    depot_inscription = DepotsInscription.objects.filter(transaction=transaction).first()
-                    depot_inscription.devise = transaction.devise
-
-                    depot_inscription.date = timezone.now()
-                    transaction.statut = depot_inscription.statut = "En attente"
-
+                    transaction.devise = depot_inscription.devise
                     transaction.montant = depot_inscription.montant
                     transaction.agent = transaction.numero_agent.agent
-                    depot_inscription.date = transaction.date = timezone.now()
+                    transaction.membre=request.user.membre
+                    transaction.type="depot_inscription"
+                    transaction.statut = "En attente"
+
+                    depot_inscription.date = timezone.now()
+                    depot_inscription.transaction = transaction
                     
                     transaction.save()
                     depot_inscription.save()
@@ -77,10 +79,17 @@ def statut(request):
             messages.error(request, "Mot de passe incorrect.")
 
     else:
-        form = TransactionsForm(instance=Transactions.objects.filter(membre=request.user.membre, type="depot_inscription").first())
-    
-    membre_form = MembresForm(instance=request.user.membre)
-    return render(request, 'membres/statut.html', {'reseaux': reseaux, 'numeros_categories': numeros_categories, 'form': form, 'membre_form': membre_form}) # Pass the form to the template
+        form = TransactionsForm(initial={"montant": depot_inscription.montant, "devise": depot_inscription.devise})
+
+        context = {
+            'form': form,
+            'membre_form': MembresForm(instance=request.user.membre),
+            'reseaux': reseaux,
+            'numeros_categories': numeros_categories,
+            depot_inscription: "depot_inscription"
+        }
+
+    return render(request, 'membres/statut.html', context) # Pass the form to the template
 
 # Vue pour la page d'inscription des membres
 def inscription(request):
@@ -106,21 +115,15 @@ def inscription(request):
                 while True:
                     numero = f"MW-{str(randint(1000, 9999)).ljust(4, '0')}-{str(randint(1000, 9999)).ljust(4, '0')}-{str(randint(1, 99)).ljust(2, '0')}"
                     if not NumerosCompte.objects.filter(numero=numero).exists(): break
-                return numero    
+                return numero
         
             membre.compte_CDF = NumerosCompte.objects.create(numero=generate_unique_numero(), devise="CDF")
             membre.compte_USD = NumerosCompte.objects.create(numero=generate_unique_numero(), devise="USD")
             
             membre.save()
 
-            DepotsInscription.objects.create(
-                transaction=Transactions.objects.create(
-                    membre=membre,
-                    montant=10,
-                    devise="USD",
-                    type="depot_inscription"
-                )
-            )
+            DepotsInscription.objects.create(membre=membre)
+
             login(request, membre.user)
             return redirect("login")
         
@@ -314,7 +317,7 @@ def contribuer(request):
 @verifier_membre
 def demande_prêt(request):
     types_prêt = TypesPrêt.objects.all() # Récupérer tous les types de prêt
-    demandes_prêt = Transactions.objects.filter(membre=request.user.membre, type="prêt")
+    demandes_prêt = Prêts.objects.filter(membre=request.user.membre)
 
     # Solde contribution
     solde_contribution_CDF = Transactions.objects.filter(membre=request.user.membre, devise="CDF", statut="Approuvé", type="contribution").aggregate(total=Sum('montant'))['total'] or 0
@@ -324,42 +327,31 @@ def demande_prêt(request):
     taux_de_change = 2800
     solde_total_contribution = solde_contribution_CDF + (solde_contribution_USD * taux_de_change)
 
-    reseaux = NumerosAgent.objects.values_list('reseau', flat=True).distinct()
-    numeros_categories = {reseau: [] for reseau in reseaux}
-    for reseau in reseaux:
-        for numero_agent in NumerosAgent.objects.filter(reseau=reseau):
-            numeros_categories[reseau].append((numero_agent.numero, numero_agent.pk))
-
     if request.method == "POST":
         form = PrêtsForm(request.POST)
-        transaction_form = TransactionsForm(request.POST)
 
-        if form.is_valid() and transaction_form.is_valid():
+        if form.is_valid():
             # Vérification du mot de passe
             mot_de_passe = request.POST.get('password')
 
             if check_password(mot_de_passe, request.user.password):
                 prêt = form.save(commit=False)  # Créer l'objet prêt sans l'enregistrer
-                transaction = transaction_form.save(commit=False)
-                transaction.membre = request.user.membre
-                transaction.agent = transaction.numero_agent.agent
-                transaction.type = "prêt"
-                transaction.statut = "Initialisation"
+                prêt.membre = request.user.membre
 
                 prêt.montant_remboursé = prêt.montant
-                transaction.montant = prêt.montant = float(prêt.montant_remboursé) - (float(prêt.montant) * 0.10) #(prêt.montant * (prêt.type_prêt.taux_interet / 100))
+                prêt.montant = float(prêt.montant_remboursé) - (float(prêt.montant) * 0.10) #(prêt.montant * (prêt.type_prêt.taux_interet / 100))
 
                 prêt.date_remboursement = datetime.now() + timedelta(days=120) #timedelta(days=prêt.type_prêt.delai_remboursement)  # Définir la date de remboursement
 
-                if not Prêts.objects.filter(transaction__membre=request.user.membre, statut="En attente").exists():
-                    if not Prêts.objects.filter(transaction__membre=request.user.membre, statut="Approuvé").exists():
+                if not Prêts.objects.filter(membre=request.user.membre, statut="En attente").exists():
+                    if not Prêts.objects.filter(membre=request.user.membre, statut="Approuvé").exists():
                         if prêt.montant_remboursé > 0 and prêt.montant_remboursé * (2800 if prêt.devise == "USD" else 1) <= 3*solde_total_contribution:
-                            # Solde suffisant, enregistrer la transaction et le prêt
-                            transaction.save()
-                            prêt.transaction = transaction
+                            # transaction.save()
+                            # prêt.transaction = transaction
+
                             prêt.save()  # Enregistrer l'objet prêt
                             messages.success(request, 'Votre demande de prêt a été soumise avec succès !')
-                            return redirect('membres:demande_prêt')  # Redirigez vers
+                            return redirect('membres:demande_prêt')
                         else:
                             # Solde insuffisant ou prêts en cours, afficher un message d'erreur
                             messages.error(request, f'Vous ne pouvez demander plus de 3x votre contribution actuelle')
@@ -376,14 +368,11 @@ def demande_prêt(request):
 
     else:
         form = PrêtsForm()
-        transaction_form = TransactionsForm(request.POST)
 
     context = {
         "form": form,
-        "transaction_form": transaction_form,
         "types_prêt": types_prêt,
         "demandes_prêt": demandes_prêt,
-        "numeros_categories": numeros_categories,
         "taux_change": taux_de_change,
         "solde_total_contribution_cdf": solde_total_contribution * 3,
         "solde_total_contribution_usd": solde_total_contribution * 3 / taux_de_change
@@ -395,8 +384,7 @@ def demande_prêt(request):
 @login_required
 @verifier_membre
 def rembourser_prêt(request, transaction_id):
-    prêt = Prêts.objects.get(transaction=get_object_or_404(Transactions, pk=transaction_id, membre=request.user.membre, type="prêt"))
-    if prêt.statut == "Remboursé":  return redirect("membres:demande_prêt")
+    prêt = get_object_or_404(Prêts, transaction=get_object_or_404(Transactions, pk=transaction_id, membre=request.user.membre, type="prêt"), statut="Approuvé")
 
     reseaux = NumerosAgent.objects.values_list('reseau', flat=True).distinct()
     numeros_categories = {reseau: [] for reseau in reseaux}
@@ -487,7 +475,7 @@ def objectifs(request):
 @login_required
 @verifier_membre
 def dépot_objectif(request, objectif_id):
-    objectif = get_object_or_404(Objectifs, membre=request.user.membre, pk=objectif_id)
+    objectif = get_object_or_404(Objectifs, membre=request.user.membre, pk=objectif_id, statut="En cours")
 
     reseaux = NumerosAgent.objects.values_list('reseau', flat=True).distinct()
     numeros_categories = {reseau: [] for reseau in reseaux}
@@ -545,7 +533,8 @@ def dépot_objectif(request, objectif_id):
         "form": form,
         "depot_objectif_form": depot_objectif_form,
         "numeros_categories": numeros_categories,
-        "objectif": objectif
+        "objectif": objectif,
+        "montant_restant": objectif.montant_cible - objectif.montant
     }
 
     return render(request, "membres/depot_objectif.html", context)
@@ -609,7 +598,7 @@ def retrait(request):
         "form": form,
         "membre": membre,
         "numeros_categories": numeros_categories,
-        "montant_benefices": montant_benefices,
+        "montant_benefices": montant_benefices - montant_retraits,
         "date": timezone.now()
     }
 

@@ -40,7 +40,7 @@
                             </div>
                         </div>
     
-                        <!-- <div class="mb-3">
+                        {% comment %} <div class="mb-3">
                             <label class="form-label" for="{{ form.type_prêt.id_for_label }}">Type de crédit</label>
                             <select class="form-select" id="{{ form.type_prêt.id_for_label }}" name="{{ form.type_prêt.html_name }}">
                                 <option value="">-- Choisissez un type de crédit --</option>
@@ -53,40 +53,27 @@
                                     </option>
                                 {% endfor %}
                             </select>
-                        </div> -->
-    
-                        <div class="mb-3">
-                            <label for="{{ transaction_form.numero_agent.id_for_label }}" class="form-label">Numéro de l'agent</label>
-                            <select class="form-control form-select" id="{{ transaction_form.numero_agent.id_for_label }}" name="{{ transaction_form.numero_agent.html_name }}">
-                                {% for reseau, numeros in numeros_categories.items %}  <!-- Use existing context variable -->
-                                    <optgroup label="{{ reseau }}">
-                                        {% for numero, id in numeros %}
-                                            <option value="{{ id }}">{{ numero }}</option>
-                                        {% endfor %}
-                                    </optgroup>
-                                {% endfor %}
-                            </select>
-                        </div>
+                        </div> {% endcomment %}
 
-                        <h4 class="text-center">Details du prêt</h4>
+                        <!-- <h4 class="text-center">Details du prêt</h4> -->
     
                         <div class="mb-3">
-                            <label for="taux_interet">Taux d'intérêt: </label>
+                            <label for="taux_interet">Taux d'intérêt : </label>
                             <strong id="taux_interet" class="font-weight-bold mb-color">15%</strong>
                         </div>
                         <div class="mb-3">
-                            <label for="delai_remboursement">Délai de remboursement: </label>
+                            <label for="delai_remboursement">Délai de remboursement : </label>
                             <strong id="delai_remboursement" class="font-weight-bold mb-color">-</strong>
                         </div>
                         <div class="mb-3">
-                            <label for="montant_rembourser">Montant à recevoir: </label>
+                            <label for="montant_rembourser">Montant à recevoir : </label>
                             <strong id="montant" class="font-weight-bold mb-color">-</strong>
                         </div>
                         <div class="mb-3">
-                            <label for="montant_rembourser">Montant à rembourser: </label>
+                            <label for="montant_rembourser">Montant à rembourser : </label>
                             <strong id="montant_rembourser" class="font-weight-bold mb-color">-</strong>
                         </div>
-    
+
                         <div class="form-group text-center">
                             <button type="button" class="btn btn-mw text-white" id="submitLoanBtn" data-bs-toggle="modal" data-bs-target="#passwordConfirmModal">
                                 Confirmer la Demande
@@ -108,10 +95,10 @@
                             <div class="card mb-3">
                                 <div class="card-body d-flex align-items-center justify-content-between">
                                     <div class="card-title">
-                                        <span class="badge bg-{% if demande.statut == 'Approuvé' %}success{% elif demande.statut == 'Rejeté' %}danger{% elif demande.statut == 'Remboursé' %}info{% else %}warning{% endif %}">
-                                            {{ demande.get_statut_display }}
+                                        <span class="badge bg-{% if demande.transaction.statut == 'Approuvé' %}success{% elif demande.statut == 'Rejeté' %}danger{% elif demande.statut == 'Remboursé' %}info{% else %}warning{% endif %}">
+                                            {% if demande.statut == 'Approuvé' and demande.transaction.statut == 'En attente' %}En attente{% else %}{{ demande.statut }}{% endif %}
                                         </span>
-                                        <p class="card-text fs-6"><strong>Montant:</strong> {{ demande.montant }} {{ demande.devise }}</p>
+                                        <p class="card-text fs-6"><strong>Montant:</strong> {{ demande.montant_remboursé }} {{ demande.devise }}</p>
                                     </div>
                                     <span class="card-text ">
                                         <small class="d-none d-md-inline">{{ demande.date|date:"d E Y" }}</small>
@@ -119,8 +106,8 @@
                                         <small class="d-md-none">{{ demande.date|date:"H:i" }}</small>
                                         <small class="d-none d-md-inline">{{ demande.date|date:"H:i:s" }}</small>
                                     </span>
-                                    {% if demande.statut == 'Approuvé' %}
-                                        <a class="btn btn-sm btn-primary text-white" href="{% url 'membres:rembourser_prêt' demande.pk %}">Rembourser</a>
+                                    {% if demande.transaction.statut == 'Approuvé' %}
+                                        <a class="btn btn-sm btn-primary text-white" href="{% url 'membres:rembourser_prêt' demande.transaction.pk %}">Rembourser</a>
                                     {% endif %}
                                 </div>
                             </div>

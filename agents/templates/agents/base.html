@@ -154,14 +154,14 @@
         </a>
         {% if request.user.is_authenticated %}
         <div class="d-flex align-items-center justify-content-center">
-            <a href="#" class="me-3">
+            <!-- <a href="#" class="me-3">
                 <span class="material-icons">notifications</span>
-            </a>
+            </a> -->
             <span class="navbar-nav rounded-4">
                 <li class="nav-item dropdown">
                     <a class="nav-link text-dark d-flex align-items-center justify-content-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         {% if user.agent.photo_passport %}
-                        <img src="{{ user.agent.photo_passport }}" alt="Photo de profil" class="rounded-circle" height="30"> 
+                        <img src="{{ user.agent.photo_passport }}" alt="Photo de profil" class="rounded-circle" height="30">
                         {% elif user.agent.sexe == 'M' %}
                         <i class="fas fa-user-circle fa-2x"></i>
                         {% else %}

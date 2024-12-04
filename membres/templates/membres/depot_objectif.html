@@ -19,6 +19,10 @@
                     <div class="text-center text-muted">
                         <span id="solde_objectif" class="font-weight-bold mb-color">{{ objectif.montant|stringformat:".2f" }} / {{ objectif.montant_cible|stringformat:".2f" }} {{ objectif.devise }}</span>
                     </div>
+                    <div class="fs-6">
+                        Montant restant : <span class="roboto-regular">{{ montant_restant|stringformat:".2f" }} {{ objectif.devise }}</span>
+                    </div>
+
                 </div>
                 <div class="card-body px-1">
 

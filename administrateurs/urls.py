@@ -42,7 +42,9 @@ urlpatterns = [
     path("types_prêt/<int:type_prêt_id>/supprimer/", views.supprimer_type_prêt, name="supprimer_type_prêt"),
 
     path("transactions/", views.transactions, name="transactions"), # If you have views for this
+    path("transaction/<int:transaction_id>", views.transaction, name="transaction"),
+    
     path("prêts/", views.prêts, name="prêts"),
-    path("prêts/<int:transaction_id>", views.voir_prêt, name="voir_prêt"),
+    path("prêts/<int:prêt_id>", views.voir_prêt, name="voir_prêt"),
     path("rejeter_prêt/<int:prêt_id>", views.rejeter_prêt, name="rejeter_prêt"),
 ]
