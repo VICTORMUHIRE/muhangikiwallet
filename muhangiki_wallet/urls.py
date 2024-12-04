@@ -10,7 +10,7 @@ urlpatterns = [
     path("", views.index, name="index"),
     path("login/", views.login_view, name="login"),
     path("logout/", views.logout_view, name="logout"),
-    path("admin/", admin.site.urls),
+    path("admin/", admin.site.urls, name="admin"),
     path("agents/", include("agents.urls")),
     path("membres/", include("membres.urls")),
     path("organisations/", include("organisations.urls")),
@@ -48,7 +48,8 @@ if __name__ == "__main__" and True:
             sexe="M", lieu_naissance="Goma", date_naissance="1999-1-1",
             etat_civil="Marié", type_carte_identite="CNI", num_carte_identite="AD1234567890",
             province_residence="Nord-Kivu", ville_residence="Goma", quartier_residence="Kyeshero",
-            avenue_residence="Douglas", numero_telephone="0909999999",
+            avenue_residence="Douglas", numero_telephone="0909999999", photo_passport="images/default.jpg",
+            carte_identite_copy="images/default.jpg",
             user=Users.objects.create_user(
                 username="0909999999",
                 email="kakule@gmail.com",
@@ -83,7 +84,8 @@ if __name__ == "__main__" and True:
             sexe="F", lieu_naissance="Goma", date_naissance="1999-1-1",
             etat_civil="Marié", type_carte_identite="CNI", num_carte_identite="AD1234567890",
             province_residence="Nord-Kivu", ville_residence="Goma", quartier_residence="Kyeshero",
-            avenue_residence="Douglas", numero_telephone="0909899999",
+            avenue_residence="Douglas", numero_telephone="0909899999", photo_passport="images/default.jpg",
+            carte_identite_copy="images/default.jpg",
             user=Users.objects.create_user(
                 username="0909899999",
                 email="kakule@gmail.com",
@@ -129,7 +131,8 @@ if __name__ == "__main__" and True:
             avenue_residence="Douglas", numero_telephone="0909594999", compte_CDF=NumerosCompte.objects.create(numero="A1234567891", devise="CDF"),
             compte_USD=NumerosCompte.objects.create(numero="A1234567890", devise="USD"), invitation_code="INV1234567890",
             contribution_mensuelle=ContributionsMensuelles.objects.all()[0],
-            reference_code=CodesReference.objects.create(), status=True,
+            reference_code=CodesReference.objects.create(), status=True, photo_passport="images/default.jpg",
+            carte_identite_copy="images/default.jpg",
             user=Users.objects.create_user(
                 username="0909594999",
                 email="kakule@gmail.com",

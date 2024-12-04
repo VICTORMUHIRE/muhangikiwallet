@@ -4,15 +4,16 @@
 {% block title %}Détails du prêt{% endblock %}
 
 {% block content %}
+{% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{message.tags}}{% endif %} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+{% endif %}
+
 <div class="card mt-5">
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{message.tags}}{% endif %} alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        {% endfor %}
-    {% endif %}
     <div class="card-header bg-white text-center">
         <h5 class="card-title mb-0">Détails du prêt</h5>
     </div>
@@ -34,49 +35,68 @@
                 {% if prêt.date_approbation %}
                     <p><strong>Date d'approbation:</strong> {{ prêt.date_approbation }}</p>
                 {% endif %}
-                {% if prêt.raison_rejet %}
-                    <p><strong>Raison du rejet:</strong> {{ prêt.raison_rejet }}</p>
-                {% endif %}
-
-
             </div>
             </div>
             {% if prêt.statut == 'En attente' %}
             <div class="col-md-12 mt-4">
-            <form method="post">
+            <form method="post" id="form">
                 {% csrf_token %}
                 {% for field in form %}
                 <input type="hidden" name="id" value="{{ prêt.pk }}">
                 <input type="hidden" id="{{ field.id_for_label }}" name="{{ field.name }}" value="{{ field.value|default:'' }}">
                 {% endfor %}
                 <div class="d-flex justify-content-center">
-                    <button type="submit" name="statut" value="Approuvé" class="btn btn-success me-2">Approuver</button>
-                    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#rejetModal">Rejeter</button>
+                    <input type="button" value="Approuver" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#passwordConfirmModal">
+                    <!-- <input type="button" value="Rejeter" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#passwordConfirmModal" onclick="this.name = 'action';"> -->
+                    <a href="{% url 'administrateurs:rejeter_prêt' prêt.pk %}" class="btn btn-danger" onclick="return confirm('Êtes-vous sûr de vouloir rejeter ce prêt ?')">Rejeter</a>
                 </div>
             </form>
         </div>
 
-        <!-- Modal pour le rejet -->
-        <div class="modal fade" id="rejetModal" tabindex="-1" aria-labelledby="rejetModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                <h5 class="modal-title" id="rejetModalLabel">Raison du rejet</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <!-- Modal -->
+        <div class="modal fade" id="passwordConfirmModal" tabindex="-1" aria-labelledby="passwordConfirmModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">  <!-- Make modal centered -->
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="passwordConfirmModalLabel">Confirmation du mot de passe</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="passwordForm">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="mot_de_passe" class="form-label">Mot de passe</label>
+                                <input type="password" class="form-control" id="mot_de_passe" name="mot_de_passe" required>
+                            </div>
+                            <div class="modal-footer">  <!-- Submit in footer -->
+                                <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Annuler</button>
+                                <button type="submit" class="btn btn-mw">Confirmer</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
-                <form method="post">
-                    {% csrf_token %}
-                <div class="modal-body">
-                    <textarea name="raison_rejet" class="form-control" rows="3" placeholder="Indiquez la raison du rejet"></textarea>              
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                    <button type="submit" name="rejeter" value="rejeter" class="btn btn-danger">Rejeter</button>
-                </div>
-                </form>
-            </div>
             </div>
         </div>
+
+        <script>
+            // Gestionnaire d'événements pour le bouton "Confirmer" dans le modal
+            document.getElementById('passwordForm').addEventListener('submit', function(event) {
+                event.preventDefault();
+
+                var password = document.getElementById('mot_de_passe').value;
+                var Form = document.getElementById('form');
+
+                // Ajouter le mot de passe au formulaire avant la soumission
+                var passwordInput = document.createElement('input');
+                passwordInput.type = 'hidden';
+                passwordInput.name = 'password';
+                passwordInput.value = password;
+                Form.appendChild(passwordInput);
+
+                // Soumettre le formulaire
+                Form.submit();
+            });
+        </script>
         {% endif %}
     </div>
 </div>

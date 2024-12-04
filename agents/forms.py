@@ -15,7 +15,6 @@ class AgentsForm(forms.ModelForm):
             "etat_civil",
             "type_carte_identite",
             "num_carte_identite",
-            "photo_profil",
             "province_residence",
             "ville_residence",
             "quartier_residence",

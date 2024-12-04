@@ -18,7 +18,7 @@
 
 
         <div class="detail-group">
-            <p><strong>Montant:</strong> {{ objectif.montant|floatformat:2 }}</p>  </div>
+            <p><strong>Montant:</strong> {{ objectif.montant|stringformat:".2f" }}</p>  </div>
 
         <div class="detail-group">
             <p><strong>Date de création:</strong> {{ objectif.date_creation|date:"d/m/Y" }}</p>

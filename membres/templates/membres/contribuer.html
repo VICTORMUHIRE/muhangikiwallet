@@ -8,7 +8,7 @@
     <div class="row mt-5 mt-sm-0 mb-3 mb-md-5">
     {% if messages %}
         {% for message in messages %}
-            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{message.tags}}{% endif %} alert-dismissible fade show" role="alert">
                 {{ message }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
@@ -19,6 +19,12 @@
         <div class="card border-0">
             <div class="card-header bg-white text-center fs-4">
                 Contribution mensuelle
+                <div class="fs-6">
+                    Mois : <span class="roboto-regular">{{ membre.mois_contribution|date:"E" }}</span>, Solde actuel : <span class="roboto-regular">{{ contribution_actuelle|stringformat:".2f" }} / {{ contribution_mensuelle.montant|stringformat:".2f" }} {% if contribution_mensuelle.devise == 'USD' %} $ {% else %} FC {% endif %}</span>
+                </div>
+                <div class="fs-6">
+                    Restant : <span class="roboto-regular">{{ montant_restant|stringformat:".2f" }} {% if contribution_mensuelle.devise == 'USD' %} $ {% else %} FC {% endif %}</span>
+                </div>
             </div>
 
             <div class="card-body px-1">
@@ -27,7 +33,7 @@
                     <div class="row mb-3">
                         <div class="form-group col-md-8">
                             <label class="form-label" for="{{ form.montant.id_for_label }}">Contribution mensuelle</label>
-                            <input type="number" class="form-control" id="{{ form.montant.id_for_label }}" name="{{ form.montant.html_name }}" value="{{ contribution_mensuelle.montant|stringformat:'.2f' }}" readonly required>
+                            <input type="number" class="form-control" id="{{ form.montant.id_for_label }}" name="{{ form.montant.html_name }}" value="{{ montant_restant|stringformat:'.2f' }}" required>
                         </div>
                         <div class="form-group col-md-4">
                             <div class="form-group">

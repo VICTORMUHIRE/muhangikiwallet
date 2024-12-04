@@ -3,6 +3,14 @@
 {% block title %}Dépôt sur Objectif{% endblock %}
 
 {% block content %}
+{% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{message.tags}}{% endif %} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+{% endif %}
     <div class="row mt-5 mt-sm-0 mb-4 mb-md-5 justify-content-center">
         <div class="col-md-8">
             <div class="card border-0">
@@ -13,14 +21,6 @@
                     </div>
                 </div>
                 <div class="card-body px-1">
-                    {% if messages %}
-                        {% for message in messages %}
-                            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}warning{% endif %} alert-dismissible fade show" role="alert">
-                                {{ message }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                            </div>
-                        {% endfor %}
-                    {% endif %}
 
                     <form method="post" enctype="multipart/form-data" id="withdraw-form">
                         {% csrf_token %}
@@ -32,10 +32,7 @@
                             </div>
                             <div class="form-group col-md-4">
                                 <label class="form-label" for="{{ form.devise.id_for_label }}">Devise</label>
-                                <select class="form-control form-select" id="{{ form.devise.id_for_label }}" name="{{ form.devise.html_name }}">
-                                    <option value="CDF" {% if form.devise.value == 'CDF' %}selected{% endif %}>CDF</option>
-                                    <option value="USD" {% if form.devise.value == 'USD' %}selected{% endif %}>USD</option>
-                                </select>
+                                <input type="text" class="form-control" id="{{ form.devise.id_for_label }}" name="{{ form.devise.html_name }}" value="{{ objectif.devise }}" readonly>
                             </div>
                         </div>
 

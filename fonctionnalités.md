@@ -51,11 +51,11 @@ En conclusion, voici un résumé des fonctionnalités clés d'un projet Muhangik
 * **Gestion des utilisateurs:**  Améliorez la gestion des utilisateurs en ajoutant des fonctionnalités pour la réinitialisation du mot de passe, la modification du profil, la gestion des rôles et les autorisations.
 * **Système de recherche:**  Implémentez une fonctionnalité de recherche pour faciliter la recherche de membres, d'organisations, de transactions et d'objectifs spécifiques.
 * **Intégration de paiement:**  Intégrez des passerelles de paiement pour permettre aux utilisateurs de payer leurs contributions et leurs remboursements de prêt en ligne.
-* **Système de sécurité:**  Renforcez la sécurité du système en utilisant des méthodes de cryptage et des protocoles de sécurité standard de l'industrie. 
+* **Système de sécurité:**  Renforcez la sécurité du système en utilisant des méthodes de cryptage et des protocoles de sécurité standard de l'industrie.
 * **Système de validation des données:**  Ajoutez des validations des données pour assurer la cohérence et l'intégrité des informations saisies par les utilisateurs.
 
 **En conclusion:**
 
-En incluant toutes ces fonctionnalités, Muhangiki Wallet peut devenir une application de paiement et de gestion des dépenses complète, moderne et pratique, permettant aux utilisateurs de gérer facilement leurs finances, d'effectuer des paiements, d'analyser leurs dépenses et de bénéficier d'une expérience utilisateur intuitive et sécurisée. 
+En incluant toutes ces fonctionnalités, Muhangiki Wallet peut devenir une application de paiement et de gestion des dépenses complète, moderne et pratique, permettant aux utilisateurs de gérer facilement leurs finances, d'effectuer des paiements, d'analyser leurs dépenses et de bénéficier d'une expérience utilisateur intuitive et sécurisée.
 
-N'hésitez pas à me fournir des informations supplémentaires sur les fonctionnalités ou les points que vous souhaitez approfondir. Je suis prêt à vous aider à définir les exigences du projet de manière plus complète et à vous accompagner dans sa réalisation! 
+N'hésitez pas à me fournir des informations supplémentaires sur les fonctionnalités ou les points que vous souhaitez approfondir. Je suis prêt à vous aider à définir les exigences du projet de manière plus complète et à vous accompagner dans sa réalisation!

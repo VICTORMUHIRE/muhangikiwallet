@@ -21,10 +21,9 @@ class Agents(models.Model):
     type_carte_identite = models.CharField(max_length=20, choices=TYPES_CARTE_IDENTITE, verbose_name="Type de carte d'identité")
     # models.ForeignKey(TypesCarteIdentite, on_delete=models.CASCADE, verbose_name="")
     num_carte_identite = models.CharField(max_length=50, verbose_name="Numéro de carte d'identité")
-    # carte_identite_copy = models.ImageField(upload_to="cartes_identite/", verbose_name="Copie de la carte d'identité")
+    carte_identite_copy = models.ImageField(upload_to="cartes_identite/", verbose_name="Copie de la carte d'identité")
     photo_passport = models.ImageField(upload_to="photos_passport/", verbose_name="Photo de passeport")
-    photo_profil = models.ImageField(upload_to="photos_profil/", blank=True, null=True, verbose_name="Photo de profil")
-
+    
     province_residence = models.CharField(max_length=20, verbose_name="Province de résidence")
     # models.ForeignKey(Provinces, on_delete=models.CASCADE, verbose_name="")
     ville_residence =models.CharField(max_length=20, verbose_name="Ville de résidence")

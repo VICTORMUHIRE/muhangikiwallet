@@ -44,4 +44,5 @@ urlpatterns = [
     path("transactions/", views.transactions, name="transactions"), # If you have views for this
     path("prêts/", views.prêts, name="prêts"),
     path("prêts/<int:transaction_id>", views.voir_prêt, name="voir_prêt"),
+    path("rejeter_prêt/<int:prêt_id>", views.rejeter_prêt, name="rejeter_prêt"),
 ]

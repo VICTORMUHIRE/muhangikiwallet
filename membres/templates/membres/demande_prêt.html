@@ -8,7 +8,7 @@
         <div class="col-md-8">  <!-- Added container for responsiveness -->
             {% if messages %}
             {% for message in messages %}
-            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}warning{% endif %} alert-dismissible fade show" role="alert">
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{message.tags}}{% endif %} alert-dismissible fade show" role="alert">
                 {{ message }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
@@ -108,12 +108,20 @@
                             <div class="card mb-3">
                                 <div class="card-body d-flex align-items-center justify-content-between">
                                     <div class="card-title">
-                                        <span class="badge bg-{% if demande.statut == 'Approuvé' %}success{% elif demande.statut == 'Rejeté' %}danger{% else %}warning{% endif %}">
+                                        <span class="badge bg-{% if demande.statut == 'Approuvé' %}success{% elif demande.statut == 'Rejeté' %}danger{% elif demande.statut == 'Remboursé' %}info{% else %}warning{% endif %}">
                                             {{ demande.get_statut_display }}
                                         </span>
                                         <p class="card-text fs-6"><strong>Montant:</strong> {{ demande.montant }} {{ demande.devise }}</p>
                                     </div>
-                                <p class="card-text">{{ demande.date }}</p>
+                                    <span class="card-text ">
+                                        <small class="d-none d-md-inline">{{ demande.date|date:"d E Y" }}</small>
+                                        <small class="d-md-none">{{ demande.date|date:"d M Y" }}</small>
+                                        <small class="d-md-none">{{ demande.date|date:"H:i" }}</small>
+                                        <small class="d-none d-md-inline">{{ demande.date|date:"H:i:s" }}</small>
+                                    </span>
+                                    {% if demande.statut == 'Approuvé' %}
+                                        <a class="btn btn-sm btn-primary text-white" href="{% url 'membres:rembourser_prêt' demande.pk %}">Rembourser</a>
+                                    {% endif %}
                                 </div>
                             </div>
                         {% empty %}
@@ -159,7 +167,7 @@
         var montant = parseFloat(document.getElementById("{{ form.montant.id_for_label }}").value) || 0;
         var selectTypeCredit = document.getElementById("{{ form.type_prêt.id_for_label }}");
         var selectedOption = selectTypeCredit?.options[selectTypeCredit.selectedIndex];
-        var tauxInteret = parseFloat(selectedOption?.getAttribute('data-taux').replace(',', '.')) || 15;
+        var tauxInteret = parseFloat(selectedOption?.getAttribute('data-taux').replace(',', '.')) || 10;
         var delaiRemboursement = parseInt(selectedOption?.getAttribute('data-delai')) || 120;
         var devise = document.getElementById("{{ form.devise.id_for_label }}").value;
 

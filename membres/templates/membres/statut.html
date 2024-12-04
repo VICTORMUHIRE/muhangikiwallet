@@ -100,7 +100,15 @@
                 </div>
             {% elif user.membre.status and form.instance.statut == "En attente" %}
                 <p class="alert alert-success text-center">Votre paiement est en cours de vérification, si cela persiste veuillez contacter l'administrateur !</p>
-                <h4>Details du paiement</h4>
+                <div class=" text-center">
+                    <a href="#" class="btn btn-mw" onclick="window.location.reload()"><i class="fas fa-sync-alt"></i>>Actualiser</a>
+                </div>
+                <script>
+                    setTimeout(function() {
+                            window.location.reload();
+                        }, 5000); // Ce script sera exécuté après 5 secondes
+                </script>
+                <!-- <h4>Details du paiement</h4>
                 <div class="row">
                     <div class="mb-3">
                         <label for="{{ form.numero_agent.id_for_label }}" class="form-label">{{ form.numero_agent.label }}</label>
@@ -121,7 +129,7 @@
                         <label for="{{ form.preuve.id_for_label }}" class="form-label">{{ form.preuve.label }}</label>
                         <img src="{% if form.preuve.value %}{{ form.preuve.value.url }}{% endif %}" class="img-fluid rounded" style="max-height: 200px; object-fit: cover;">
                     </div>
-                </div>
+                </div> -->
             {% else %}
                 <script>window.location.href = "{% url 'membres:home' %}";</script>
             {% endif %}

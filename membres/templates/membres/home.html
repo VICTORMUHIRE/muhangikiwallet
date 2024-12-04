@@ -8,20 +8,20 @@
 <div class="row pt-5 pt-sm-0 mb-3 mb-md-5">
     {% if messages %}
         {% for message in messages %}
-        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}warning{% endif %} alert-dismissible fade show" role="alert">
+        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{message.tags}}{% endif %} alert-dismissible fade show" role="alert">
             {{ message }}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
         {% endfor %}
     {% endif %}
 
-    <div class="row mb-4 d-none d-sm-block">
+    <!-- <div class="row mb-4 d-none d-sm-block">
         <div class="col-12">
             <h1 class="text-center roboto-regular">
-                <span class="mw-color">Bienvenu {% if membre.sexe == "Femme" %}e{% endif %}</span> {% if membre.sexe == "Homme" %}cher{% else %}chère{% endif %}  {{ user.membre.nom }} {{ user.membre.postnom }}
+                <span class="mw-color">Bienvenu {% if membre.sexe == "F" %}e{% endif %}</span> {% if membre.sexe == "M" %}cher{% else %}chère{% endif %}  {{ user.membre.nom }} {{ user.membre.postnom }}
             </h1>
         </div>
-    </div>
+    </div> -->
 
     <div class="col-6 col-md-3 my-3 my-md-0 h-100">
         <div class="card h-100 shadow-sm rounded-4 border-0 bg-light" style="background-color: color(srgb 0 1 0 / 0.05) !important;">
@@ -101,16 +101,16 @@
             </div>
             <div class="card-body p-2">
                 {% for transaction in transactions|slice:":5" %}
-                <a href="{% url 'membres:transaction' transaction.id %}" class="d-block btn btn-light bg-white transaction-item {% if transaction.type == 'retrait' %}transaction-retrait{% elif transaction.type == 'transfert' %}transaction-transfert{% elif transaction.type == 'depot_objectif' %}transaction-depot-objectif{% elif transaction.type == 'depot_inscription' %}transaction-depot-inscription{% elif transaction.type == 'contribution' %}transaction-contribution{% elif transaction.type == 'prêt' %}transaction-prêt{% endif %}">
+                <a href="{% url 'membres:transaction' transaction.id %}" class="d-block btn btn-light bg-white transaction-item {% if transaction.type == 'retrait' %}transaction-retrait{% elif transaction.type == 'transfert' %}transaction-transfert{% elif transaction.type == 'depot_objectif' %}transaction-depot-objectif{% elif transaction.type == 'depot_inscription' %}transaction-depot-inscription{% elif transaction.type == 'contribution' %}transaction-contribution{% elif 'prêt' in transaction.type %}transaction-prêt{% endif %}">
                     <div class="d-flex align-items-center justify-content-between">
                         <div class="d-flex align-items-center gap-3">
-                            <i class="{% if transaction.type == 'retrait' %}fas fa-minus-circle{% elif transaction.type == 'transfert' %}fas fa-exchange-alt{% elif transaction.type == 'depot_objectif' %}fas fa-piggy-bank{% elif transaction.type == 'depot_inscription' %}fas fa-sign-in-alt{% elif transaction.type == 'contribution' %}fas fa-donate{% elif transaction.type == 'prêt' %}fas fa-hand-holding-usd{% endif %}"></i>
+                            <i class="{% if transaction.type == 'retrait' %}fas fa-minus-circle{% elif transaction.type == 'transfert' %}fas fa-exchange-alt{% elif transaction.type == 'depot_objectif' %}fas fa-piggy-bank{% elif transaction.type == 'depot_inscription' %}fas fa-sign-in-alt{% elif transaction.type == 'contribution' %}fas fa-donate{% elif transaction.type == 'prêt' %}fas fa-hand-holding-usd{% elif transaction.type == 'remboursement_prêt' %}fas fa-money-bill-wave{% endif %}"></i>
                             <div class="text-dark fw-bold text-start">
-                                {% if transaction.type == 'retrait' %}Retrait d'argent{% elif transaction.type == 'transfert' %}Transfert d'argent{% elif transaction.type == 'depot_objectif' %}Dépôt sur objectif{% elif transaction.type == 'depot_inscription' %}Dépôt d'inscription{% elif transaction.type == 'contribution' %}Contribution mensuelle{% elif transaction.type == 'prêt' %}Prêt d'argent{% endif %}
+                                {% if transaction.type == 'retrait' %}Retrait d'argent{% elif transaction.type == 'transfert' %}Transfert d'argent{% elif transaction.type == 'depot_objectif' %}Dépôt sur objectif{% elif transaction.type == 'depot_inscription' %}Dépôt d'inscription{% elif transaction.type == 'contribution' %}Contribution mensuelle{% elif transaction.type == 'prêt' %}Prêt d'argent{% elif transaction.type == 'remboursement_prêt' %}Remboursement de prêt{% endif %}
                                 <div>
                                     <span class="text-muted small mb-0">{{ transaction.montant|stringformat:".2f" }} {{ transaction.devise }}</span>
                                     <span class="transaction-status">
-                                        <span class="badge {% if transaction.statut == 'Approuvé' %}bg-success{% elif transaction.statut == 'Rejeté' %}bg-danger{% else %}bg-warning{% endif %}">{{ transaction.statut }}</span>
+                                        <span class="badge {% if transaction.statut == 'Approuvé' %}bg-success{% elif transaction.statut == 'Rejeté' %}bg-danger{% elif transaction.statut == 'Remboursé' %}bg-info{% else %}bg-warning{% endif %}">{{ transaction.statut }}</span>
                                     </span>
                                 </div>
                             </div>

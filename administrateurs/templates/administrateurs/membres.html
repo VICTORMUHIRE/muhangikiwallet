@@ -16,52 +16,91 @@
         {% endfor %}
     {% endif %}
 
-    <div class="col-12 d-flex justify-content-end mb-3">  </a>
-        <a href="{% url 'administrateurs:creer_membre' %}" class="btn btn-primary">Créer un Membre</a>
+    <div class="col-12 d-flex justify-content-between mb-3">
+        <form class="d-flex" role="search" method="get">
+            <input class="form-control me-2 form-control-sm" type="search" placeholder="Rechercher" aria-label="Search" name="q" value="{{ request.GET.q }}">
+            <button class="btn btn-outline-success btn-sm" type="submit">Rechercher</button>
+          </form>
+        {% comment %} <a href="{% url 'administrateurs:creer_membre' %}" class="btn btn-success btn-sm">Créer un Membre</a> {% endcomment %}
     </div>
+
     <div class="col-12">
         <div class="card shadow-sm rounded-4">
             <div class="card-body">
-                <table id="membres-table" class="table table-striped" style="width:100%">  </a>
+                <table id="membres-table" class="table table-striped" style="width:100%">
                     <thead>
                         <tr>
                             <th>Prénom</th>
                             <th>Nom</th>
                             <th>Postnom</th>
-                            <th>Date de naissance</th>
+                            <th>Numéro</th>
                             <th>Sexe</th>
+                            <th>Contributions</th>
+                            <th>Bénéfices</th>
+                            <th>Dette</th>
+                            <th>%</th>
+                            <th>Statut</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for membre in membres %}
                         <tr>
-                            <td>{{ membre.prenom }}</td>
                             <td>{{ membre.nom }}</td>
+                            <td>{{ membre.prenom }}</td>
                             <td>{{ membre.postnom }}</td>
-                            <td>{{ membre.date_naissance }}</td>
+                            <td>{{ membre.numero_telephone }}</td>
                             <td>{{ membre.sexe }}</td>
+                            <td>{{ membre.solde_contributions }} {{ membre.devise }}</td> {# Replace with actual field or method #}
+                            <td>{{ membre.benefice_membre|stringformat:".2f" }} {% if membre.contribution_mensuelle.devise == "CDF" %} FC {% else %} $ {% endif %}</td> {# Replace with actual field or method #}
+                            <td>{{ membre.dette.montant_remboursé }}  {{ membre.devise }}</td> {# Replace with actual field or method #}
+                            <td>{{ membre.pourcentage|default:0|stringformat:".2f" }}%</td> {# Replace with actual field or method #}
+                            <td>{{ membre.status|yesno:"Actif, Inactif" }}</td>
                             <td>
+                                <a href="{% url 'administrateurs:voir_membre' membre.pk %}" class="btn btn-sm btn-info"><i class="fas fa-eye"></i></a>
                                 <a href="{% url 'administrateurs:modifier_membre' membre.pk %}" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></a>
                                 <a href="{% url 'administrateurs:supprimer_membre' membre.pk %}" class="btn btn-sm btn-danger ms-2" onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce membre ?')"><i class="fas fa-trash-alt"></i></a>
                             </td>
                         </tr>
                         {% empty %}
-                            <tr><td colspan="6" class="text-center">Aucun membre trouvé. <a href="{% url 'administrateurs:creer_membre' %}">Créer un membre</a>.</td></tr>
+                            <tr><td colspan="11" class="text-center">Aucun membre trouvé</td></tr>
                         {% endfor %}
-
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
+    <div class="col-12 mt-3">
+      <nav aria-label="Page navigation example">
+        <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+            <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Previous">&laquo;</a>
+            </li>
+        {% else %}
+            <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+        {% endif %}
+    
+        {% for i in page_obj.paginator.page_range %}
+            {% if page_obj.number == i %}
+            <li class="page-item active" aria-current="page"><span class="page-link">{{ i }}</span></li>
+            {% else %}
+            <li class="page-item"><a class="page-link" href="?page={{ i }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ i }}</a></li>
+            {% endif %}
+        {% endfor %}
+    
+        {% if page_obj.has_next %}
+            <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Next">&raquo;</a>
+            </li>
+        {% else %}
+            <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+        {% endif %}
+        </ul>
+    </nav>
+    </div>
+
 </div>
 
-
-<script>
-$(document).ready(function () {
-    $('#membres-table').DataTable();
-});
-</script>
 
 {% endblock %}

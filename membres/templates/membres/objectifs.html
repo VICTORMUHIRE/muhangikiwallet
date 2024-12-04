@@ -13,7 +13,7 @@
                 </div>
                 <div class="card-body text-enter">
                     <p class="fs-5 mb-0">Solde total</p>
-                    <h4 class="mb-3 fw-bolder fs-5">{{ solde_objectifs_CDF|floatformat:2 }} FC / {{ solde_objectifs_USD|floatformat:2 }} $</h4>
+                    <h4 class="mb-3 fw-bolder fs-5">{{ solde_objectifs_CDF|stringformat:".2f" }} FC / {{ solde_objectifs_USD|stringformat:".2f" }} $</h4>
                     
                     <button type="button" class="btn btn-sm  btn-primary text-white" data-bs-toggle="modal" data-bs-target="#ajouterObjectifModal">
                         Ajouter un objectif
@@ -40,19 +40,14 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <div class="progress color-mw mb-3" style="height: 25px;">  <!-- Enhanced progress bar -->
-                        <div class="progress-bar" role="progressbar" 
-                            style="width: {{ objectif.pourcentage_atteint }}%"
-                            aria-valuenow="{{ objectif.montant }}" 
-                            aria-valuemin="0" 
-                            aria-valuemax="{{ objectif.montant_cible }}">
-                            {{ objectif.pourcentage_atteint|stringformat:".1f" }}%
-                        </div>
+                    <div class="progress position-relative mb-3" style="height: 25px;">  <!-- Enhanced progress bar -->
+                        <div class="progress-bar" role="progressbar" style="width: {{ objectif.pourcentage|stringformat:'.2f' }}%" aria-valuenow="{{ objectif.montant }}" aria-valuemin="0" aria-valuemax="{{ objectif.montant_cible }}"></div>
+                        <span class="position-absolute top-50 start-50 translate-middle fw-bold">{{ objectif.pourcentage|stringformat:".2f" }}%</span>
                     </div>
 
                     <!-- Clearer display of amounts and date -->
-                    <p class="card-text fw-bold">Montant cible : {{ objectif.montant|floatformat:2 }} {{ objectif.devise }}</p>
-                    <p class="card-text fw-bold">Montant épargné : {{ objectif.montant_epargne|floatformat:2 }} {{ objectif.devise }}</p>
+                    <p class="card-text fw-bold">Montant cible : {{ objectif.montant_cible|stringformat:".2f" }} {{ objectif.devise }}</p>
+                    <p class="card-text fw-bold">Montant épargné : {{ objectif.montant|stringformat:".2f" }} {{ objectif.devise }}</p>
                     <p class="card-text fw-bold">Date de début : {{ objectif.date_debut }}</p>
                     <p class="card-text fw-bold">Date limite : {{ objectif.date_fin }}</p>
 

@@ -16,10 +16,11 @@ urlpatterns = [
     path("transaction/<int:transaction_id>", views.transaction, name="transaction"),
     path("transactions/", views.transactions, name="transactions"),
     path("demande_prêt/", views.demande_prêt, name="demande_prêt"),
+    path("rembourser_prêt/<int:transaction_id>", views.rembourser_prêt, name="rembourser_prêt"),
     path("objectifs/", views.objectifs, name="objectifs"),
     path("objectifs/dépot/<int:objectif_id>", views.dépot_objectif, name="dépot_objectif"),
     path("objectifs/voir/<int:objectif_id>", views.objectif, name="objectif"),
-    path("profil/", views.profil, name="profil"),
+    path("profile/", views.profile, name="profile"),
     path("notifications/", views.notifications, name="notifications"),
     path("paramètres/", views.paramètres, name="paramètres"),
 ]

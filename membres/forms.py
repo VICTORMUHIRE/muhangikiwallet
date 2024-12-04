@@ -53,6 +53,9 @@ class MembresForm(forms.ModelForm):
             pass
             self.add_error("mot_de_passe", error)
 
+        if len(mot_de_passe) < 4:
+            self.add_error("mot_de_passe", "Le mot de passe doit contenir au minimum 4 caractères")
+
         code_invitation = self.cleaned_data.get("invitation_code")
         code_reference = CodesReference.objects.filter(code=code_invitation)
         

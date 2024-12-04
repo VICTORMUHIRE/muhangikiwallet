@@ -35,4 +35,4 @@ class Objectifs(models.Model):
 
 
     def __str__(self):
-        return f"Objectif de {self.montant_cible} {self.devise} pour {self.type_objectif} de {self.membre} " if self.membre else f"Objectif de {self.organisation} "
+        return f"Objectif de {self.montant_cible} {self.devise} pour {self.type} de {self.membre} " if self.membre else f"Objectif de {self.organisation} "

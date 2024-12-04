@@ -23,7 +23,6 @@ class Membres(models.Model):
     num_carte_identite = models.CharField(max_length=50, verbose_name="Numéro de carte d'identité")
     carte_identite_copy = models.ImageField(upload_to="cartes_identite/", verbose_name="Copie de la carte d'identité")
     photo_passport = models.ImageField(upload_to="photos_passport/", verbose_name="Photo de passeport")
-    photo_profil = models.ImageField(upload_to="photos_profil/", blank=True, null=True, verbose_name="Photo de profil")
 
     province_residence = models.CharField(max_length=20, verbose_name="Province de résidence")
     # models.ForeignKey(Provinces, on_delete=models.CASCADE, verbose_name="")
@@ -46,6 +45,8 @@ class Membres(models.Model):
     compte_USD = models.OneToOneField(NumerosCompte, on_delete=models.CASCADE, max_length=15, unique=True, verbose_name="Compte USD")
 
     contribution_mensuelle = models.ForeignKey(ContributionsMensuelles, on_delete=models.CASCADE, verbose_name="Contribution mensuelle")
+    mois_contribution = models.DateField(auto_now_add=True, verbose_name="Mois de contribution")
+
     status = models.BooleanField(default=False)
 
     def __str__(self):

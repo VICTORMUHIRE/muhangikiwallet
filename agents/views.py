@@ -1,3 +1,4 @@
+from datetime import timedelta
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.hashers import check_password
@@ -10,6 +11,16 @@ from transactions.models import Transactions, Prêts, TypesPrêt, Contributions,
 from transactions.forms import TypesPrêtForm, ContributionsForm, PrêtsForm, TransfertsForm, RetraitsForm, DepotsInscriptionForm, TransactionsForm
 from django.db.models import Sum
 from django.utils import timezone
+from functools import wraps
+
+
+def verifier_agent(func):
+    def verify(request, *args, **kwargs):
+        if request.user.is_agent():
+            return func(request, *args, **kwargs)
+        else: return redirect("index")
+
+    return wraps(func)(verify)
 
 # Vue pour la page d'accueil des agents
 @login_required
@@ -29,7 +40,7 @@ def home(request):
     total_retraits_CDF = Transactions.objects.filter(agent=agent, devise="CDF", statut="Approuvé", type="retrait").aggregate(total=Sum('montant'))['total'] or 0
     total_retraits_USD = Transactions.objects.filter(agent=agent, devise="USD", statut="Approuvé", type="retrait").aggregate(total=Sum('montant'))['total'] or 0
 
-    transactions = Transactions.objects.filter(agent=agent, statut="Approuvé").order_by("-date")
+    transactions = Transactions.objects.filter(agent=agent).order_by("-date")
     taches = Transactions.objects.filter(agent=agent, statut="En attente").order_by("-date")
     
     context = {
@@ -70,19 +81,57 @@ def voir_transaction(request, transaction_id):
 
                 match transaction.type:
                     case"contribution":
-                        transaction.contribution.statut = "Approuvé"
+                        membre = transaction.membre
 
-                    case"prêt":
-                        transaction.prêt.statut = "Approuvé"
+                        contribution = Contributions.objects.filter(transaction=transaction).first()
+                        contribution.statut = "Approuvé"
+                        contribution.date_approbation = timezone.now()
+                        contribution.save()
+
+                        contribution_actuelle = Contributions.objects.filter(transaction__membre=membre, mois=membre.mois_contribution, statut="Approuvé").aggregate(total=Sum('montant'))['total'] or 0
+
+                        if contribution_actuelle >= float(membre.contribution_mensuelle.montant):
+                            membre.mois_contribution = membre.mois_contribution + timedelta(days=30)
+                            membre.save()
+
+                    case "prêt" :
+                        prêt = Prêts.objects.filter(transaction=transaction).first()
+                        prêt.statut = "Approuvé"
+                        prêt.date_approbation = timezone.now()
+                        prêt.save()
+
+                    case "remboursement_prêt" :
+                        prêt = Prêts.objects.filter(transaction__membre=transaction.membre, statut="Approuvé").first()
+                        prêt.solde_remboursé += transaction.montant
+                        
+                        if prêt.solde_remboursé >= prêt.montant_remboursé:
+                            prêt.statut = prêt.transaction.statut = "Remboursé"
+                            prêt.date_remboursement = timezone.now()
+                            prêt.transaction.save()
+                            
+                        prêt.save()
 
                     case"depot_objectif":
-                        transaction.depot_objectif.statut = "Approuvé"
+                        depot_objectif = DepotsObjectif.objects.filter(transaction=transaction).first()
+                        depot_objectif.statut = "Approuvé"
+                        depot_objectif.date_approbation = timezone.now()
+                        depot_objectif.objectif.montant += float(depot_objectif.objectif.montant) + float(transaction.montant)
+                        depot_objectif.objectif.save()
+                        depot_objectif.save()
 
                     case "depot_inscription":
-                        transaction.depot_inscription.statut = "Approuvé"
+                        depot_inscription = DepotsInscription.objects.filter(transaction=transaction).first()
+                        depot_inscription.statut = "Approuvé"
+                        depot_inscription.date_approbation = timezone.now()
+                        depot_inscription.save()
 
                     case"retrait":
-                        transaction.retrait.statut = "Approuvé"
+                        retrait = Retraits.objects.filter(transaction=transaction).first()
+                        retrait.statut = "Approuvé"
+                        retrait.date_approbation = timezone.now()
+                        retrait.save()
+
+                    case _: pass
 
                 transaction.save()
                 messages.success(request, "La transaction a été approuvée avec succès")

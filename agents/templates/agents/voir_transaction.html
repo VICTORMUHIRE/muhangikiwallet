@@ -8,7 +8,7 @@
         <form method="post" enctype="multipart/form-data" id="form">
             <h2 class="roboto-light text-center">{{ form.instance.membre }}</h2>
             <h4 class="text-center mb-4">
-                {% if form.instance.type == 'retrait' %}Retrait d'argent{% elif form.instance.type == 'transfert' %}Transfert d'argent{% elif form.instance.type == 'depot_objectif' %}Dépôt sur objectif{% elif form.instance.type == 'depot_inscription' %}Dépôt d'inscription{% elif form.instance.type == 'contribution' %}Contribution mensuelle{% elif form.instance.type == 'prêt' %}Prêt d'argent{% endif %}
+                {% if form.instance.type == 'retrait' %}Retrait d'argent{% elif form.instance.type == 'transfert' %}Transfert d'argent{% elif form.instance.type == 'depot_objectif' %}Dépôt sur objectif{% elif form.instance.type == 'depot_inscription' %}Dépôt d'inscription{% elif form.instance.type == 'contribution' %}Contribution mensuelle{% elif form.instance.type == 'prêt' %}Prêt d'argent {% elif form.instance.type == 'remboursement_prêt' %}Remboursement de prêt{% endif %}
             </h4>
 
             {% csrf_token %}
@@ -45,7 +45,7 @@
             </div>
     
             <div class="text-center">
-                <a class="btn btn-danger text-white w-25" href="{% url 'agents:rejetter_depot_inscription' form.instance.pk %}">Refuser</a>
+                <a class="btn btn-danger text-white w-25" href="{% url 'agents:rejetter_depot_inscription' form.instance.pk %}" onclick="return confirm('Êtes-vous sûr de vouloir rejeter cette transaction ?')">Refuser</a>
                 <button type="button" class="btn btn-mw text-white w-25" id="submitBtn" data-bs-toggle="modal" data-bs-target="#confirmationModal">Accepter</button>
             </div>
         </form>

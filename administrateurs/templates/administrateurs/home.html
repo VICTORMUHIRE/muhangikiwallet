@@ -4,10 +4,10 @@
 {% block title %}Tableau de Bord Administrateur{% endblock %}
 
 {% block content %}
-<div class="row mt-5 mt-sm-0 mb-5 mb-sm-3">
-    <h1 class="text-center mb-4">
+<div class="row mt-5 mt-sm-0 mb-5 mb-sm-3 justify-content-center">
+    <h4 class="text-center mb-4">
         Tableau de Bord Administrateur
-    </h1>
+    </h4>
 
     <div class="col-6 col-md-3 my-3 my-md-0 h-100">
         <div class="card h-100 shadow-sm rounded-4 border-0 bg-light" style="background-color: color(srgb 0 1 0 / 0.05) !important;">
@@ -17,7 +17,7 @@
                 <h6 class="card-subtitle mb-2 text-muted">CDF : {{ solde_total_entreprise_cdf|stringformat:".2f" }}</h6>
                 <h6 class="card-subtitle text-muted">USD : {{ solde_total_entreprise_usd|stringformat:".2f" }}</h6>
             </div>
-            <a href="{% url 'membres:contributions' %}" class="card-footer text-center text-white bg-success btn btn-success rounded-4 rounded-top-0 btn-sm">Contributions</a>
+            <a href="{% url 'membres:contributions' %}" class="card-footer text-center text-white bg-success btn btn-success rounded-4 rounded-top-0 btn-sm">Voir</a>
         </div>
     </div>
 
@@ -29,7 +29,7 @@
                 <h6 class="card-subtitle mb-2 text-muted">CDF : {{ total_dettes_cdf|stringformat:".2f" }}</h6>
                 <h6 class="card-subtitle text-muted">USD : {{ total_dettes_usd|stringformat:".2f" }}</h6>
             </div>
-            <a href="{% url 'membres:demande_prêt' %}" class="card-footer text-center text-white bg-danger btn btn-danger rounded-4 rounded-top-0 btn-sm">Emprunt</a>
+            <a href="{% url 'membres:demande_prêt' %}" class="card-footer text-center text-white bg-danger btn btn-danger rounded-4 rounded-top-0 btn-sm">Voir</a>
         </div>
     </div>
 
@@ -41,7 +41,7 @@
                 <h6 class="card-subtitle mb-2 text-muted">CDF : {{ total_benefices_cdf|stringformat:".2f" }}</h6>
                 <h6 class="card-subtitle text-muted">USD : {{ total_benefices_usd|stringformat:".2f" }}</h6>
             </div>
-            <a href="{% url 'membres:retrait' %}" class="card-footer text-center text-white bg-mw btn btn-mw rounded-4 rounded-top-0 btn-sm">Retrait</a>
+            <a href="{% url 'membres:retrait' %}" class="card-footer text-center text-white bg-mw btn btn-mw rounded-4 rounded-top-0 btn-sm">Voir</a>
         </div>
     </div>
 
@@ -53,13 +53,13 @@
                 <h6 class="card-subtitle mb-2 text-muted">CDF : {{ total_depots_objectifs_cdf|stringformat:".2f" }}</h6>
                 <h6 class="card-subtitle text-muted">USD : {{ total_depots_objectifs_usd|stringformat:".2f" }}</h6>
             </div>
-            <a href="{% url 'membres:objectifs' %}" class="card-footer text-center text-white bg-secondary btn btn-primary rounded-4 rounded-top-0 btn-sm">Gérer</a>
+            <a href="{% url 'membres:objectifs' %}" class="card-footer text-center text-white bg-secondary btn btn-primary rounded-4 rounded-top-0 btn-sm">Voir</a>
         </div>
     </div>
 
     <div class="my-4">
         <div class="bg-light d-flex rounded-4 shadow-sm">
-            <a class="text-center btn btn-sm btn-light flex-grow-1 p-2" href="{% url 'administrateurs:agents'}">
+            <a class="text-center btn btn-sm btn-light flex-grow-1 p-2" href="{% url 'administrateurs:agents' %}">
                 <i class="fas fa-user-tie fa-3x text-warning mb-2"></i>
                 <h5 class="card-title font-weight-bold">{{ nombre_agents }} Agent{{ nombre_agents|pluralize:"s" }}</h5>
             </a>
@@ -75,7 +75,7 @@
     </div>
 
 
-    <div class="row mt-4 gap-3 gap-md-0 justify-content-center">
+    <div class="row mt-4 gap-3 gap-md-0 pe-0">
         <div class="col-md-6">
             <div class="card shadow-sm rounded-4 border-0 h-100">
                 <div class="card-header bg-white rounded-top-4">
@@ -106,7 +106,7 @@
                             </a>
                         </li>
                         {% endfor %}
-                        {% if not demandes_prêt and not demandes_inscription %}
+                        {% if not demandes_prêt.count and not demandes_inscription.count %}
                         <li class="list-group-item"> Aucune tâches pour le moment</li>
                         {% endif %}
                     </ul>

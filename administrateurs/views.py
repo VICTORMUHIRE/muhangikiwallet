@@ -1,9 +1,12 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.hashers import check_password
 from django.db.models import Sum
 from django.contrib import messages
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.forms import AuthenticationForm
+from django.core.paginator import Paginator
+from django.db.models import Q
 
 from membres.models import Membres
 from organisations.models import Organisations
@@ -21,6 +24,16 @@ from organisations.forms import OrganisationsForm
 from transactions.forms import TransactionsForm, TypesPrêtForm, ContributionsForm, PrêtsForm, TransfertsForm, RetraitsForm, DepotsInscriptionForm
 from objectifs.models import Objectifs
 from django.utils import timezone
+from functools import wraps
+
+
+def verifier_admin(func):
+    def verify(request, *args, **kwargs):
+        if request.user.is_admin():
+            return func(request, *args, **kwargs)
+        else: return redirect("index")
+
+    return wraps(func)(verify)
 
 # Vue pour la page d'accueil des administrateurs
 @login_required
@@ -30,20 +43,27 @@ def home(request):
     solde_total_entreprise_usd = Transactions.objects.filter(devise="USD", type="contribution").aggregate(Sum('montant'))['montant__sum'] or 0
 
     # Solde de toutes les dettes
-    total_dettes_cdf = Prêts.objects.filter(devise="CDF", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
-    total_dettes_usd = Prêts.objects.filter(devise="USD", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
+    total_dettes_cdf = Prêts.objects.filter(devise="CDF", statut__in=["Approuvé", "Remboursé"]).aggregate(Sum('montant'))['montant__sum'] or 0
+    total_dettes_usd = Prêts.objects.filter(devise="USD", statut__in=["Approuvé", "Remboursé"]).aggregate(Sum('montant'))['montant__sum'] or 0
+
+    # Solde de toutes les dettes
+    total_montant_dettes_rembouser_cdf = Prêts.objects.filter(devise="CDF", statut__in=["Approuvé", "Remboursé"]).aggregate(Sum('montant_remboursé'))['montant_remboursé__sum'] or 0
+    total_montant_dettes_rembouser_usd = Prêts.objects.filter(devise="USD", statut__in=["Approuvé", "Remboursé"]).aggregate(Sum('montant_remboursé'))['montant_remboursé__sum'] or 0
 
     # Calcul du solde total des dépôts sur les objectifs
     total_depots_objectifs_cdf = DepotsObjectif.objects.filter(devise="CDF", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
     total_depots_objectifs_usd = DepotsObjectif.objects.filter(devise="USD", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
 
     # Calcul du solde total des benefices
-    total_benefices_cdf = Benefices.objects.filter(devise="CDF", statut=True).aggregate(Sum('montant'))['montant__sum'] or 0
-    total_benefices_usd = Benefices.objects.filter(devise="USD", statut=True).aggregate(Sum('montant'))['montant__sum'] or 0
+    # total_benefices_cdf = Benefices.objects.filter(devise="CDF", statut=True).aggregate(Sum('montant'))['montant__sum'] or 0
+    # total_benefices_usd = Benefices.objects.filter(devise="USD", statut=True).aggregate(Sum('montant'))['montant__sum'] or 0
 
-    # Calcul du solde total des retraits
-    total_retraits_cdf = Retraits.objects.filter(devise="CDF", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
-    total_retraits_usd = Retraits.objects.filter(devise="USD", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
+    # # Calcul du solde total des retraits
+    # total_retraits_cdf = Retraits.objects.filter(devise="CDF", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
+    # total_retraits_usd = Retraits.objects.filter(devise="USD", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
+
+    total_benefices_cdf = float(total_montant_dettes_rembouser_cdf - total_dettes_cdf) * 0.1
+    total_benefices_usd = float(total_montant_dettes_rembouser_usd - total_dettes_usd) * 0.1
 
     # Nombre total de membres, organisations et agents
     nombre_membres = Membres.objects.count()
@@ -64,8 +84,8 @@ def home(request):
         'total_dettes_usd': total_dettes_usd,
         'total_depots_objectifs_cdf': total_depots_objectifs_cdf,
         'total_depots_objectifs_usd': total_depots_objectifs_usd,
-        'total_benefices_cdf': total_benefices_cdf - total_retraits_cdf,
-        'total_benefices_usd': total_benefices_usd - total_retraits_usd,
+        'total_benefices_cdf': total_benefices_cdf,
+        'total_benefices_usd': total_benefices_usd,
         'nombre_membres': nombre_membres,
         'nombre_organisations': nombre_organisations,
         'nombre_agents': nombre_agents,
@@ -97,11 +117,47 @@ def profile(request):
 # Vue pour la page de gestion des membres
 @login_required
 def membres(request):
-    membres = Membres.objects.all().order_by("-date_creation")
+    q = request.GET.get('q', None)
+    membres = Membres.objects.all().order_by('nom')  # Order by name initially
+
+    if q:
+        membres = membres.filter(
+            Q(prenom__icontains=q) |
+            Q(nom__icontains=q) |
+            Q(postnom__icontains=q) |
+            Q(numero_telephone__icontains=q)
+        )
+
+    total_contributions_CDF = Transactions.objects.filter(devise="CDF", statut="Approuvé", type="contribution").aggregate(total=Sum('montant'))['total'] or 0
+    total_contributions_USD = Transactions.objects.filter(devise="USD", statut="Approuvé", type="contribution").aggregate(total=Sum('montant'))['total'] or 0
+                
+    # Convert USD contributions to CDF for a common currency
+    total_contributions_CDF += total_contributions_USD * 2800
+                
+    membres_actifs = Membres.objects.filter(status=True)
+
+    for membre in membres:
+        # Get member's total contributions in their respective currency
+        membre.solde_contributions = Transactions.objects.filter(membre=membre, devise="CDF" if membre.contribution_mensuelle.devise == "CDF" else "USD", statut="Approuvé", type="contribution").aggregate(total=Sum('montant'))['total'] or 0
+        membre.benefice_membre = Benefices.objects.filter(membre=membre).aggregate(Sum('montant'))['montant__sum'] or 0 - (Transactions.objects.filter(membre=membre, statut="Approuvé", type="retrait").aggregate(Sum('montant'))['montant__sum'] or 0)
+        
+        if total_contributions_CDF > 0:  # Avoid ZeroDivisionError
+            membre.pourcentage = float(membre.solde_contributions * (2800 if membre.contribution_mensuelle.devise == "USD" else 1) / total_contributions_CDF) * 100
+
+        membre.dette = Prêts.objects.filter(transaction__membre=membre, statut="Approuvé").first()
+        membre.devise = "FC" if membre.contribution_mensuelle.devise == "CDF" else "$"
+
+    paginator = Paginator(membres, 10) # Show 10 members per page
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+
     context = {
-        "membres": membres,
+        'membres': page_obj,
+        'page_obj': page_obj,
+        'request': request
     }
-    return render(request, "administrateurs/membres.html", context)
+
+    return render(request, 'administrateurs/membres.html', context)
 
 # Vue pour la page de création d'un membre
 @login_required
@@ -183,7 +239,6 @@ def accepter_membre(request, membre_id):
             depot = form.save(commit=False)
             depot.transaction.date_approbation = timezone.now()
             depot.statut = "En attente"
-            membre = depot.transaction.membre
             membre.status = True
 
             membre.save()
@@ -198,7 +253,14 @@ def accepter_membre(request, membre_id):
 @login_required
 def refuser_membre(request, membre_id):
     membre = get_object_or_404(Membres, pk=membre_id)
-    membre.delete()
+
+    transaction=Transactions.objects.get(membre=membre, type="depot_inscription")
+    transaction.statut = "Rejeté"
+    transaction.date = transaction.depot_inscription.date = timezone.now()
+    transaction.save()
+    membre.status = False
+    membre.save()
+
     messages.success(request, "Le membre a été refusé avec succès.")
     return redirect("administrateurs:membres")
 
@@ -406,14 +468,12 @@ def voir_organisation(request, organisation_id):
     context = { "organisation": organisation}
     return render(request, "administrateurs/voir_organisation.html", context)
 
-
 # Administrateurs Views (Add these views)
 @login_required
 def administrateurs(request):
     administrateurs = Administrateurs.objects.all().order_by("-date_creation") # Make sure this query works with your model
     context = { "administrateurs": administrateurs }
     return render(request, "administrateurs/administrateurs.html", context)
-
 
 @login_required
 def creer_administrateur(request):
@@ -427,13 +487,11 @@ def creer_administrateur(request):
         form = AdministrateurForm()
     return render(request, "administrateurs/creer_administrateur.html", {"form": form})
 
-
 @login_required
 def voir_administrateur(request, administrateur_id):
     administrateur = get_object_or_404(Administrateurs, pk=administrateur_id) # Correct model here
     context = {"administrateur": administrateur}
     return render(request, "administrateurs/voir_administrateur.html", context)
-
 
 @login_required
 def modifier_administrateur(request, administrateur_id):
@@ -449,7 +507,6 @@ def modifier_administrateur(request, administrateur_id):
 
     context = {"form": form, "administrateur": administrateur}
     return render(request, "administrateurs/modifier_administrateur.html", context)
-
 
 @login_required
 def supprimer_administrateur(request, administrateur_id):
@@ -469,14 +526,17 @@ def voir_prêt(request, transaction_id):
     prêt = Prêts.objects.filter(transaction=get_object_or_404(Transactions, pk=transaction_id)).first()
     
     if request.method == "POST":
-        if "id" in request.POST:
-            prêt = get_object_or_404(Prêts, pk=request.POST["id"])
-            prêt.statut = prêt.transaction.statut = request.POST["statut"]
+        mot_de_passe = request.POST.get("password")
+
+        if check_password(mot_de_passe, request.user.password):
+            prêt.statut = "Approuvé" #if request.POST["action"] == "Approuver" else "Rejeté"
+            prêt.transaction.statut = "En attente"
             prêt.date = prêt.transaction.date = timezone.now()
 
             if prêt.statut == "Approuvé":
                 prêt.date_approbation = prêt.transaction.date_approbation = timezone.now()
                 prêt.administrateur = request.user.admin
+                prêt.transaction.save()
                 prêt.save()
             
                 # Calculate benefit amount
@@ -517,8 +577,27 @@ def voir_prêt(request, transaction_id):
                 messages.success(request, "Le prêt a été approuvé et les bénéfices distribués avec succès.")
                 return redirect("administrateurs:voir_prêt", transaction_id=prêt.transaction.pk)
             
-    else:
-        form = PrêtsForm(instance=prêt)
-    print(form.errors)
-    context = {"form": form, "prêt": prêt}
+            else:
+                prêt.date = prêt.transaction.date = timezone.now()
+                prêt.save()
+                messages.success(request, "Le prêt a été rejeté avec succès.")
+                return redirect("administrateurs:voir_prêt", transaction_id=prêt.transaction.pk)
+        else:
+            messages.error(request, "Mot de passe incorrect")
+    
+    context = {
+        "form": PrêtsForm(instance=prêt),
+        "prêt": prêt
+    }
+    
     return render(request, "administrateurs/voir_prêt.html", context)
+
+@login_required
+def rejeter_prêt(request, prêt_id):
+    prêt = get_object_or_404(Prêts, pk=prêt_id)
+
+    prêt.statut = prêt.transaction.statut = "Rejeté"
+    prêt.date = prêt.transaction.date = timezone.now()
+    prêt.save()
+    messages.success(request, "Le prêt a été rejeté avec succès.")
+    return redirect("administrateurs:voir_prêt", transaction_id=prêt.transaction.pk)

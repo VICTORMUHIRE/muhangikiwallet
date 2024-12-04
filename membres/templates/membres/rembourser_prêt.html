@@ -1,0 +1,175 @@
+{% extends 'membres/base.html' %}
+
+{% block title %}Demande de Prêt{% endblock %}
+
+{% block content %}
+
+    <div class="row mt-5 mt-sm-0 mb-4 mb-md-5 justify-content-center">
+        <div class="col-md-8">  <!-- Added container for responsiveness -->
+            {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}warning{% endif %} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+            {% endif %}
+
+            <div class="card border-0 px-2">
+                <div class="card-header bg-white text-center fs-4">  <!-- Consistent styling with other forms -->
+                    Remboursement de Prêt
+                    <div class="fs-6">
+                        Etat : <span class="roboto-regular">{{ prêt.solde_remboursé|stringformat:".2f" }} / {{ prêt.montant_remboursé|stringformat:".2f" }} {% if prêt.devise == 'USD' %} $ {% else %} FC {% endif %}</span>
+                    </div>
+                    <div class="fs-6">
+                        Montant restant : <span class="roboto-regular">{{ montant_restant|stringformat:".2f" }} {% if prêt.devise == 'USD' %} $ {% else %} FC {% endif %} </span>
+                    </div>
+                </div>
+                <div class="card-body px-1">
+                    <form method="post" id="loan-form" enctype="multipart/form-data">  <!-- Added enctype for file uploads -->
+                        {% csrf_token %}
+                        <div class="row mb-3">
+                            <div class="form-group col-md-8">
+                                <label class="form-label" for="{{ form.montant.id_for_label }}">Montant</label>
+                                <input type="number" class="form-control" id="{{ form.montant.id_for_label }}" name="{{ form.montant.html_name }}" value="{{ form.montant.value|default:0 }}" placeholder="Entrez le montant">
+                            </div>
+
+                            <div class="form-group col-md-4">
+                                <label class="form-label" for="{{ form.devise.id_for_label }}">Devise</label>
+                                <input class="form-control" id="{{ form.devise.id_for_label }}" name="{{ form.devise.html_name }}" value="{{ prêt.devise }}" readonly>
+                            </div>
+                        </div>
+
+                        <!-- <div class="mb-3">
+                            <label class="form-label" for="{{ form.type_prêt.id_for_label }}">Type de crédit</label>
+                            <select class="form-select" id="{{ form.type_prêt.id_for_label }}" name="{{ form.type_prêt.html_name }}">
+                                <option value="">-- Choisissez un type de crédit --</option>
+                                {% for type_prêt in types_prêt %}
+                                    <option value="{{ type_prêt.id }}"
+                                        data-taux="{{ type_prêt.taux_interet|floatformat:2 }}"
+                                        data-delai="{{ type_prêt.delai_remboursement }}"
+                                        {% if type_prêt.id == form.type_prêt.value %}selected{% endif %}>
+                                        {{ type_prêt.nom }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div> -->
+
+                        <div class="mb-3">
+                            <label for="{{ form.numero_agent.id_for_label }}" class="form-label">Numéro de l'agent</label>
+                            <select class="form-control form-select" id="{{ form.numero_agent.id_for_label }}" name="{{ form.numero_agent.html_name }}">
+                                {% for reseau, numeros in numeros_categories.items %}  <!-- Use existing context variable -->
+                                    <optgroup label="{{ reseau }}">
+                                        {% for numero, id in numeros %}
+                                            <option value="{{ id }}">{{ numero }}</option>
+                                        {% endfor %}
+                                    </optgroup>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3 d-flex flex-column align-items-center justify-content-center">
+                            <label for="preuve" class="form-label">Preuve de paiement</label>
+                            <input type="file" class="form-control d-none" id="preuve" name="preuve" onchange="previewImage(this);" required>
+                            <div id="imagePreview" class="image-preview text-center" onclick="document.getElementById('preuve').click();">
+                                <span class="upload-icon"><i class="fas fa-image"></i></span>
+                            </div>
+                        </div>
+    
+                        <div class="form-group text-center">
+                            <button type="button" class="btn btn-mw text-white" id="submitLoanBtn" data-bs-toggle="modal" data-bs-target="#passwordConfirmModal">
+                                Confirmer la Demande
+                            </button>
+                        </div>
+    
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Modal -->
+    <div class="modal fade" id="passwordConfirmModal" tabindex="-1" aria-labelledby="passwordConfirmModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">  <!-- Make modal centered -->
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="passwordConfirmModalLabel">Confirmation du mot de passe</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="passwordForm">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="mot_de_passe" class="form-label">Mot de passe</label>
+                            <input type="password" class="form-control" id="mot_de_passe" name="mot_de_passe" required>
+                        </div>
+                        <div class="modal-footer">  <!-- Submit in footer -->
+                            <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Annuler</button>
+                            <button type="submit" class="btn btn-mw">Confirmer</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+<script>
+    function previewImage(input) {
+        const previewContainer = document.getElementById('imagePreview');
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+
+            reader.onload = function(e) {
+                previewContainer.innerHTML = `<img src="${e.target.result}" style="max-width: 200px; max-height: 200px;" alt="Image Preview">`;
+            }
+
+            reader.readAsDataURL(input.files[0]);
+        } else {
+            previewContainer.innerHTML = '<span class="upload-icon"><i class="fas fa-upload"></i></span>';
+        }
+    }
+
+    // Gestionnaire d'événements pour le bouton "Confirmer" dans le modal
+    document.getElementById('passwordForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        var password = document.getElementById('mot_de_passe').value;
+        var loanForm = document.getElementById('loan-form');
+
+        // Ajouter le mot de passe au formulaire avant la soumission
+        var passwordInput = document.createElement('input');
+        passwordInput.type = 'hidden';
+        passwordInput.name = 'password';
+        passwordInput.value = password;
+        loanForm.appendChild(passwordInput);
+
+        // Soumettre le formulaire
+        loanForm.submit();
+    });
+</script>
+
+<style>
+    .image-preview {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 200px;
+        height: 200px;
+        border: 1px dashed #ccc;
+        margin-top: 10px;
+    }
+
+    .upload-icon {
+        font-size: 3em;
+        color: #ccc;
+    }
+
+    .image-preview img {
+        max-width: 100%;
+        max-height: 100%;
+    }
+</style>
+{% endblock %}
+

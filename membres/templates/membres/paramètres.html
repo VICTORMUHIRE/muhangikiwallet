@@ -6,12 +6,12 @@
     <div class="row mt-5 mt-sm-0">
         <div class=" text-center p-2 rounded-4 rounded-start">
             <div class="d-inline-block bg-light rounded-pill p-2 position-relative">
-                {% if request.user.membre.photo_passport %}
-                    <img src="/static/{{ request.user.membre.photo_passport }}" alt="Photo de profil" class="rounded-circle img-fluid" style="height: 100px; object-fit: cover;">
+                {% if request.user.membre.photo_passport.url %}
+                    <img src="{{ user.membre.photo_passport.url }}" alt="Photo de profil" class="rounded-4 img-fluid" style="height: 100px; object-fit: cover;">
                 {% else %}
                     <i class="fas fa-user-circle fa-5x"></i>
                 {% endif %}
-                {% comment %} <a href="{% url 'membres:profil' %}" class="position-absolute top-0 end-0"><i class="fas fa-edit text-black m-1"></i></a> {% endcomment %}
+                {% comment %} <a href="{% url 'membres:profile' %}" class="position-absolute top-0 end-0"><i class="fas fa-edit text-black m-1"></i></a> {% endcomment %}
             </div>
         </div>
         <div class="mx-2 text-dark text-center fs-5 fw-bold p-2">{{ user.membre }}</span>
@@ -19,7 +19,7 @@
 
     <div class="list-group my-2 px-3">
 
-        <a href="{% url 'membres:profil' %}" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between">
+        <a href="{% url 'membres:profile' %}" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between">
             <span><i class="fas fa-user fa-lg me-3 text-mw"></i> Profil</span> <i class="fas fa-chevron-right"></i>
         </a>
 

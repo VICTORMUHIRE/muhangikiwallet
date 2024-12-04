@@ -3,7 +3,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <link rel="icon" href="{% static 'LOGO MUHANGIKI WALLET PRINCIPALE.png' %}" type="image/png">
+    <link rel="icon" href="{% static 'LOGO_MUHANGIKI_WALLET_PRINCIPALE.png' %}" type="image/png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <meta name="description" content="Muhangiki Wallet: Votre solution financière pour une gestion simplifiée de votre argent.">
@@ -12,22 +12,22 @@
     <meta name="theme-color" content="#000000">
     <meta proprerty="og:title" content="Muhangiki Wallet">
     <meta proprerty="og:description" content="Muhangiki Wallet: Votre solution financière pour une gestion simplifiée de votre argent.">
-    <meta proprerty="og:image" content="{% static 'LOGO MUHANGIKI WALLET PRINCIPALE.png' %}">
+    <meta proprerty="og:image" content="{% static 'LOGO_MUHANGIKI_WALLET_PRINCIPALE.png' %}">
     <meta proprerty="og:url" content="https://muhangikiwallet.com">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="@muhangikiwallet">
     <meta name="twitter:title" content="Muhangiki Wallet">
     <meta name="twitter:description" content="Muhangiki Wallet: Votre solution financière pour une gestion simplifiée de votre argent.">
-    <meta name="twitter:image" content="{% static 'LOGO MUHANGIKI WALLET PRINCIPALE.png' %}">
+    <meta name="twitter:image" content="{% static 'LOGO_MUHANGIKI_WALLET_PRINCIPALE.png' %}">
     <meta name="msapplication-TileColor" content="#000000">
-    <meta name="msapplication-TileImage" content="{% static 'LOGO MUHANGIKI WALLET PRINCIPALE.png' %}">
+    <meta name="msapplication-TileImage" content="{% static 'LOGO_MUHANGIKI_WALLET_PRINCIPALE.png' %}">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <meta name="apple-mobile-web-app-title" content="Muhangiki Wallet">
-    <link rel="apple-touch-icon" href="{% static 'LOGO MUHANGIKI WALLET PRINCIPALE.png' %}">
-    <link rel="apple-touch-startup-image" href="{% static 'LOGO MUHANGIKI WALLET PRINCIPALE.png' %}">
-    <link rel="apple-touch-icon-precomposed" href="{% static 'LOGO MUHANGIKI WALLET PRINCIPALE.png' %}">
-    <link rel="shortcut icon" href="{% static 'LOGO MUHANGIKI WALLET PRINCIPALE.png' %}" type="image/x-icon">
+    <link rel="apple-touch-icon" href="{% static 'LOGO_MUHANGIKI_WALLET_PRINCIPALE.png' %}">
+    <link rel="apple-touch-startup-image" href="{% static 'LOGO_MUHANGIKI_WALLET_PRINCIPALE.png' %}">
+    <link rel="apple-touch-icon-precomposed" href="{% static 'LOGO_MUHANGIKI_WALLET_PRINCIPALE.png' %}">
+    <link rel="shortcut icon" href="{% static 'LOGO_MUHANGIKI_WALLET_PRINCIPALE.png' %}" type="image/x-icon">
     <link rel="manifest" href="{% static 'manifest.json' %}">
 
     <title>{% block title %}Muhangiki Wallet{% endblock %}</title>
@@ -151,7 +151,7 @@
     <!-- Top App Bar (pour mobile) -->
     <div class="top-app-bar bg-white p-2 d-flex align-items-center justify-content-between">
         <a class="navbar-brand d-flex align-items-center justify-content-center" href="{% url 'membres:home' %}">
-            <img src="{% static 'LOGO MUHANGIKI WALLET PRINCIPALE.png' %}" alt="Logo Muhangiki Wallet" height="40" class="d-inline-block">
+            <img src="{% static 'LOGO_MUHANGIKI_WALLET_PRINCIPALE.png' %}" alt="Logo Muhangiki Wallet" height="40" class="d-inline-block">
             <h5 class="ms-2">Muhangiki Wallet</h5>
         </a>
         {% if request.user.is_authenticated %}
@@ -162,8 +162,8 @@
             <span class="navbar-nav rounded-4">
                 <li class="nav-item dropdown">
                     <a class="nav-link text-dark d-flex align-items-center justify-content-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        {% if request.user.membre.photo_passport %}
-                        <img src="/static/{{request.user.membre.photo_passport}}" alt="Photo de profil" class="rounded-circle" height="30">
+                        {% if user.membre.photo_passport.url %}
+                        <img src="{{ user.membre.photo_passport.url }}" alt="Photo de profil" class="rounded-circle" height="30">
                         {% elif request.user.membre.sexe == 'M' %}
                         <i class="fas fa-user-circle fa-2x"></i>
                         {% else %}
@@ -171,7 +171,7 @@
                         {% endif %}
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                        <li><a class="dropdown-item" href="#">
+                        <li><a class="dropdown-item" href="{% url 'membres:profile' %}">
                             <i class="fa fa-user"></i>
                             Mon profil
                         </a></li>
@@ -201,7 +201,7 @@
         <nav class="navbar navbar-expand-lg navbar-light p-0">
             <div class="container-fluid">
                 <a class="navbar-brand align-middle" href="{% url 'membres:home' %}">
-                    <img src="{% static 'LOGO MUHANGIKI WALLET NOIR.png' %}" alt="Logo Muhangiki Wallet" height="50" class="d-inline-block">
+                    <img src="{% static 'LOGO_MUHANGIKI_WALLET_NOIR.png' %}" alt="Logo Muhangiki Wallet" height="50" class="d-inline-block">
                     <span>Muhangiki Wallet</span>
                 </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -244,8 +244,8 @@
                     <ul class="navbar-nav rounded-4" style="background-color: #ffdeba;">
                         <li class="nav-item dropdown">
                             <a class="nav-link text-dark d-flex align-items-center justify-content-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                {% if request.user.membre.photo_passport %}
-                                <img src="/static/{{request.user.membre.photo_passport}}" alt="Photo de profil" class="rounded-circle" height="30"> 
+                                {% if user.membre.photo_passport.url %}
+                                <img src="{{ user.membre.photo_passport.url }}" alt="Photo de profil" class="rounded-4" height="30"> 
                                 {% elif request.user.membre.sexe == 'M' %}
                                 <i class="fas fa-user-circle fa-2x"></i>
                                 {% else %}
@@ -254,13 +254,13 @@
                                 <span class="mx-2 text-dark">{{ user.membre.nom }}</span>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                                <li><a class="dropdown-item" href="{% url 'membres:profil' %}">
+                                <li><a class="dropdown-item" href="{% url 'membres:profile' %}">
                                     <i class="fa fa-user"></i>
-                                    Mon profil 
+                                    Mon profil
                                 </a></li>
                                 <li><a class="dropdown-item" href="#">
                                     <i class="fa fa-bell"></i>
-                                    Notifications 
+                                    Notifications
                                     <span class="badge bg-secondary">3</span>
                                 </a></li>
                                 <li><hr class="dropdown-divider"></li>

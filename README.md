@@ -21,15 +21,6 @@ Muhangiki Wallet est un projet ambitieux visant à créer un portefeuille numér
     * Ajout de fonds au compte.
     * Retrait de fonds du compte.
     * Historique des transactions (dépôts, retraits, paiements).
-* **Paiements en Ligne:**
-    * Paiement de factures (téléphone, électricité, etc.)
-    * Paiement de biens et services en ligne.
-    * Transfert d'argent à d'autres utilisateurs de Muhangiki Wallet.
-* **Gestion des Dépenses:**
-    * Catégorisation des dépenses (alimentaire, loyer, transport, etc.)
-    * Suivi des dépenses et des revenus.
-    * Création de budgets et de limites de dépenses.
-    * Rapports de dépenses (journalier, hebdomadaire, mensuel).
 * **Système de Notifications:**
     * Notifications par email et/ou SMS pour les transactions, les changements de solde, les rappels de paiement, etc.
 * **Données Géographiques Electroniques:**
@@ -37,11 +28,6 @@ Muhangiki Wallet est un projet ambitieux visant à créer un portefeuille numér
 * **Gestion de Rôles:**
     * Système multi-utilisateurs avec différents rôles (Administrateur, Utilisateur standard, etc.)
     * Permissions d'accès aux données et actions en fonction du rôle.
-
-**Fonctionnalités à Inclure:**
-
-* **[Liste des fonctionnalités supplémentaires]**
-* **[Liste des fonctionnalités à venir]**
 
 ### Développements Techniques
 

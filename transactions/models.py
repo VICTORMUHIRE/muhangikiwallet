@@ -33,7 +33,8 @@ TRANSACTION_CHOICES = [
     ('depot_objectif', 'Dépôt objectif'),
     ('depot_inscription', 'Dépôt inscription'),
     ('contribution', 'Contribution'),
-    ('prêt', 'Prêt')
+    ('prêt', 'Prêt'),
+    ('remboursement_prêt', 'Remboursement_prêt')
 ]
 
 # Définition du modèle de transaction
@@ -41,7 +42,7 @@ class Transactions(models.Model):
     operateur = models.CharField(max_length=20, choices=OPERATEURS, default="membre", verbose_name="Opérateur")
     membre = models.ForeignKey(Membres, blank=True, null=True, on_delete=models.CASCADE, verbose_name="Membres")
     organisation = models.ForeignKey(Organisations, blank=True, null=True, on_delete=models.CASCADE, verbose_name="Organisations")
-
+    
     agent = models.ForeignKey(Agents, blank=True, null=True, on_delete=models.CASCADE, verbose_name="Agents")
     numero_agent = models.ForeignKey(NumerosAgent, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Numéro de l'agent")
     
@@ -84,10 +85,11 @@ class Prêts(models.Model):
     administrateur = models.ForeignKey(Administrateurs, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Administrateur")
 
     type_prêt = models.ForeignKey(TypesPrêt, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Type de prêt")
-    transaction = models.ForeignKey(Transactions, on_delete=models.CASCADE, blank=True, related_name="prêt", verbose_name="Transaction")
+    transaction = models.ForeignKey(Transactions, on_delete=models.CASCADE, blank=True, null=True, related_name="prêt", verbose_name="Transaction")
 
     montant = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Montant du prêt")
     montant_remboursé = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Montant remboursé")
+    solde_remboursé = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Solde remboursé")
     devise = models.CharField(max_length=3, choices=DEVISE_CHOICES, verbose_name="Devise")
     
     preuve = models.ImageField(upload_to="preuves/contributions/", verbose_name="Preuve de contribution")
@@ -115,7 +117,6 @@ class Benefices(models.Model):
     date = models.DateTimeField(auto_now_add=True, verbose_name="Date du bénéfice")
     statut = models.BooleanField(default=True, verbose_name="Statut")
 
-    
 # Définition du modèle de contribution
 class Contributions(models.Model):
     montant = models.FloatField(verbose_name="Montant")
@@ -123,6 +124,7 @@ class Contributions(models.Model):
 
     date = models.DateField(auto_now_add=True, verbose_name="Date")
     date_approbation = models.DateTimeField(blank=True, null=True, verbose_name="Date d'approbation")
+    mois = models.DateField(verbose_name="Mois")
     
     transaction = models.ForeignKey(Transactions, on_delete=models.CASCADE, blank=True, related_name="contribution", verbose_name="Transaction")
 
