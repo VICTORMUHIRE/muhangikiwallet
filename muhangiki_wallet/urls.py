@@ -21,25 +21,7 @@ urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 if __name__ == "__main__" and True:
-    from administrateurs.models import ContributionsMensuelles, Administrateurs, NumerosCompte, CodesReference
-    from agents.models import NumerosAgent, Agents
-    from membres.models import Membres
-    from transactions.models import TypesPrêt, Transactions, DepotsInscription
-    from objectifs.models import Objectifs, TypesObjectif
-    from administrateurs.models import Users
-
-
-    Users.objects.all().delete()
-    Administrateurs.objects.all().delete()
-    Membres.objects.all().delete()
-    Agents.objects.all().delete()
-    NumerosAgent.objects.all().delete()
-    NumerosCompte.objects.all().delete()
-    TypesPrêt.objects.all().delete()
-    CodesReference.objects.all().delete()
-    ContributionsMensuelles.objects.all().delete()
-    Transactions.objects.all().delete()
-    DepotsInscription.objects.all().delete()
+    from administrateurs.models import Administrateurs, Users
 
 
     if len(Administrateurs.objects.all()) == 0:
