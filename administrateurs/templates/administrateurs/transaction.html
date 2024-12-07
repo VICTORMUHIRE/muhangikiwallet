@@ -19,8 +19,8 @@
           {% elif transaction.type == 'depot_objectif' %}Dépôt sur objectif
           {% elif transaction.type == 'depot_inscription' %}Dépôt d'inscription
           {% elif transaction.type == 'contribution' %}Contribution mensuelle
-          {% elif transaction.type == 'prêt' %}Prêt d'argent
-          {% elif transaction.type == 'remboursement_prêt' %}Remboursement de prêt
+          {% elif transaction.type == 'pret' %}pret d'argent
+          {% elif transaction.type == 'remboursement_pret' %}Remboursement de pret
           {% else %}Transaction Inconnue
           {% endif %}
         </h3>
@@ -51,7 +51,7 @@
             <dd class="col-sm-9">{{ transaction.destinataire.username }}</dd>
           {% endif %}
 
-          {% if transaction.type == 'prêt' %}
+          {% if transaction.type == 'pret' %}
             <dt class="col-sm-3">Taux d'intérêt:</dt>
             <dd class="col-sm-9">10%</dd>  <!-- Format interest rate -->
 
@@ -66,7 +66,7 @@
                 <a href="{{ transaction.preuve.url }}" target="_blank" rel="noopener noreferrer">Voir la preuve (Lien externe)</a>  <!-- Added rel attribute for security -->
               {% else %}
                 <a href="{{ transaction.preuve.url }}" target="_blank" rel="noopener noreferrer">  <!-- Added rel attribute for security -->
-                  <img src="{{ transaction.preuve.url }}" alt="Preuve de transaction" style="max-width: 200px;" onerror="this.src='{% static 'images/placeholder.png' %}'">  <!-- Placeholder image -->
+                  <img src="/static{{transaction.preuve.url}}" alt="Preuve de transaction" style="max-width: 200px;" onerror="this.src='{% static 'images/placeholder.png' %}'">  <!-- Placeholder image -->
                 </a>
               {% endif %}
 

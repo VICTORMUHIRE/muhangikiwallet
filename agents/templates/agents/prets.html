@@ -1,0 +1,42 @@
+{% extends 'agents/base.html' %}
+
+{% block title %}Prêts{% endblock %}
+
+{% block content %}
+<h1>Prêts</h1>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="card-title">Liste des Prêts</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Date de demande</th>
+                            <th>Membre</th>
+                            <th>Type de pret</th>
+                            <th>Montant</th>
+                            <th>Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pret in prets %}
+                        <tr>
+                            <td>{{ pret.date_demande }}</td>
+                            <td>{{ pret.membre.prenom }} {{ pret.membre.nom }}</td>
+                            <td>{{ pret.type_pret.name }}</td>
+                            <td>{{ pret.montant|floatformat:2 }} CDF</td>
+                            <td>{{ pret.status }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

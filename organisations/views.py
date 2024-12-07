@@ -18,9 +18,9 @@ def home(request):
     solde_CDF = organisation.compte_CDF
     solde_USD = organisation.compte_USD
 
-    # Calcul du montant total des prêts accordés à l'organisation
-    total_prêts_CDF = Prêts.objects.filter(organisation=organisation, devise="CDF", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
-    total_prêts_USD = Prêts.objects.filter(organisation=organisation, devise="USD", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
+    # Calcul du montant total des prets accordés à l'organisation
+    total_prets_CDF = Prêts.objects.filter(organisation=organisation, devise="CDF", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
+    total_prets_USD = Prêts.objects.filter(organisation=organisation, devise="USD", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
 
     # Récupérer les 4 dernières transactions de l'organisation
     transactions = Transactions.objects.filter(organisation=organisation).order_by('-date')[:4]
@@ -31,8 +31,8 @@ def home(request):
     context = {
         'solde_CDF': solde_CDF,
         'solde_USD': solde_USD,
-        'total_prêts_CDF': total_prêts_CDF,
-        'total_prêts_USD': total_prêts_USD,
+        'total_prets_CDF': total_prets_CDF,
+        'total_prets_USD': total_prets_USD,
         'transactions': transactions,
         'membres': membres,
     }
@@ -102,37 +102,37 @@ def membres(request):
     }
     return render(request, "organisations/membres.html", context)
 
-# Vue pour la page de gestion des types de prêt (à implémenter)
+# Vue pour la page de gestion des types de pret (à implémenter)
 @login_required
-def types_prêt(request):
-    types_prêt = TypesPrêt.objects.all()
+def types_pret(request):
+    types_pret = TypesPrêt.objects.all()
     context = {
-        "types_prêt": types_prêt,
+        "types_pret": types_pret,
     }
-    return render(request, "organisations/types_prêt.html", context)
+    return render(request, "organisations/types_pret.html", context)
 
-# Vue pour la page de modification d'un type de prêt (à implémenter)
+# Vue pour la page de modification d'un type de pret (à implémenter)
 @login_required
-def modifier_type_prêt(request, type_prêt_id):
-    type_prêt = get_object_or_404(TypesPrêt, pk=type_prêt_id)
-    # Logique pour modifier le type de prêt
-    return render(request, "organisations/modifier_type_prêt.html")
+def modifier_type_pret(request, type_pret_id):
+    type_pret = get_object_or_404(TypesPrêt, pk=type_pret_id)
+    # Logique pour modifier le type de pret
+    return render(request, "organisations/modifier_type_pret.html")
 
-# Vue pour la page de suppression d'un type de prêt (à implémenter)
+# Vue pour la page de suppression d'un type de pret (à implémenter)
 @login_required
-def supprimer_type_prêt(request, type_prêt_id):
-    type_prêt = get_object_or_404(TypesPrêt, pk=type_prêt_id)
-    # Logique pour supprimer le type de prêt
-    return redirect("organisations:types_prêt")
+def supprimer_type_pret(request, type_pret_id):
+    type_pret = get_object_or_404(TypesPrêt, pk=type_pret_id)
+    # Logique pour supprimer le type de pret
+    return redirect("organisations:types_pret")
 
-# Vue pour la page de gestion des prêts (à implémenter)
+# Vue pour la page de gestion des prets (à implémenter)
 @login_required
-def prêts(request):
-    prêts = Prêts.objects.all()
+def prets(request):
+    prets = Prêts.objects.all()
     context = {
-        "prêts": prêts,
+        "prets": prets,
     }
-    return render(request, "organisations/prêts.html", context)
+    return render(request, "organisations/prets.html", context)
 
 # Vue pour la page de gestion des transactions (à implémenter)
 @login_required

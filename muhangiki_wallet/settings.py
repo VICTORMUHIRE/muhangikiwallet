@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 import os
+import pymysql
+pymysql.install_as_MySQLdb()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -23,10 +25,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-0n!^rc92pcf=frp0#n&gp8+pqcso4crpd8!cs7_j3y=dh+4l^x')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = eval(os.environ.get('DJANGO_DEBUG', "True"))
+DEBUG = False
 
-ALLOWED_HOSTS = [os.environ.get('DJANGO_ALLOWED_HOSTS', "*")]
+ALLOWED_HOSTS = ["https://muhangikiwallet.com","muhangikiwallet.com"]
 
+# Encodage UTF-8
+DEFAULT_CHARSET = 'utf-8'
 
 # Application definition
 
@@ -60,7 +64,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-CSRF_TRUSTED_ORIGINS = [os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "http://127.0.0.1")]
+CSRF_TRUSTED_ORIGINS = ["https://muhangikiwallet.com"]
 
 
 ROOT_URLCONF = 'muhangiki_wallet.urls'
@@ -88,9 +92,21 @@ WSGI_APPLICATION = 'muhangiki_wallet.wsgi.application'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
+    # 'default': {
+    #     'ENGINE': 'django.db.backends.sqlite3',
+    #     'NAME': BASE_DIR / 'db.sqlite3',
+    # },
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'muhangikiwallet_muhangikiwallet', # Remplacez par le nom de votre base de données
+        'USER': 'muhangikiwallet_muhangik', # Remplacez par votre utilisateur de base de données
+        'PASSWORD': '@!rm0n123#', # Remplacez par votre mot de passe de base de données
+        'HOST': 'localhost',
+        'PORT': '3306',
+        'OPTIONS':{
+            'init_command':"SET sql_mode='STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION'"
+            },
+        
     },
     'mysql': {
         'ENGINE': 'django.db.backends.mysql',
@@ -153,7 +169,7 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # Media files (Uploads)
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = BASE_DIR / 'staticfiles' / 'media'
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
@@ -162,9 +178,9 @@ STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# STATICFILES_DIRS = [
-#     MEDIA_ROOT
-# ]
+STATICFILES_DIRS = [
+    MEDIA_ROOT
+]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field

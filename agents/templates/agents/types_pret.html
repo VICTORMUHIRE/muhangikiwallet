@@ -1,0 +1,59 @@
+# agent/templates/types_pret.html
+
+{% extends 'agent/base.html' %}
+
+{% block title %}Types de Prêts{% endblock %}
+
+{% block content %}
+<h1>Types de Prêts</h1>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="card-title">Liste des Types de Prêts</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Nom</th>
+                            <th>Taux d'intérêt</th>
+                            <th>Durée de remboursement</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for type_pret in types_pret %}
+                        <tr>
+                            <td>{{ type_pret.name }}</td>
+                            <td>{{ type_pret.taux_interet }}%</td>
+                            <td>{{ type_pret.duree_remboursement }} jours</td>
+                            <td>
+                                <a href="{% url 'agent:modifier_type_pret' type_pret.id %}" class="btn btn-sm btn-warning">Modifier</a>
+                                <a href="{% url 'agent:supprimer_type_pret' type_pret.id %}" class="btn btn-sm btn-danger">Supprimer</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="card-title">Ajouter un Type de Prêt</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    {{ form.as_p }}
+                    <button type="submit" class="btn btn-primary">Ajouter</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

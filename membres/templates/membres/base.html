@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <meta name="description" content="Muhangiki Wallet: Votre solution financière pour une gestion simplifiée de votre argent.">
-    <meta name="keywords" content="Muhangiki Wallet, finance, épargne, prêt, investissement, RD Congo, Goma">
+    <meta name="keywords" content="Muhangiki Wallet, finance, épargne, pret, investissement, RD Congo, Goma">
     <meta name="author" content="Muhangiki Wallet Team">
     <meta name="theme-color" content="#000000">
     <meta proprerty="og:title" content="Muhangiki Wallet">
@@ -127,7 +127,7 @@
         .transaction-depot-objectif { color: #28a745; } /* Green for goal deposits */
         .transaction-depot-inscription { color: #ffc107; } /* Yellow for registration deposits */
         .transaction-contribution { color: #17a2b8; } /* Teal for contributions */
-        .transaction-prêt { color: #6f42c1; }  /* Purple for loans */
+        .transaction-pret { color: #6f42c1; }  /* Purple for loans */
 
         /* Affichage sur mobile */
         @media (max-width: 768px) {
@@ -162,8 +162,8 @@
             <span class="navbar-nav rounded-4">
                 <li class="nav-item dropdown">
                     <a class="nav-link text-dark d-flex align-items-center justify-content-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        {% if user.membre.photo_passport.url %}
-                        <img src="{{ user.membre.photo_passport.url }}" alt="Photo de profil" class="rounded-circle" height="30">
+                        {% if user.membre.photo_profile.url %}
+                        <img src="/static{{user.membre.photo_profile.url}}" alt="Photo de profil" class="rounded-circle" height="30">
                         {% elif request.user.membre.sexe == 'M' %}
                         <i class="fas fa-user-circle fa-2x"></i>
                         {% else %}
@@ -235,7 +235,7 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if '/paramètres/' in request.path %}active{% endif %}" href="{% url 'membres:paramètres' %}">
+                            <a class="nav-link {% if '/parametres/' in request.path %}active{% endif %}" href="{% url 'membres:parametres' %}">
                                 <i class="fa fa-cog"></i>
                                 Paramètres
                             </a>
@@ -244,8 +244,8 @@
                     <ul class="navbar-nav rounded-4" style="background-color: #ffdeba;">
                         <li class="nav-item dropdown">
                             <a class="nav-link text-dark d-flex align-items-center justify-content-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                {% if user.membre.photo_passport.url %}
-                                <img src="{{ user.membre.photo_passport.url }}" alt="Photo de profil" class="rounded-4" height="30"> 
+                                {% if user.membre.photo_profile.url %}
+                                <img src="/static{{user.membre.photo_profile.url}}" alt="Photo de profil" class="rounded-4" height="30"> 
                                 {% elif request.user.membre.sexe == 'M' %}
                                 <i class="fas fa-user-circle fa-2x"></i>
                                 {% else %}
@@ -315,7 +315,7 @@
                 <i class="fa fa-exchange-alt"></i>
                 <span>Transactions</span>
             </a>
-            <a href="{% url 'membres:paramètres' %}" class="nav-link {% if '/paramètres/' in request.path %}active{% endif %}">
+            <a href="{% url 'membres:parametres' %}" class="nav-link {% if '/parametres/' in request.path %}active{% endif %}">
                 <i class="fa fa-user-cog"></i>
                 <span>Paramètres</span>
             </a>
@@ -327,7 +327,7 @@
         <ul>
             <li><a href="{% url 'membres:objectifs' %}"><i class="fa fa-trophy"></i> Objectifs</a></li>
             <li><a href="{% url 'membres:contributions' %}"><i class="fa fa-donate"></i> Contributions</a></li>
-            <li><a href="{% url 'membres:paramètres' %}"><i class="fa fa-cog"></i> Paramètres</a></li>
+            <li><a href="{% url 'membres:parametres' %}"><i class="fa fa-cog"></i> Paramètres</a></li>
             <li>
                 <a href="#" data-bs-toggle="modal" data-bs-target="#logoutModal">
                     <i class="fa fa-sign-out-alt"></i> Déconnexion

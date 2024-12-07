@@ -10,7 +10,7 @@ from django.db.models import Sum
 from .models import Membres
 from .forms import MembresForm
 from agents.models import Agents, NumerosAgent
-from administrateurs.models import Users, NumerosCompte
+from administrateurs.models import Users, NumerosCompte, Villes, Communes, Quartiers, Avenues
 from organisations.models import Organisations
 from objectifs.models import Objectifs
 from objectifs.forms import ObjectifsForm
@@ -22,6 +22,8 @@ from datetime import datetime, timedelta
 from django.utils import timezone
 from functools import wraps
 from random import randint
+from django.http import JsonResponse
+
 
 def verifier_membre(func):
     def verify(request, *args, **kwargs):
@@ -33,6 +35,27 @@ def verifier_membre(func):
         else: return redirect("index")
 
     return wraps(func)(verify)
+
+
+def get_villes(request):
+    province_id = request.GET.get('province_id')
+    villes = Villes.objects.filter(province_id=province_id).values('id', 'nom', 'type')
+    return JsonResponse(list(villes), safe=False)
+
+def get_communes(request):
+    ville_id = request.GET.get('ville_id')
+    communes = Communes.objects.filter(ville_id=ville_id).values('id', 'nom')
+    return JsonResponse(list(communes), safe=False)
+
+def get_quartiers(request):
+    commune_id = request.GET.get('commune_id')
+    quartiers = Quartiers.objects.filter(commune_id=commune_id).values('id', 'nom')
+    return JsonResponse(list(quartiers), safe=False)
+
+def get_avenues(request):
+    quartier_id = request.GET.get('quartier_id')
+    avenues = Avenues.objects.filter(quartier_id=quartier_id).values('id', 'nom')
+    return JsonResponse(list(avenues), safe=False)
 
 # Vue pour la page de statut des membres
 @login_required
@@ -86,7 +109,7 @@ def statut(request):
             'membre_form': MembresForm(instance=request.user.membre),
             'reseaux': reseaux,
             'numeros_categories': numeros_categories,
-            depot_inscription: "depot_inscription"
+            "depot_inscription": depot_inscription
         }
 
     return render(request, 'membres/statut.html', context) # Pass the form to the template
@@ -127,6 +150,12 @@ def inscription(request):
             login(request, membre.user)
             return redirect("login")
         
+        else:
+            messages.error(request, "Veuillez corriger les erreurs du formulaire")
+            # fs = FileSystemStorage()
+            # for name, file in request.FILES.items():
+            #     filename = fs.save("{name}/" + file.name, file)
+
     else: form = MembresForm()
     
     return render(request, "membres/inscription.html", {"form": form})
@@ -160,8 +189,8 @@ def home(request):
     solde_CDF = Transactions.objects.filter(membre=membre, devise="CDF", statut="Approuvé", type="contribution").aggregate(total=Sum('montant'))['total'] or 0
     solde_USD = Transactions.objects.filter(membre=membre, devise="USD", statut="Approuvé", type="contribution").aggregate(total=Sum('montant'))['total'] or 0
 
-    total_prêts_CDF = Prêts.objects.filter(transaction__membre=membre, devise="CDF", statut="Approuvé").aggregate(total=Sum('montant_remboursé'))['total'] or 0
-    total_prêts_USD = Prêts.objects.filter(transaction__membre=membre, devise="USD", statut="Approuvé").aggregate(total=Sum('montant_remboursé'))['total'] or 0
+    total_prets_CDF = Prêts.objects.filter(transaction__membre=membre, devise="CDF", statut="Approuvé").aggregate(total=Sum('montant_remboursé'))['total'] or 0
+    total_prets_USD = Prêts.objects.filter(transaction__membre=membre, devise="USD", statut="Approuvé").aggregate(total=Sum('montant_remboursé'))['total'] or 0
 
     total_depot_objectif_CDF = Transactions.objects.filter(membre=membre, devise="CDF", statut="Approuvé", type="depot_objectif").aggregate(total=Sum('montant'))['total'] or 0
     total_depot_objectif_USD = Transactions.objects.filter(membre=membre, devise="USD", statut="Approuvé", type="depot_objectif").aggregate(total=Sum('montant'))['total'] or 0
@@ -177,8 +206,8 @@ def home(request):
     context = {
         "membre": membre,
         "objectifs": objectifs,
-        "total_prêts_CDF": total_prêts_CDF,
-        "total_prêts_USD": total_prêts_USD,
+        "total_prets_CDF": total_prets_CDF,
+        "total_prets_USD": total_prets_USD,
         "total_depot_objectif_CDF": total_depot_objectif_CDF,
         "total_depot_objectif_USD": total_depot_objectif_USD,
         "solde_CDF": solde_CDF,
@@ -201,7 +230,7 @@ def profile(request):
             # Handle photo upload manually
             photo_file = request.FILES['nouvellePhoto']
             fs = FileSystemStorage()
-            filename = fs.save("photos_passport/" + photo_file.name, photo_file)
+            filename = fs.save("photo_profile/" + photo_file.name, photo_file)
             uploaded_file_url = fs.url(filename)
 
             membre = request.user.membre
@@ -312,12 +341,12 @@ def contribuer(request):
 
     return render(request, "membres/contribuer.html", context)
 
-# Vue pour la page de demande de prêt du membre
+# Vue pour la page de demande de pret du membre
 @login_required
 @verifier_membre
-def demande_prêt(request):
-    types_prêt = TypesPrêt.objects.all() # Récupérer tous les types de prêt
-    demandes_prêt = Prêts.objects.filter(membre=request.user.membre)
+def demande_pret(request):
+    types_pret = TypesPrêt.objects.all() # Récupérer tous les types de pret
+    demandes_pret = Prêts.objects.filter(membre=request.user.membre)
 
     # Solde contribution
     solde_contribution_CDF = Transactions.objects.filter(membre=request.user.membre, devise="CDF", statut="Approuvé", type="contribution").aggregate(total=Sum('montant'))['total'] or 0
@@ -335,30 +364,30 @@ def demande_prêt(request):
             mot_de_passe = request.POST.get('password')
 
             if check_password(mot_de_passe, request.user.password):
-                prêt = form.save(commit=False)  # Créer l'objet prêt sans l'enregistrer
-                prêt.membre = request.user.membre
+                pret = form.save(commit=False)  # Créer l'objet pret sans l'enregistrer
+                pret.membre = request.user.membre
 
-                prêt.montant_remboursé = prêt.montant
-                prêt.montant = float(prêt.montant_remboursé) - (float(prêt.montant) * 0.10) #(prêt.montant * (prêt.type_prêt.taux_interet / 100))
+                pret.montant_remboursé = pret.montant
+                pret.montant = float(pret.montant_remboursé) - (float(pret.montant) * 0.10) #(pret.montant * (pret.type_pret.taux_interet / 100))
 
-                prêt.date_remboursement = datetime.now() + timedelta(days=120) #timedelta(days=prêt.type_prêt.delai_remboursement)  # Définir la date de remboursement
+                pret.date_remboursement = datetime.now() + timedelta(days=120) #timedelta(days=pret.type_pret.delai_remboursement)  # Définir la date de remboursement
 
                 if not Prêts.objects.filter(membre=request.user.membre, statut="En attente").exists():
                     if not Prêts.objects.filter(membre=request.user.membre, statut="Approuvé").exists():
-                        if prêt.montant_remboursé > 0 and prêt.montant_remboursé * (2800 if prêt.devise == "USD" else 1) <= 3*solde_total_contribution:
+                        if pret.montant_remboursé > 0 and pret.montant_remboursé * (2800 if pret.devise == "USD" else 1) <= 3*solde_total_contribution:
                             # transaction.save()
-                            # prêt.transaction = transaction
+                            # pret.transaction = transaction
 
-                            prêt.save()  # Enregistrer l'objet prêt
-                            messages.success(request, 'Votre demande de prêt a été soumise avec succès !')
-                            return redirect('membres:demande_prêt')
+                            pret.save()  # Enregistrer l'objet pret
+                            messages.success(request, 'Votre demande de pret a été soumise avec succès !')
+                            return redirect('membres:demande_pret')
                         else:
-                            # Solde insuffisant ou prêts en cours, afficher un message d'erreur
+                            # Solde insuffisant ou prets en cours, afficher un message d'erreur
                             messages.error(request, f'Vous ne pouvez demander plus de 3x votre contribution actuelle')
                     else:
-                        messages.error(request, 'Vous avez déjà un prêt approuvé, veuillez le rembourser')
+                        messages.error(request, 'Vous avez déjà un pret approuvé, veuillez le rembourser')
                 else:
-                    messages.error(request, 'Vous avez déjà une demande de prêt en cours, veuillez patienter qu\'elle soit traitée')
+                    messages.error(request, 'Vous avez déjà une demande de pret en cours, veuillez patienter qu\'elle soit traitée')
             
             else:
                 # Mot de passe incorrect, afficher un message d'erreur
@@ -371,20 +400,20 @@ def demande_prêt(request):
 
     context = {
         "form": form,
-        "types_prêt": types_prêt,
-        "demandes_prêt": demandes_prêt,
+        "types_pret": types_pret,
+        "demandes_pret": demandes_pret,
         "taux_change": taux_de_change,
         "solde_total_contribution_cdf": solde_total_contribution * 3,
         "solde_total_contribution_usd": solde_total_contribution * 3 / taux_de_change
     }
 
-    return render(request, "membres/demande_prêt.html", context)
+    return render(request, "membres/demande_pret.html", context)
 
-# Vue pour la page de demande de prêt du membre
+# Vue pour la page de demande de pret du membre
 @login_required
 @verifier_membre
-def rembourser_prêt(request, transaction_id):
-    prêt = get_object_or_404(Prêts, transaction=get_object_or_404(Transactions, pk=transaction_id, membre=request.user.membre, type="prêt"), statut="Approuvé")
+def rembourser_pret(request, transaction_id):
+    pret = get_object_or_404(Prêts, transaction=get_object_or_404(Transactions, pk=transaction_id, membre=request.user.membre, type="pret"), statut="Approuvé")
 
     reseaux = NumerosAgent.objects.values_list('reseau', flat=True).distinct()
     numeros_categories = {reseau: [] for reseau in reseaux}
@@ -404,18 +433,18 @@ def rembourser_prêt(request, transaction_id):
                 transaction = form.save(commit=False)
                 transaction.membre=request.user.membre
                 transaction.agent=transaction.numero_agent.agent
-                transaction.type= "remboursement_prêt"
+                transaction.type= "remboursement_pret"
                 transaction.statut="En attente"
 
-                if not Transactions.objects.filter(membre=request.user.membre, statut="En attente", type="remboursement_prêt").exists():
-                    if transaction.montant > 0 and transaction.montant <= (prêt.montant_remboursé - prêt.solde_remboursé):
-                        # Solde suffisant, enregistrer la transaction et le prêt
+                if not Transactions.objects.filter(membre=request.user.membre, statut="En attente", type="remboursement_pret").exists():
+                    if transaction.montant > 0 and transaction.montant <= (pret.montant_remboursé - pret.solde_remboursé):
+                        # Solde suffisant, enregistrer la transaction et le pret
                         transaction.save()
-                        messages.success(request, 'Votre demande de prêt a été soumise avec succès !')
-                        return redirect('membres:demande_prêt')  # Redirigez vers
+                        messages.success(request, 'Votre demande de pret a été soumise avec succès !')
+                        return redirect('membres:demande_pret')  # Redirigez vers
                 
                     else:
-                        # Solde insuffisant ou prêts en cours, afficher un message d'erreur
+                        # Solde insuffisant ou prets en cours, afficher un message d'erreur
                         messages.error(request, 'Solde invalide, veuillez réessayer')
                 
                 else:
@@ -432,12 +461,12 @@ def rembourser_prêt(request, transaction_id):
         
     context = {
         "form": form,
-        "prêt": prêt,
-        "montant_restant": prêt.montant_remboursé - prêt.solde_remboursé,
+        "pret": pret,
+        "montant_restant": pret.montant_remboursé - pret.solde_remboursé,
         "numeros_categories": numeros_categories
     }
 
-    return render(request, "membres/rembourser_prêt.html", context)
+    return render(request, "membres/rembourser_pret.html", context)
 
 # Vue pour la page de gestion des objectifs du membre
 @login_required
@@ -707,22 +736,22 @@ def transaction(request, transaction_id):
     }
     return render(request, "membres/transaction.html", context)
 
-# Vue pour la page de gestion des paramètres du membre
+# Vue pour la page de gestion des parametres du membre
 @login_required
 @verifier_membre
-def paramètres(request):
+def parametres(request):
     if request.method == "POST":
         form = PasswordChangeForm(request.user, request.POST)
         if form.is_valid():
             form.save()
             update_session_auth_hash(request, form.user)
             messages.success(request, "Votre mot de passe a été mis à jour avec succès.")
-            return redirect("membres:paramètres")
+            return redirect("membres:parametres")
         else:
             messages.error(request, "Veuillez corriger les erreurs dans le formulaire.")
     else:
         form = PasswordChangeForm(request.user)
-    return render(request, "membres/paramètres.html", {"form": form})
+    return render(request, "membres/parametres.html", {"form": form})
 
 # Vue pour la page de gestion des notifications du membre
 @login_required

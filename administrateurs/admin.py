@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import Administrateurs, Users
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from .models import Provinces, Villes, Quartiers, Avenues, EtatsCivil, TypesCarteIdentite, ContributionsMensuelles, CodesReference, NumerosCompte
+from .models import Provinces, Villes, Quartiers, Avenues, Communes, EtatsCivil, TypesCarteIdentite, ContributionsMensuelles, CodesReference, NumerosCompte
 
 # Register your models here.
 class UserAdmin(BaseUserAdmin):
@@ -27,12 +27,13 @@ class UserAdmin(BaseUserAdmin):
 admin.site.register(Users, UserAdmin)
 admin.site.register(Administrateurs)
 
-# admin.site.register(Provinces)
-# admin.site.register(Villes)
-# admin.site.register(Quartiers)
-# admin.site.register(Avenues)
-# admin.site.register(EtatsCivil)
-# admin.site.register(TypesCarteIdentite)
+admin.site.register(Provinces)
+admin.site.register(Villes)
+admin.site.register(Communes)
+admin.site.register(Quartiers)
+admin.site.register(Avenues)
+admin.site.register(EtatsCivil)
+admin.site.register(TypesCarteIdentite)
 
 admin.site.register(ContributionsMensuelles)
 admin.site.register(CodesReference)

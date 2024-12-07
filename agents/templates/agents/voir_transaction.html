@@ -8,7 +8,7 @@
         <form method="post" enctype="multipart/form-data" id="form">
             <h2 class="roboto-light text-center">{{ form.instance.membre }}</h2>
             <h4 class="text-center mb-4">
-                {% if form.instance.type == 'retrait' %}Retrait d'argent{% elif form.instance.type == 'transfert' %}Transfert d'argent{% elif form.instance.type == 'depot_objectif' %}Dépôt sur objectif{% elif form.instance.type == 'depot_inscription' %}Dépôt d'inscription{% elif form.instance.type == 'contribution' %}Contribution mensuelle{% elif form.instance.type == 'prêt' %}Prêt d'argent {% elif form.instance.type == 'remboursement_prêt' %}Remboursement de prêt{% endif %}
+                {% if form.instance.type == 'retrait' %}Retrait d'argent{% elif form.instance.type == 'transfert' %}Transfert d'argent{% elif form.instance.type == 'depot_objectif' %}Dépôt sur objectif{% elif form.instance.type == 'depot_inscription' %}Dépôt d'inscription{% elif form.instance.type == 'contribution' %}Contribution mensuelle{% elif form.instance.type == 'pret' %}Prêt d'argent {% elif form.instance.type == 'remboursement_pret' %}Remboursement de pret{% endif %}
             </h4>
 
             {% csrf_token %}
@@ -30,11 +30,11 @@
                 <input type="hidden" class="form-control" id="{{ form.numero_agent.id_for_label }}" name="{{ form.numero_agent.html_name}}" value="{{ form.numero_agent.value }}" readonly>
                 <input type="text" class="form-control" value="{{ form.instance.numero_agent.numero }}" readonly>
             </div>
-    
+
             <div class="mb-3 d-flex flex-column align-items-center justify-content-center">
                 <label for="{{ form.preuve.id_for_label }}" class="form-label">{{ form.preuve.label }}</label>
                 {% if form.instance.preuve %}
-                    <img src="{{ form.preuve.value.url }}" class="img-fluid rounded" style="max-height: 200px; object-fit: cover;">
+                    <img src="/static{{ form.preuve.value.url }}" class="img-fluid rounded" style="max-height: 200px; object-fit: cover;">
                     <input type="hidden" name="{{ form.preuve.html_name }}" id="{{ form.preuve.id_for_label }}" value="{{ form.preuve.value }}">
                 {% else %}
                     <input type="file" class="form-control d-none" id="{{ form.preuve.id_for_label }}" name="{{ form.preuve.html_name }}" onchange="previewImage(this);" required>
@@ -43,7 +43,7 @@
                     </div>
                 {% endif %}
             </div>
-    
+
             <div class="text-center">
                 <a class="btn btn-danger text-white w-25" href="{% url 'agents:rejetter_depot_inscription' form.instance.pk %}" onclick="return confirm('Êtes-vous sûr de vouloir rejeter cette transaction ?')">Refuser</a>
                 <button type="button" class="btn btn-mw text-white w-25" id="submitBtn" data-bs-toggle="modal" data-bs-target="#confirmationModal">Accepter</button>

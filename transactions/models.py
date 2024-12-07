@@ -32,13 +32,14 @@ TRANSACTION_CHOICES = [
     ('depot_objectif', 'Dépôt objectif'),
     ('depot_inscription', 'Dépôt inscription'),
     ('contribution', 'Contribution'),
-    ('prêt', 'Prêt'),
-    ('remboursement_prêt', 'Remboursement_prêt')
+    ('pret', 'Prêt'),
+    ('remboursement_pret', 'Remboursement_pret')
 ]
 
 # Définition du modèle de transaction
 class Transactions(models.Model):
     operateur = models.CharField(max_length=20, choices=OPERATEURS, default="membre", verbose_name="Opérateur")
+    admin = models.ForeignKey(Administrateurs, blank=True, null=True, on_delete=models.CASCADE, verbose_name="Administrateurs")
     membre = models.ForeignKey(Membres, blank=True, null=True, on_delete=models.CASCADE, verbose_name="Membres")
     organisation = models.ForeignKey(Organisations, blank=True, null=True, on_delete=models.CASCADE, verbose_name="Organisations")
     
@@ -65,9 +66,9 @@ class Transactions(models.Model):
         verbose_name = "Transaction"
         verbose_name_plural = "Transactions"
 
-# Modèle pour les types de prêt
+# Modèle pour les types de pret
 class TypesPrêt(models.Model):
-    nom = models.CharField(max_length=45, verbose_name="Nom du type de prêt")
+    nom = models.CharField(max_length=45, verbose_name="Nom du type de pret")
     description = models.TextField(blank=True, null=True, verbose_name="Description")
     taux_interet = models.DecimalField(max_digits=5, decimal_places=2, verbose_name="Taux d'intérêt (%)")
     delai_remboursement = models.IntegerField(verbose_name="Delai de remboursement")
@@ -76,18 +77,18 @@ class TypesPrêt(models.Model):
         return self.nom
     
     class Meta:
-        verbose_name = "Type de prêt"
-        verbose_name_plural = "Types de prêts"
+        verbose_name = "Type de pret"
+        verbose_name_plural = "Types de prets"
 
-# Modèle pour les prêts
+# Modèle pour les prets
 class Prêts(models.Model):
     administrateur = models.ForeignKey(Administrateurs, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Administrateur")
     membre = models.ForeignKey(Membres, blank=True, null=True, on_delete=models.CASCADE, verbose_name="Membres")
 
-    type_prêt = models.ForeignKey(TypesPrêt, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Type de prêt")
-    transaction = models.ForeignKey(Transactions, on_delete=models.CASCADE, blank=True, null=True, related_name="prêt", verbose_name="Transaction")
+    type_pret = models.ForeignKey(TypesPrêt, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Type de pret")
+    transaction = models.ForeignKey(Transactions, on_delete=models.CASCADE, blank=True, null=True, related_name="pret", verbose_name="Transaction")
 
-    montant = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Montant du prêt")
+    montant = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Montant du pret")
     montant_remboursé = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Montant remboursé")
     solde_remboursé = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Solde remboursé")
     devise = models.CharField(max_length=3, choices=DEVISE_CHOICES, verbose_name="Devise")
@@ -108,7 +109,7 @@ class Prêts(models.Model):
         verbose_name_plural = "Prêts"
 
 class Benefices(models.Model):
-    prêt = models.ForeignKey(Prêts, on_delete=models.CASCADE, verbose_name="Prêt")
+    pret = models.ForeignKey(Prêts, on_delete=models.CASCADE, verbose_name="Prêt")
     membre = models.ForeignKey(Membres, blank=True, null=True, on_delete=models.CASCADE, verbose_name="Membre")
     
     montant = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Montant du bénéfice")

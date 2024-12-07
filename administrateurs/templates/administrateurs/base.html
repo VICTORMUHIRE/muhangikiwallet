@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <meta name="description" content="Muhangiki Wallet: Votre solution financière pour une gestion simplifiée de votre argent.">
-    <meta name="keywords" content="Muhangiki Wallet, finance, épargne, prêt, investissement, RD Congo, Goma">
+    <meta name="keywords" content="Muhangiki Wallet, finance, épargne, pret, investissement, RD Congo, Goma">
     <meta name="author" content="Muhangiki Wallet Team">
     <meta name="theme-color" content="#000000">
     <meta proprerty="og:title" content="Muhangiki Wallet">
@@ -124,7 +124,7 @@
         .transaction-depot-objectif { color: #28a745; } /* Green for goal deposits */
         .transaction-depot-inscription { color: #ffc107; } /* Yellow for registration deposits */
         .transaction-contribution { color: #17a2b8; } /* Teal for contributions */
-        .transaction-prêt { color: #6f42c1; }  /* Purple for loans */
+        .transaction-pret { color: #6f42c1; }  /* Purple for loans */
 
         /* Affichage sur mobile */
         @media (max-width: 768px) {
@@ -159,8 +159,8 @@
             <span class="navbar-nav rounded-4">
                 <li class="nav-item dropdown">
                     <a class="nav-link text-dark d-flex align-items-center justify-content-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        {% if user.admin.photo_passport %}
-                        <img src="{{ user.admin.photo_passport }}" alt="Photo de profil" class="rounded-circle" height="30"> 
+                        {% if user.admin.photo_profile %}
+                        <img src="/static{{user.admin.photo_profile.url}}" alt="Photo de profil" class="rounded-circle" height="30"> 
                         {% elif user.admin.sexe == 'M' %}
                         <i class="fas fa-user-circle fa-2x"></i>
                         {% else %}
@@ -238,7 +238,7 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if '/paramètres/' in request.path %}active{% endif %}" href="/admin">
+                            <a class="nav-link {% if '/parametres/' in request.path %}active{% endif %}" href="/admin">
                                 <i class="fa fa-cog"></i>
                                 Paramètres
                             </a>
@@ -247,8 +247,8 @@
                     <ul class="navbar-nav rounded-4" style="background-color: #ffdeba;">
                         <li class="nav-item dropdown">
                             <a class="nav-link text-dark d-flex align-items-center justify-content-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                {% if user.admin.photo_passport %}
-                                <img src="{{ user.admin.photo_passport }}" alt="Photo de profil" class="rounded-circle" height="30"> 
+                                {% if user.admin.photo_profile %}
+                                <img src="/static{{user.admin.photo_profile.url}}" alt="Photo de profil" class="rounded-circle" height="30"> 
                                 {% elif user.admin.sexe == 'M' %}
                                 <i class="fas fa-user-circle fa-2x"></i>
                                 {% else %}
@@ -318,7 +318,7 @@
                 <i class="fa fa-exchange-alt"></i>
                 <span>Transactions</span>
             </a> -->
-            <a  href="/admin" class="nav-link {% if '/paramètres/' in request.path %}active{% endif %}">
+            <a  href="/admin" class="nav-link {% if '/parametres/' in request.path %}active{% endif %}">
                 <i class="fa fa-cog"></i>
                 <span>Paramètres</span>
             </a>

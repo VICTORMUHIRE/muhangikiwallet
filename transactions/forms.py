@@ -17,9 +17,9 @@ class TransactionsForm(forms.ModelForm):
 class PrêtsForm(forms.ModelForm):
     class Meta:
         model = Prêts
-        fields = ["type_prêt", "montant", "devise"]
+        fields = ["type_pret", "montant", "devise"]
 
-# Formulaire de type de prêt
+# Formulaire de type de pret
 class TypesPrêtForm(forms.ModelForm):
     class Meta:
         model = TypesPrêt

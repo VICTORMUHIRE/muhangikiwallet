@@ -7,8 +7,8 @@ from administrateurs.models import CodesReference, Users
 # Formulaire d'inscription de membre
 class MembresForm(forms.ModelForm):
     # email = forms.EmailField()
-    mot_de_passe = forms.CharField(widget=forms.PasswordInput())
-    confirmation_mot_de_passe = forms.CharField(widget=forms.PasswordInput())
+    mot_de_passe = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': '4 caractères minimum'}))
+    confirmation_mot_de_passe = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': '4 caractères minimum'}))
     class Meta:
         model = Membres
         fields = [
@@ -22,22 +22,29 @@ class MembresForm(forms.ModelForm):
             "type_carte_identite",
             "num_carte_identite",
             "carte_identite_copy",
-            "photo_passport",
+            "photo_profile",
             "province_residence",
             "ville_residence",
+            "commune_residence",
             "quartier_residence",
             "avenue_residence",
+            "numero_residence",
             "numero_telephone",
             "contribution_mensuelle",
             "invitation_code",
         ]
 
         widgets = {
-            "date_naissance": forms.DateInput(attrs={"type": "date"})
+            "date_naissance": forms.DateInput(attrs={"type": "date"}),
+            "numero_telephone": forms.TextInput(attrs={"placeholder": "Ex : +243999999999 ou 0999999999"}),
         }
 
     def clean(self):
         super().clean()
+
+        numero_telephone = self.cleaned_data.get("numero_telephone")
+        if Users.objects.filter(username=numero_telephone).exists():
+            self.add_error("numero_telephone", "Ce numéro de téléphone est déjà utilisé")
 
         mot_de_passe = self.cleaned_data.get("mot_de_passe")
         confirmation_mot_de_passe = self.cleaned_data.get("confirmation_mot_de_passe")
@@ -46,12 +53,12 @@ class MembresForm(forms.ModelForm):
         if mot_de_passe and confirmation_mot_de_passe and mot_de_passe != confirmation_mot_de_passe:
             self.add_error("confirmation_mot_de_passe", "Les mots de passe doivent correspondent")
 
-        try: validate_password(mot_de_passe)
-        except ValidationError as error:
-            pass
-            # self.add_error("mot_de_passe", error)
+        # try: validate_password(mot_de_passe)
+        # except ValidationError as error:
+        #     pass
+        #     # self.add_error("mot_de_passe", error)
 
-        if len(mot_de_passe) < 4:
+        if len(mot_de_passe or "") < 4:
             self.add_error("mot_de_passe", "Le mot de passe doit contenir au minimum 4 caractères")
 
         code_invitation = self.cleaned_data.get("invitation_code")
@@ -89,16 +96,29 @@ class ModifierMembresForm(forms.ModelForm):
             "type_carte_identite",
             "num_carte_identite",
             "carte_identite_copy",
-            "photo_passport",
+            "photo_profile",
             "province_residence",
             "ville_residence",
+            "commune_residence",
             "quartier_residence",
             "avenue_residence",
+            "numero_residence",
             "numero_telephone",
             "contribution_mensuelle",
             "status"
         ]
 
         widgets = {
-            "date_naissance": forms.DateInput(attrs={"type": "date"})
+            "date_naissance": forms.DateInput(attrs={"type": "date"}),
+            "numero_telephone": forms.TextInput(attrs={"placeholder": "Ex : +243999999999 ou 0999999999"})
         }
+
+    def clean(self):
+        super().clean()
+
+        numero_telephone = self.cleaned_data.get("numero_telephone")
+        if Users.objects.filter(username=numero_telephone).exists():
+            self.add_error("numero_telephone", "Ce numéro de téléphone est déjà utilisé")
+
+        return self.cleaned_data
+

@@ -24,15 +24,16 @@ def verifier_agent(func):
 
 # Vue pour la page d'accueil des agents
 @login_required
+@verifier_agent
 def home(request):
-    # Récupérer les contributions et les prêts de l'agent connecté
+    # Récupérer les contributions et les prets de l'agent connecté
     agent = request.user.agent
 
     solde_CDF = Transactions.objects.filter(agent=agent, devise="CDF", statut="Approuvé", type="contribution").aggregate(total=Sum('montant'))['total'] or 0
     solde_USD = Transactions.objects.filter(agent=agent, devise="USD", statut="Approuvé", type="contribution").aggregate(total=Sum('montant'))['total'] or 0
 
-    total_prêts_CDF = Transactions.objects.filter(agent=agent, devise="CDF", statut="Approuvé", type="prêt").aggregate(total=Sum('montant'))['total'] or 0
-    total_prêts_USD = Transactions.objects.filter(agent=agent, devise="USD", statut="Approuvé", type="prêt").aggregate(total=Sum('montant'))['total'] or 0
+    total_prets_CDF = Transactions.objects.filter(agent=agent, devise="CDF", statut="Approuvé", type="pret").aggregate(total=Sum('montant'))['total'] or 0
+    total_prets_USD = Transactions.objects.filter(agent=agent, devise="USD", statut="Approuvé", type="pret").aggregate(total=Sum('montant'))['total'] or 0
 
     total_depot_objectif_CDF = Transactions.objects.filter(agent=agent, devise="CDF", statut="Approuvé", type="depot_objectif").aggregate(total=Sum('montant'))['total'] or 0
     total_depot_objectif_USD = Transactions.objects.filter(agent=agent, devise="USD", statut="Approuvé", type="depot_objectif").aggregate(total=Sum('montant'))['total'] or 0
@@ -46,8 +47,8 @@ def home(request):
     context = {
         "agent": agent,
         "objectifs": objectifs,
-        "total_prêts_CDF": total_prêts_CDF,
-        "total_prêts_USD": total_prêts_USD,
+        "total_prets_CDF": total_prets_CDF,
+        "total_prets_USD": total_prets_USD,
         "total_depot_objectif_CDF": total_depot_objectif_CDF,
         "total_depot_objectif_USD": total_depot_objectif_USD,
         "total_retraits_CDF": total_retraits_CDF,
@@ -59,6 +60,8 @@ def home(request):
     }
     return render(request, "agents/home.html", context)
 
+@login_required
+@verifier_agent
 def depot_inscription(request):
     depots_inscriptions = DepotsInscription.objects.filter(statut="En attente").order_by("-date")
     context = {
@@ -66,6 +69,8 @@ def depot_inscription(request):
     }
     return render(request, "agents/depot_inscription.html", context)
 
+@login_required
+@verifier_agent
 def voir_transaction(request, transaction_id):
     transaction = get_object_or_404(Transactions, pk=transaction_id)
 
@@ -94,22 +99,22 @@ def voir_transaction(request, transaction_id):
                             membre.mois_contribution = membre.mois_contribution + timedelta(days=30)
                             membre.save()
 
-                    case "prêt" :
-                        prêt = Prêts.objects.filter(transaction=transaction).first()
-                        prêt.statut = "Approuvé"
-                        prêt.date_approbation = timezone.now()
-                        prêt.save()
+                    case "pret" :
+                        pret = Prêts.objects.filter(transaction=transaction).first()
+                        pret.statut = "Approuvé"
+                        pret.date_approbation = timezone.now()
+                        pret.save()
 
-                    case "remboursement_prêt" :
-                        prêt = Prêts.objects.filter(transaction__membre=transaction.membre, statut="Approuvé").first()
-                        prêt.solde_remboursé += transaction.montant
+                    case "remboursement_pret" :
+                        pret = Prêts.objects.filter(transaction__membre=transaction.membre, statut="Approuvé").first()
+                        pret.solde_remboursé += transaction.montant
                         
-                        if prêt.solde_remboursé >= prêt.montant_remboursé:
-                            prêt.statut = prêt.transaction.statut = "Remboursé"
-                            prêt.date_remboursement = timezone.now()
-                            prêt.transaction.save()
+                        if pret.solde_remboursé >= pret.montant_remboursé:
+                            pret.statut = pret.transaction.statut = "Remboursé"
+                            pret.date_remboursement = timezone.now()
+                            pret.transaction.save()
                             
-                        prêt.save()
+                        pret.save()
 
                     case"depot_objectif":
                         depot_objectif = DepotsObjectif.objects.filter(transaction=transaction).first()
@@ -155,6 +160,8 @@ def voir_transaction(request, transaction_id):
     }
     return render(request, "agents/voir_transaction.html", context)
 
+@login_required
+@verifier_agent
 def approuver_depot_inscription(request, transaction_id):
     # depot = DepotsInscription.objects.filter(transaction=get_object_or_404(Transactions, pk=transaction_id)).first()
     transaction=get_object_or_404(Transactions, pk=transaction_id)
@@ -172,6 +179,8 @@ def approuver_depot_inscription(request, transaction_id):
     messages.success(request, "La transaction a été approuvée avec succès")
     return redirect("agents:home")
 
+@login_required
+@verifier_agent
 def rejetter_depot_inscription(request, transaction_id):
     # depot = DepotsInscription.objects.filter(transaction=get_object_or_404(Transactions, pk=transaction_id)).first()
     transaction=get_object_or_404(Transactions, pk=transaction_id)
@@ -185,8 +194,8 @@ def rejetter_depot_inscription(request, transaction_id):
     match transaction.type:
         case "contribution":
             transaction.contribution.statut = "Rejeté"
-        case "prêt":
-            transaction.prêt.statut = "Rejeté"
+        case "pret":
+            transaction.pret.statut = "Rejeté"
         case "depot_objectif":
             transaction.depot_objectif.statut = "Rejeté"
         case "depot_inscription":
@@ -205,6 +214,8 @@ def rejetter_depot_inscription(request, transaction_id):
     return redirect("agents:home")
 
 # Vue pour la page de la liste des transactions de l'agent
+@login_required
+@verifier_agent
 def transactions(request):
     transactions = Transactions.objects.filter(agent=request.user.agent).order_by("-date")
     context = {
@@ -213,6 +224,7 @@ def transactions(request):
     return render(request, "agents/transactions.html", context)
 
 @login_required
+@verifier_agent
 def transaction(request, transaction_id):
     transaction = get_object_or_404(Transactions, pk=transaction_id)
     context = {
@@ -222,6 +234,7 @@ def transaction(request, transaction_id):
 
 # Vue pour la page de profil de l'agent
 @login_required
+@verifier_agent
 def profile(request):
     agent = request.user
     if request.method == "POST":
@@ -240,6 +253,7 @@ def profile(request):
 
 # Vue pour la page de gestion des contributions
 @login_required
+@verifier_agent
 def contributions(request):
     contributions = Contributions.objects.all().order_by("-date")
     context = {
@@ -247,35 +261,38 @@ def contributions(request):
     }
     return render(request, "agents/contributions.html", context)
 
-# Vue pour la page de gestion des prêts
+# Vue pour la page de gestion des prets
 @login_required
-def prêts(request):
-    prêts = Prêts.objects.all().order_by("-date_demande")
+@verifier_agent
+def prets(request):
+    prets = Prêts.objects.all().order_by("-date_demande")
     context = {
-        "prêts": prêts,
+        "prets": prets,
     }
-    return render(request, "agents/prêts.html", context)
+    return render(request, "agents/prets.html", context)
 
-# Vue pour la page de gestion des types de prêt
+# Vue pour la page de gestion des types de pret
 @login_required
+@verifier_agent
 def retraits(request):
-    types_prêt = TypesPrêt.objects.all()
+    types_pret = TypesPrêt.objects.all()
     if request.method == "POST":
         form = TypesPrêtForm(request.POST)
         if form.is_valid():
             form.save()
-            messages.success(request, "Le type de prêt a été ajouté avec succès.")
-            return redirect("agent:types_prêt")
+            messages.success(request, "Le type de pret a été ajouté avec succès.")
+            return redirect("agent:types_pret")
     else:
         form = TypesPrêtForm()
     context = {
-        "types_prêt": types_prêt,
+        "types_pret": types_pret,
         "form": form,
     }
-    return render(request, "agents/types_prêt.html", context)
+    return render(request, "agents/types_pret.html", context)
 
 # Vue pour la page de gestion des objectifs
 @login_required
+@verifier_agent
 def objectifs(request):
     objectifs = Objectifs.objects.all().order_by("-date_debut")
     context = {
@@ -285,6 +302,7 @@ def objectifs(request):
 
 # Vue pour la page de dépôt d'objectif
 @login_required
+@verifier_agent
 def parametres(request, objectif_id):
     objectif = get_object_or_404(Objectifs, pk=objectif_id)
     if request.method == "POST":

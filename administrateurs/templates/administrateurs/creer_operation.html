@@ -1,0 +1,16 @@
+{% extends 'administrateurs/base.html' %}
+
+{% block title %}Créer une Opération{% endblock %}
+
+{% block content %}
+<h1>Créer une Opération</h1>
+
+<p>Veuillez remplir le formulaire pour créer une nouvelle operation.</p>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">Créer l'Opération</button>
+</form>
+
+{% endblock %}

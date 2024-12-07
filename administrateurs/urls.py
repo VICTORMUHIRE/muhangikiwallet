@@ -36,15 +36,15 @@ urlpatterns = [
     path("transactions/cdf/creer/", views.creer_transaction_cdf, name="creer_transaction_cdf"),
     path("transactions/usd/creer/", views.creer_transaction_usd, name="creer_transaction_usd"),
 
-    path("types_prêt/", views.types_prêt, name="types_prêt"),
-    path("types_prêt/creer/", views.creer_type_prêt, name="creer_type_prêt"),
-    path("types_prêt/<int:type_prêt_id>/modifier/", views.modifier_type_prêt, name="modifier_type_prêt"),
-    path("types_prêt/<int:type_prêt_id>/supprimer/", views.supprimer_type_prêt, name="supprimer_type_prêt"),
+    path("types_pret/", views.types_pret, name="types_pret"),
+    path("types_pret/creer/", views.creer_type_pret, name="creer_type_pret"),
+    path("types_pret/<int:type_pret_id>/modifier/", views.modifier_type_pret, name="modifier_type_pret"),
+    path("types_pret/<int:type_pret_id>/supprimer/", views.supprimer_type_pret, name="supprimer_type_pret"),
 
     path("transactions/", views.transactions, name="transactions"), # If you have views for this
     path("transaction/<int:transaction_id>", views.transaction, name="transaction"),
     
-    path("prêts/", views.prêts, name="prêts"),
-    path("prêts/<int:prêt_id>", views.voir_prêt, name="voir_prêt"),
-    path("rejeter_prêt/<int:prêt_id>", views.rejeter_prêt, name="rejeter_prêt"),
+    path("prets/", views.prets, name="prets"),
+    path("prets/<int:pret_id>", views.voir_pret, name="voir_pret"),
+    path("rejeter_pret/<int:pret_id>", views.rejeter_pret, name="rejeter_pret"),
 ]

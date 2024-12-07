@@ -2,8 +2,12 @@ from django import forms
 from django.contrib.auth.forms import AuthenticationForm
 from .models import Administrateurs
 
+
+
 # Formulaire d'inscription d'administrateur
 class AdministrateurForm(forms.ModelForm):
+    mot_de_passe = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': '4 caractères minimum'}))
+    confirmation_mot_de_passe = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': '4 caractères minimum'}))
     class Meta:
         model = Administrateurs
         fields = [
@@ -15,14 +19,36 @@ class AdministrateurForm(forms.ModelForm):
             "sexe",
             "type_carte_identite",
             "num_carte_identite",
-            "photo_passport",
+            "photo_profile",
             "province_residence",
             "ville_residence",
+            "commune_residence",
             "quartier_residence",
             "avenue_residence",
             "numero_telephone",
             "status",
         ]
+
+        widgets = {
+            "date_naissance": forms.DateInput(attrs={"type": "date"}),
+            "numero_telephone": forms.TextInput(attrs={"placeholder": "Ex : +243999999999 ou 0999999999"}),
+        }
+
+
+    def clean(self):
+        super().clean()
+
+        numero_telephone = self.cleaned_data.get("numero_telephone")
+        if Administrateurs.objects.filter(numero_telephone=numero_telephone).exists():
+            self.add_error("numero_telephone", "Ce numéro de téléphone est déjà utilisé")
+
+        mot_de_passe = self.cleaned_data.get("mot_de_passe")
+        confirmation_mot_de_passe = self.cleaned_data.get("confirmation_mot_de_passe")
+
+        if mot_de_passe and confirmation_mot_de_passe and mot_de_passe != confirmation_mot_de_passe:
+            self.add_error("confirmation_mot_de_passe", "Les mots de passe doivent correspondre")
+
+        return self.cleaned_data
 
 class CustomLoginForm(AuthenticationForm):
     username = forms.CharField(label='Numéro de Téléphone', max_length=15)

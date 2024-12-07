@@ -17,14 +17,20 @@
 
         <div class="card-body">
             {% if not user.membre.status and not depot_inscription.transaction %}
-                <p class="alert alert-warning text-center">Votre compte est en cours d'approbation. Veuillez contacter l'administrateur si la vérification persiste</p>
+                <p class="alert alert-warning text-center">Votre compte est en cours d'approbation, veuillez contacter l'administrateur si la vérification persiste</p>
+                <div class=" text-center">
+                    <img src="{% static 'waiting-for-results.png' %}" alt="Waiting Image" class="img-fluid rounded" style="max-height: 400px; object-fit: cover;">
+                </div>
                 <div class=" text-center">
                     <a href="#" class="btn btn-mw" onclick="window.location.reload()"><i class="fas fa-sync-alt"></i> Actualiser </a>
+                    <button href="{% url 'logout' %}" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#logoutModal">
+                        <i class="fa fa-sign-out-alt"></i> Déconnexion
+                    </button>
                 </div>
                 <script>
                     setTimeout(function() {
                             window.location.reload();
-                        }, 5000); // Ce script sera exécuté après 5 secondes
+                        }, 30000); // Ce script sera exécuté après 5 secondes
                 </script>
                 <!-- <h4 class="text-center p-3">Vos informations</h4> -->
                 <!-- <div class="row">
@@ -101,12 +107,18 @@
             {% elif user.membre.status and depot_inscription.transaction.statut == "En attente" %}
                 <p class="alert alert-success text-center">Votre paiement est en cours de vérification, si cela persiste veuillez contacter l'administrateur !</p>
                 <div class=" text-center">
+                    <img src="{% static 'waiting-for-results.png' %}" alt="Waiting Image" class="img-fluid rounded" style="max-height: 400px; object-fit: cover;">
+                </div>
+                <div class=" text-center">
                     <a href="#" class="btn btn-mw" onclick="window.location.reload()"><i class="fas fa-sync-alt"></i> Actualiser </a>
+                    <button href="{% url 'logout' %}" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#logoutModal">
+                        <i class="fa fa-sign-out-alt"></i> Déconnexion
+                    </button>
                 </div>
                 <script>
                     setTimeout(function() {
                             window.location.reload();
-                        }, 5000); // Ce script sera exécuté après 5 secondes
+                        }, 30000); // Ce script sera exécuté après 5 secondes
                 </script>
                 <!-- <h4>Details du paiement</h4>
                 <div class="row">
@@ -155,8 +167,6 @@
                 </div>
         </div>
     </div>
-
-
 
         <script>
             document.getElementById('passwordForm').addEventListener('submit', function(event) {

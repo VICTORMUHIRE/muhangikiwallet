@@ -44,6 +44,7 @@ def verifier_admin(func):
 
 # Vue pour la page d'accueil des administrateurs
 @login_required
+@verifier_admin
 def home(request):
     # Solde total de l'entreprise
     solde_total_entreprise_cdf = Transactions.objects.filter(devise="CDF", type="contribution").aggregate(Sum('montant'))['montant__sum'] or 0
@@ -80,7 +81,7 @@ def home(request):
     transactions = Transactions.objects.all().order_by("-date")
     objectifs = Objectifs.objects.filter()
 
-    demandes_prêt = Prêts.objects.filter(statut="En attente"),
+    demandes_pret = Prêts.objects.filter(statut="En attente"),
     demandes_inscription = DepotsInscription.objects.filter(statut="En attente")
     
     context = {
@@ -96,13 +97,14 @@ def home(request):
         'nombre_organisations': nombre_organisations,
         'nombre_agents': nombre_agents,
         "transactions": transactions,
-        "demandes_prêt": demandes_prêt,
+        "demandes_pret": demandes_pret,
         "demandes_inscription": demandes_inscription,
     }
     return render(request, 'administrateurs/home.html', context)
 
 # Vue pour la page de profil de l'administrateur
 @login_required
+@verifier_admin
 def profile(request):
     administrateur = request.user.administrateurs
     if request.method == "POST":
@@ -121,6 +123,7 @@ def profile(request):
 
 # Vue pour la page de gestion des membres
 @login_required
+@verifier_admin
 def membres(request):
     q = request.GET.get('q', None)
     membres = Membres.objects.all().order_by('nom')  # Order by name initially
@@ -166,6 +169,7 @@ def membres(request):
 
 # Vue pour la page de création d'un membre
 @login_required
+@verifier_admin
 def creer_membre(request):
     if request.method == "POST":
         form = MembresForm(request.POST, request.FILES)
@@ -202,6 +206,7 @@ def creer_membre(request):
 
 # Vue pour la page de voir un membre
 @login_required
+@verifier_admin
 def voir_membre(request, membre_id):
     membre = get_object_or_404(Membres, pk=membre_id)
     if request.method == "POST":
@@ -223,6 +228,7 @@ def voir_membre(request, membre_id):
 
 # Vue pour la page de modification d'un membre
 @login_required
+@verifier_admin
 def modifier_membre(request, membre_id):
     membre = get_object_or_404(Membres, pk=membre_id)
     if request.method == "POST":
@@ -242,6 +248,7 @@ def modifier_membre(request, membre_id):
 
 # Vue pour la page de suppression d'un membre
 @login_required
+@verifier_admin
 def supprimer_membre(request, membre_id):
     membre = get_object_or_404(Membres, pk=membre_id)
     membre.delete()
@@ -249,6 +256,7 @@ def supprimer_membre(request, membre_id):
     return redirect("administrateurs:membres")
 
 @login_required
+@verifier_admin
 def accepter_membre(request, membre_id):
     membre=get_object_or_404(Membres, pk=membre_id)
 
@@ -267,6 +275,16 @@ def accepter_membre(request, membre_id):
             depot.date = timezone.now()
             membre.status = True
 
+            if "payé" in request.POST and request.POST.get("payé") == "on":
+                depot.transaction = Transactions.objects.create(
+                    admin=request.user.admin,
+                    montant=depot.montant,
+                    devise=depot.devise,
+                    membre=membre,
+                    statut="Approuvé",
+                    type="depot_inscription"
+                )
+
             membre.save()
             depot.save()
 
@@ -276,6 +294,7 @@ def accepter_membre(request, membre_id):
         return redirect("administrateurs:membres")
 
 @login_required
+@verifier_admin
 def refuser_membre(request, membre_id):
     membre = get_object_or_404(Membres, pk=membre_id)
 
@@ -291,6 +310,7 @@ def refuser_membre(request, membre_id):
 
 # Vue pour la page de gestion des organisations
 @login_required
+@verifier_admin
 def organisations(request):
     organisations = Organisations.objects.all().order_by("-date_creation")
     context = {
@@ -300,6 +320,7 @@ def organisations(request):
 
 # Vue pour la page de création d'une organisation
 @login_required
+@verifier_admin
 def creer_organisation(request):
     if request.method == "POST":
         form = OrganisationsForm(request.POST, request.FILES)
@@ -313,6 +334,7 @@ def creer_organisation(request):
 
 # Vue pour la page de modification d'une organisation
 @login_required
+@verifier_admin
 def modifier_organisation(request, organisation_id):
     organisation = get_object_or_404(Organisations, pk=organisation_id)
     if request.method == "POST":
@@ -331,6 +353,7 @@ def modifier_organisation(request, organisation_id):
 
 # Vue pour la page de suppression d'une organisation
 @login_required
+@verifier_admin
 def supprimer_organisation(request, organisation_id):
     organisation = get_object_or_404(Organisations, pk=organisation_id)
     organisation.delete()
@@ -339,6 +362,7 @@ def supprimer_organisation(request, organisation_id):
 
 # Vue pour la page de gestion des transactions en CDF
 @login_required
+@verifier_admin
 def transactions(request):
     transactions = Transactions.objects.filter().order_by("-date")
     context = {
@@ -347,6 +371,7 @@ def transactions(request):
     return render(request, "administrateurs/transactions.html", context)
 
 @login_required
+@verifier_admin
 def transaction(request, transaction_id):
     transaction = get_object_or_404(Transactions, pk=transaction_id)
     context = {
@@ -354,56 +379,61 @@ def transaction(request, transaction_id):
     }
     return render(request, "administrateurs/transaction.html", context)
 
-# Vue pour la page de gestion des types de prêt
+# Vue pour la page de gestion des types de pret
 @login_required
-def types_prêt(request):
-    types_prêt = TypesPrêt.objects.all()
+@verifier_admin
+def types_pret(request):
+    types_pret = TypesPrêt.objects.all()
     context = {
-        "types_prêt": types_prêt,
+        "types_pret": types_pret,
     }
-    return render(request, "administrateurs/types_prêt.html", context)
+    return render(request, "administrateurs/types_pret.html", context)
 
-# Vue pour la page de création d'un type de prêt
+# Vue pour la page de création d'un type de pret
 @login_required
-def creer_type_prêt(request):
+@verifier_admin
+def creer_type_pret(request):
     if request.method == "POST":
         form = TypesPrêtForm(request.POST)
         if form.is_valid():
             form.save()
-            messages.success(request, "Le type de prêt a été créé avec succès.")
-            return redirect("administrateurs:types_prêt")  # Rediriger vers la page de gestion des types de prêt
+            messages.success(request, "Le type de pret a été créé avec succès.")
+            return redirect("administrateurs:types_pret")  # Rediriger vers la page de gestion des types de pret
     else:
         form = TypesPrêtForm()
-    return render(request, "administrateurs/creer_type_prêt.html", {"form": form})
+    return render(request, "administrateurs/creer_type_pret.html", {"form": form})
 
-# Vue pour la page de modification d'un type de prêt
+# Vue pour la page de modification d'un type de pret
 @login_required
-def modifier_type_prêt(request, type_prêt_id):
-    type_prêt = get_object_or_404(TypesPrêt, pk=type_prêt_id)
+@verifier_admin
+def modifier_type_pret(request, type_pret_id):
+    type_pret = get_object_or_404(TypesPrêt, pk=type_pret_id)
     if request.method == "POST":
-        form = TypesPrêtForm(request.POST, instance=type_prêt)
+        form = TypesPrêtForm(request.POST, instance=type_pret)
         if form.is_valid():
             form.save()
-            messages.success(request, "Le type de prêt a été modifié avec succès.")
-            return redirect("administrateurs:types_prêt")  # Rediriger vers la page de gestion des types de prêt
+            messages.success(request, "Le type de pret a été modifié avec succès.")
+            return redirect("administrateurs:types_pret")  # Rediriger vers la page de gestion des types de pret
     else:
-        form = TypesPrêtForm(instance=type_prêt)
+        form = TypesPrêtForm(instance=type_pret)
     context = {
         "form": form,
-        "type_prêt": type_prêt,
+        "type_pret": type_pret,
     }
-    return render(request, "administrateurs/modifier_type_prêt.html", context)
+    return render(request, "administrateurs/modifier_type_pret.html", context)
 
-# Vue pour la page de suppression d'un type de prêt
+# Vue pour la page de suppression d'un type de pret
 @login_required
-def supprimer_type_prêt(request, type_prêt_id):
-    type_prêt = get_object_or_404(TypesPrêt, pk=type_prêt_id)
-    type_prêt.delete()
-    messages.success(request, "Le type de prêt a été supprimé avec succès.")
-    return redirect("administrateurs:types_prêt")  # Rediriger vers la page de gestion des types de prêt
+@verifier_admin
+def supprimer_type_pret(request, type_pret_id):
+    type_pret = get_object_or_404(TypesPrêt, pk=type_pret_id)
+    type_pret.delete()
+    messages.success(request, "Le type de pret a été supprimé avec succès.")
+    return redirect("administrateurs:types_pret")  # Rediriger vers la page de gestion des types de pret
 
 # Vue pour la page de création d'une transaction en CDF
 @login_required
+@verifier_admin
 def creer_transaction_cdf(request):
     if request.method == "POST":
         form = TransactionsForm(request.POST)
@@ -419,6 +449,7 @@ def creer_transaction_cdf(request):
 
 # Vue pour la page de création d'une transaction en USD
 @login_required
+@verifier_admin
 def creer_transaction_usd(request):
     if request.method == "POST":
         form = TransactionsForm(request.POST)
@@ -434,6 +465,7 @@ def creer_transaction_usd(request):
 
 # Agents Views
 @login_required
+@verifier_admin
 def agents(request):
     agents = Agents.objects.all().order_by("-date_creation")
     context = {
@@ -442,6 +474,7 @@ def agents(request):
     return render(request, "administrateurs/agents.html", context)
 
 @login_required
+@verifier_admin
 def creer_agent(request):
     if request.method == "POST":
         form = AgentsForm(request.POST, request.FILES)
@@ -466,6 +499,7 @@ def creer_agent(request):
     return render(request, "administrateurs/creer_agent.html", {"form": form})
 
 @login_required
+@verifier_admin
 def voir_agent(request, agent_id):
     agent = get_object_or_404(Agents, pk=agent_id)
     if request.method == "POST":
@@ -483,6 +517,7 @@ def voir_agent(request, agent_id):
     return render(request, "administrateurs/voir_agent.html", context)
 
 @login_required
+@verifier_admin
 def modifier_agent(request, agent_id):
     agent = get_object_or_404(Agents, pk=agent_id)
     if request.method == "POST":
@@ -500,6 +535,7 @@ def modifier_agent(request, agent_id):
     return render(request, "administrateurs/modifier_agent.html", context)
 
 @login_required
+@verifier_admin
 def supprimer_agent(request, agent_id):
     agent = get_object_or_404(Agents, pk=agent_id)
     agent.delete()
@@ -508,6 +544,7 @@ def supprimer_agent(request, agent_id):
 
 # View for Organisations Detail
 @login_required
+@verifier_admin
 def voir_organisation(request, organisation_id):
     organisation = get_object_or_404(Organisations, pk=organisation_id)
     context = { "organisation": organisation}
@@ -515,12 +552,14 @@ def voir_organisation(request, organisation_id):
 
 # Administrateurs Views (Add these views)
 @login_required
+@verifier_admin
 def administrateurs(request):
     administrateurs = Administrateurs.objects.all().order_by("-date_creation") # Make sure this query works with your model
     context = { "administrateurs": administrateurs }
     return render(request, "administrateurs/administrateurs.html", context)
 
 @login_required
+@verifier_admin
 def creer_administrateur(request):
     if request.method == "POST":
         form = AdministrateurForm(request.POST, request.FILES)
@@ -533,12 +572,14 @@ def creer_administrateur(request):
     return render(request, "administrateurs/creer_administrateur.html", {"form": form})
 
 @login_required
+@verifier_admin
 def voir_administrateur(request, administrateur_id):
     administrateur = get_object_or_404(Administrateurs, pk=administrateur_id) # Correct model here
     context = {"administrateur": administrateur}
     return render(request, "administrateurs/voir_administrateur.html", context)
 
 @login_required
+@verifier_admin
 def modifier_administrateur(request, administrateur_id):
     administrateur = get_object_or_404(Administrateurs, pk=administrateur_id)
     if request.method == "POST":
@@ -554,6 +595,7 @@ def modifier_administrateur(request, administrateur_id):
     return render(request, "administrateurs/modifier_administrateur.html", context)
 
 @login_required
+@verifier_admin
 def supprimer_administrateur(request, administrateur_id):
     administrateur = get_object_or_404(Administrateurs, pk=administrateur_id)
     administrateur.delete()
@@ -561,14 +603,16 @@ def supprimer_administrateur(request, administrateur_id):
     return redirect("administrateurs:administrateurs")
 
 @login_required
-def prêts(request):
-    prêts = Prêts.objects.all().order_by("-date")
-    context = {"prêts": prêts}
-    return render(request, "administrateurs/prêts.html", context)
+@verifier_admin
+def prets(request):
+    prets = Prêts.objects.all().order_by("-date")
+    context = {"prets": prets}
+    return render(request, "administrateurs/prets.html", context)
 
 @login_required
-def voir_prêt(request, prêt_id):
-    prêt = get_object_or_404(Prêts, pk=prêt_id)
+@verifier_admin
+def voir_pret(request, pret_id):
+    pret = get_object_or_404(Prêts, pk=pret_id)
 
     reseaux = NumerosAgent.objects.values_list('reseau', flat=True).distinct()
     numeros_categories = {reseau: [] for reseau in reseaux}
@@ -582,25 +626,25 @@ def voir_prêt(request, prêt_id):
 
         if check_password(mot_de_passe, request.user.password):
             if transaction_form.is_valid():
-                prêt.date_approbation = timezone.now()
-                prêt.administrateur = request.user.admin
+                pret.date_approbation = timezone.now()
+                pret.administrateur = request.user.admin
 
                 transaction = transaction_form.save(commit=False)
 
-                transaction.membre = prêt.membre
+                transaction.membre = pret.membre
                 transaction.agent = transaction.numero_agent.agent
-                transaction.type = "prêt"
+                transaction.type = "pret"
                 transaction.statut = "En attente"
-                prêt.statut = "Approuvé"
+                pret.statut = "Approuvé"
                 
-                prêt.transaction = transaction
+                pret.transaction = transaction
 
-                prêt.transaction.save()
-                prêt.save()
+                pret.transaction.save()
+                pret.save()
             
                 # Calculate benefit amount
-                montant_benefice = (float(prêt.montant_remboursé) - float(prêt.montant)) * 0.9 * (2800 if prêt.devise == "USD" else 1)
-                devise_pret = prêt.devise
+                montant_benefice = (float(pret.montant_remboursé) - float(pret.montant)) * 0.9 * (2800 if pret.devise == "USD" else 1)
+                devise_pret = pret.devise
                 
                 total_contributions_CDF = Transactions.objects.filter(devise="CDF", statut="Approuvé", type="contribution").aggregate(total=Sum('montant'))['total'] or 0
                 total_contributions_USD = Transactions.objects.filter(devise="USD", statut="Approuvé", type="contribution").aggregate(total=Sum('montant'))['total'] or 0
@@ -625,35 +669,36 @@ def voir_prêt(request, prêt_id):
                         # Determine the benefit currency based on loan currency
                         benefice_membre_usd = benefice_membre / 2800
                         Benefices.objects.create(
-                            prêt=prêt,
+                            pret=pret,
                             membre=membre,
                             montant=benefice_membre_usd if membre.contribution_mensuelle.devise == "USD" else benefice_membre,
                             devise=membre.contribution_mensuelle.devise  # Use loan currency
                         )
-                    
+                        
                         print(f"{total_contributions_USD = } {total_contributions_CDF = } {contributions_membre_CDF = } {contributions_membre_USD = } {contributions_membre_CDF = } {montant_benefice = } {proportion =  } {benefice_membre = }")
                 
-                messages.success(request, "Le prêt a été approuvé et les bénéfices distribués avec succès.")
-                return redirect("administrateurs:voir_prêt", prêt_id=prêt.pk)
+                messages.success(request, "Le pret a été approuvé et les bénéfices distribués avec succès.")
+                return redirect("administrateurs:voir_pret", pret_id=pret.pk)
             
         else:
             messages.error(request, "Mot de passe incorrect")
     
     context = {
-        "form": PrêtsForm(instance=prêt),
+        "form": PrêtsForm(instance=pret),
         "transaction_form": TransactionsForm(),
         "numeros_categories": numeros_categories,
-        "prêt": prêt
+        "pret": pret
     }
     
-    return render(request, "administrateurs/voir_prêt.html", context)
+    return render(request, "administrateurs/voir_pret.html", context)
 
 @login_required
-def rejeter_prêt(request, prêt_id):
-    prêt = get_object_or_404(Prêts, pk=prêt_id)
+@verifier_admin
+def rejeter_pret(request, pret_id):
+    pret = get_object_or_404(Prêts, pk=pret_id)
 
-    prêt.statut = "Rejeté"
-    prêt.date = timezone.now()
-    prêt.save()
-    messages.success(request, "Le prêt a été rejeté avec succès.")
-    return redirect("administrateurs:voir_prêt", prêt_id=prêt.pk)
+    pret.statut = "Rejeté"
+    pret.date = timezone.now()
+    pret.save()
+    messages.success(request, "Le pret a été rejeté avec succès.")
+    return redirect("administrateurs:voir_pret", pret_id=pret.pk)
