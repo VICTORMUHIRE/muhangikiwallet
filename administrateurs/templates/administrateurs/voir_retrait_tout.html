@@ -1,0 +1,58 @@
+{% extends 'administrateurs/base.html' %}
+{% load static %}
+
+{% block title %}Retrait total de {{ membre.nom }} {{ membre.prenom }} {{ membre.postnom }}{% endblock %}
+
+{% block content %}
+
+<div class="container mt-5">
+    <div class="card shadow-sm rounded-4 border-0">
+        <div class="card-header bg-white">
+            <h4 class="card-title font-weight-bold">
+                Demande de retrait total - {{ membre.nom }} {{ membre.prenom }} {{ membre.postnom }}
+            </h4>
+        </div>
+        <div class="card-body">
+            <p><strong>Membre:</strong> {{ membre.nom }} {{ membre.prenom }} {{ membre.postnom }}</p>
+            <p><strong>Numéro de téléphone:</strong> {{ membre.numero_telephone }}</p>
+            <p><strong>Date de la demande:</strong> {{ retrait.date }}</p>
+
+            <h5>Détails des fonds :</h5>
+            <ul>
+                <li><strong>Contributions:</strong> {{ montant_contributions|stringformat:".2f" }} {{ membre.contribution_mensuelle.devise }}</li>
+                <li><strong>Objectifs:</strong> {{ montant_objectifs|stringformat:".2f" }} {{ membre.contribution_mensuelle.devise }}</li>
+                <li><strong>Prêts remboursés:</strong> {{ montant_prets|stringformat:".2f" }} {{ membre.contribution_mensuelle.devise }}</li>
+            </ul>
+
+            <button type="button" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#approveModal">Approuver</button>
+             <a href="{% url 'administrateurs:refuser_retrait_tout' retrait.pk %}" class="btn btn-danger">Rejeter</a>
+
+            <!-- Approve Modal -->
+            <div class="modal fade" id="approveModal" tabindex="-1" aria-labelledby="approveModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="approveModalLabel">Confirmation d'approbation</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>Êtes-vous sûr de vouloir approuver ce retrait total ?</p>
+                            <form method="post" id="approveForm">
+                                {% csrf_token %}
+                                <label for="password" class="form-label">Votre mot de passe:</label>
+                                <input type="password" class="form-control" id="password" name="password" required>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                            <button type="submit" class="btn btn-success" form="approveForm">Approuver</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+{% endblock %}

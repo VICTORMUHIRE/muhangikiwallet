@@ -50,10 +50,16 @@
                         </div>
                     {% endfor %}
                 </div> -->
-            {% elif not user.membre.status and user.membre.reference_code %}
+            {% elif not user.membre.status and depot_inscription.transaction %}
                 <p class="alert alert-danger text-center">Votre compte est désactivé, veuillez contacter l'administrateur.</p>
+                <div class=" text-center">
+                    <img src="{% static 'denied.png' %}" alt="Waiting Image" class="img-fluid rounded" style="max-height: 400px; object-fit: cover;">
+                </div>
             {% elif not user.membre.status and not depot_inscription.statut == "Réjetté" %}
                 <p class="alert alert-danger text-center">Votre compte n'a pas été approuvé, veuillez contacter l'administrateur</p>
+                <div class=" text-center">
+                    <img src="{% static 'desaprouve.png' %}" alt="Waiting Image" class="img-fluid rounded" style="max-height: 400px; object-fit: cover;">
+                </div>
             {% elif user.membre.status and not depot_inscription.transaction %}
                 <p class="alert alert-info text-center">Votre compte a été approuvé, veuillez payer les frais d'adhésion pour finaliser l'Inscription</p>
                 <div class="card">

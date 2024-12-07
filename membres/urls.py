@@ -27,4 +27,5 @@ urlpatterns = [
     path('get_communes/', views.get_communes, name='get_communes'),
     path('get_quartiers/', views.get_quartiers, name='get_quartiers'),
     path('get_avenues/', views.get_avenues, name='get_avenues'),
+    path("retirer_tout/", views.retirer_tout, name="retirer_tout")
 ]

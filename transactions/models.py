@@ -28,6 +28,7 @@ OPERATEURS = [
 
 TRANSACTION_CHOICES = [
     ('retrait', 'Retrait'),
+    ('retrait tout', 'Retrait tout'),
     ('transfert', 'Transfert'),
     ('depot_objectif', 'Dépôt objectif'),
     ('depot_inscription', 'Dépôt inscription'),

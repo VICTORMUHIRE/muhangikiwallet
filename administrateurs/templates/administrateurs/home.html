@@ -84,7 +84,7 @@
                     </h5>
                 </div><div class="card-body p-0">
                     <ul class="list-group list-group-flush">
-                        {% for demande_pret in demandes_pret|first %}
+                        {% for demande_pret in demandes_pret %}
                         <li class="list-group-item p-2 rounded-4">
                             <a class="btn d-block text-start btn-light d-flex justify-content-between" href="{% url 'administrateurs:voir_pret' demande_pret.pk %}">
                                 <div>
@@ -92,6 +92,17 @@
                                     <h6 class="text-center">{{ demande_pret.membre }}</h6>
                                 </div>
                                 <span>{{ demande_pret.transaction.date }}</span>
+                            </a>
+                        </li>
+                        {% endfor %}
+                        {% for demande_retrait_tout in demandes_retrait_tout %}
+                        <li class="list-group-item p-2 rounded-4">
+                            <a class="btn d-block text-start btn-light d-flex justify-content-between" href="{% url 'administrateurs:demande_retrait_tout' demande_retrait_tout.pk %}">
+                                <div>
+                                    <div class="badge bg-danger">Demande de pret</div>
+                                    <h6 class="text-center">{{ demande_retrait_tout.membre }}</h6>
+                                </div>
+                                <span>{{ demande_retrait_tout.date }}</span>
                             </a>
                         </li>
                         {% endfor %}

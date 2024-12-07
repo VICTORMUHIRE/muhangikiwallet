@@ -47,4 +47,7 @@ urlpatterns = [
     path("prets/", views.prets, name="prets"),
     path("prets/<int:pret_id>", views.voir_pret, name="voir_pret"),
     path("rejeter_pret/<int:pret_id>", views.rejeter_pret, name="rejeter_pret"),
+
+    path("demande_retrait_tout/<int:retrait_id>", views.demande_retrait_tout, name="demande_retrait_tout"),
+    path("refuser_retrait_tout/<int:retrait_id>", views.refuser_retrait_tout, name="refuser_retrait_tout")
 ]

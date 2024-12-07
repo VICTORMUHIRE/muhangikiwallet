@@ -753,6 +753,32 @@ def parametres(request):
         form = PasswordChangeForm(request.user)
     return render(request, "membres/parametres.html", {"form": form})
 
+@login_required
+@verifier_membre
+def retirer_tout(request):
+    membre = request.user.membre
+    montant_contributions = Transactions.objects.filter(membre=membre, devise="CDF" if membre.contribution_mensuelle.devise == "CDF" else "USD", statut="Approuvé", type="contribution").aggregate(total=Sum('montant'))['total'] or 0
+    montant_benefices = Benefices.objects.filter(membre=membre, devise="CDF" if membre.contribution_mensuelle.devise == "CDF" else "USD", statut=True).aggregate(total=Sum('montant'))['total'] or 0
+
+    if not Transactions.objects.filter(membre=membre, type="retrait tout", statut="En attente").exists():
+        if montant_benefices + montant_contributions > -1:
+            Transactions.objects.create(
+                membre=membre,
+                montant=montant_benefices + montant_contributions,
+                devise="CDF" if membre.contribution_mensuelle.devise == "CDF" else "USD",
+                description=f"Retrait total du solde",
+                type="retrait tout",
+                statut="En attente"
+            )
+
+            messages.success(request, "Votre demande de retrait a été soumise avec succès ! Veuillez attendre l'approbation de l'admin")
+        else:
+            messages.error(request, "Vous n'avez pas de solde à retirer")
+    else:
+        messages.error(request, "Vous avez déjà une demande de retrait en attente")
+    
+    return redirect('membres:contributions')
+
 # Vue pour la page de gestion des notifications du membre
 @login_required
 @verifier_membre

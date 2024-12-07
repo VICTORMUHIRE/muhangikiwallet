@@ -81,8 +81,9 @@ def home(request):
     transactions = Transactions.objects.all().order_by("-date")
     objectifs = Objectifs.objects.filter()
 
-    demandes_pret = Prêts.objects.filter(statut="En attente"),
+    demandes_pret = Prêts.objects.filter(statut="En attente")
     demandes_inscription = DepotsInscription.objects.filter(statut="En attente")
+    demandes_retrait_tout = Transactions.objects.filter(statut="En attente", type="retrait tout")
     
     context = {
         'solde_total_entreprise_cdf': solde_total_entreprise_cdf,
@@ -99,6 +100,7 @@ def home(request):
         "transactions": transactions,
         "demandes_pret": demandes_pret,
         "demandes_inscription": demandes_inscription,
+        "demandes_retrait_tout": demandes_retrait_tout
     }
     return render(request, 'administrateurs/home.html', context)
 
@@ -141,8 +143,8 @@ def membres(request):
                 
     # Convert USD contributions to CDF for a common currency
     total_contributions_CDF += total_contributions_USD * 2800
-            
-    membres_actifs = Membres.objects.filter(status=True)
+    
+    membres_actifs = Membres.objects.filter().reverse()  # Order by id descendant
 
     for membre in membres:
         # Get member's total contributions in their respective currency
@@ -702,3 +704,100 @@ def rejeter_pret(request, pret_id):
     pret.save()
     messages.success(request, "Le pret a été rejeté avec succès.")
     return redirect("administrateurs:voir_pret", pret_id=pret.pk)
+
+@login_required
+@verifier_admin
+def demande_retrait_tout(request, retrait_id):
+    retrait = get_object_or_404(Transactions, pk=retrait_id, type="retrait tout")
+    membre = retrait.membre
+
+    reseaux = NumerosAgent.objects.values_list('reseau', flat=True).distinct()
+    numeros_categories = {reseau: [] for reseau in reseaux}
+    for reseau in reseaux:
+        for numero_agent in NumerosAgent.objects.filter(reseau=reseau):
+            numeros_categories[reseau].append((numero_agent.numero, numero_agent.pk))
+
+    if request.method == "POST":
+        mot_de_passe = request.POST.get("password")
+        transaction_form = TransactionsForm(request.POST, instance=retrait)
+
+        if check_password(mot_de_passe, request.user.password):
+            if transaction_form.is_valid() or True:
+                # retrait = transaction_form.save(commit=False)
+
+                retrait.date_approbation = timezone.now()
+                retrait.administrateur = request.user.admin
+                # retrait.agent = retrait.numero_agent.agent
+
+                for transaction in Transactions.objects.filter(membre=membre):
+                    transaction.statut = "Annulé"
+                    transaction.date = timezone.now()
+
+                    # match transaction.type:
+                    #     case "contribution":
+                    #         contribution = Contributions.objects.get(transaction=transaction)
+                    #         contribution.statut = "Annulé"
+                    #         contribution.save()
+
+                        # case "depot_inscription":
+                        #     depot_inscription = DepotsInscription.objects.get(transaction=transaction)
+                        #     depot_inscription.statut = "Annulé"
+                        #     depot_inscription.save()
+
+                        # case "depot_objectif":
+                        #     depot_objectif = DepotsObjectif.objects.get(transaction=transaction)
+                        #     depot_objectif.statut = "Annulé"
+                        #     depot_objectif.save()
+
+                        # case "pret":
+                        #     pret = Prêts.objects.get(transaction=transaction)
+                        #     pret.statut = "Annulé"
+                        #     pret.save()
+
+                        # case "retrait":
+                        #     retrait_pret = Retraits.objects.get(transaction=transaction)
+                        #     retrait_pret.statut = "Annulé"
+                        #     retrait_pret.save()
+
+                        # case "transfert":
+                        #     transfert = Transferts.objects.get(transaction=transaction)
+                        #     transfert.statut = "Annulé"
+                        #     transfert.save()
+
+                    transaction.save()
+
+                retrait.statut = "Approuvé"
+                retrait.save()
+
+                retrait.membre.status = False
+                retrait.membre.save()
+
+                messages.success(request, "Le retrait a été approuvé avec succès.")
+                return redirect("administrateurs:home")
+
+            else:
+                messages.error(request, "Veuillez corriger les erreurs du formulaire.")
+        else:
+            messages.error(request, "Mot de passe incorrect")
+
+    context = {
+        "form": TransactionsForm(instance=retrait),
+        "numeros_categories": numeros_categories,
+        "retrait": retrait,
+        "membre": membre,
+        "montant_contributions": Contributions.objects.filter(transaction__membre=membre, devise=membre.contribution_mensuelle.devise, statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0,
+        "montant_objectifs": DepotsObjectif.objects.filter(transaction__membre=membre, statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0,
+        "montant_prets": Prêts.objects.filter(transaction__membre=membre, statut="Approuvé").aggregate(Sum('montant_remboursé'))['montant_remboursé__sum'] or 0
+    }
+
+    return render(request, "administrateurs/voir_retrait_tout.html", context)
+
+@login_required
+@verifier_admin
+def refuser_retrait_tout(request, retrait_id):
+    retrait = get_object_or_404(Transactions, pk=retrait_id, type="retrait tout")
+    retrait.statut = "Rejeté"
+    retrait.date = timezone.now()
+    retrait.save()
+    messages.success(request, "Le retrait a été rejeté avec succès.")
+    return redirect("administrateurs:home")

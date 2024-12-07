@@ -113,12 +113,3 @@ class ModifierMembresForm(forms.ModelForm):
             "numero_telephone": forms.TextInput(attrs={"placeholder": "Ex : +243999999999 ou 0999999999"})
         }
 
-    def clean(self):
-        super().clean()
-
-        numero_telephone = self.cleaned_data.get("numero_telephone")
-        if Users.objects.filter(username=numero_telephone).exists():
-            self.add_error("numero_telephone", "Ce numéro de téléphone est déjà utilisé")
-
-        return self.cleaned_data
-
