@@ -10,20 +10,28 @@
     {% endfor %}
 {% endif %}
 
+<form method="get" class="d-flex" role="search">
+    <input class="form-control me-2" type="search" placeholder="Recherche" aria-label="Search" name="q">
+    <button class="btn btn-outline-success" type="submit">Rechercher</button>
+</form>
+
+
 <h1>Agents : {{ agents|length }} {{ agents.count|pluralize:"s" }}</h1>
 
 <p class="text-end"><a href="{% url 'administrateurs:creer_agent' %}" class="btn btn-primary">Créer un nouvel agent</a></p>
 
-<div class="table-responsive"> <!-- Added for responsiveness -->
-    <table class="table table-striped">  <!-- Added Bootstrap styling -->
+<div class="table-responsive">
+    <table class="table table-striped">
         <thead>
             <tr>
                 <th>Nom</th>
                 <th>Prénom</th>
-                <th>Email</th>
                 <th>Téléphone</th>
-                <th>Adresse</th>
-                <th>Statut</th>
+                <th>Contributions (USD)</th>
+                <th>Prêts (USD)</th>
+                <th>Remb. Prêts (USD)</th>
+                <th>Objectifs (USD)</th>
+                <th>Total (USD)</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -32,22 +40,42 @@
             <tr>
                 <td>{{ agent.nom }}</td>
                 <td>{{ agent.prenom }}</td>
-                <td>{{ agent.email }}</td>
-                <td>{{ agent.telephone }}</td>
-                <td>{{ agent.adresse }}</td>
-                <td>{{ agent.statut }}</td>
+                <td>{{ agent.numero_telephone }}</td>
+                <td>{{ agent.total_contributions_usd|stringformat:".2f" }}</td>
+                <td>{{ agent.total_prets_usd|stringformat:".2f" }}</td>
+                <td>{{ agent.total_remboursements_prets_usd|stringformat:".2f" }}</td>
+                <td>{{ agent.total_objectifs_usd|stringformat:".2f" }}</td>
+                <td>{{ agent.total_transactions_usd|stringformat:".2f" }}</td>
                 <td>
-                    <a href="{% url 'administrateurs:modifier_agent' agent.pk %}" class="btn btn-sm btn-secondary">Modifier</a>
-                    <a href="{% url 'administrateurs:supprimer_agent' agent.pk %}" class="btn btn-sm btn-danger" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet agent ?')">Supprimer</a>
+                    <a href="{% url 'administrateurs:modifier_agent' agent.pk %}" class="btn btn-sm btn-secondary"><i class="fas fa-edit"></i></a>
+                    <a href="{% url 'administrateurs:supprimer_agent' agent.pk %}" class="btn btn-sm btn-danger" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet agent ?')"><i class="fas fa-trash-alt"></i></a>
+                </td>
+            </tr></a>
                 </td>
             </tr>
-            {% empty %}  <!-- Added empty case -->
+            {% empty %}
             <tr>
-                <td colspan="7" class="text-center">Aucun agent trouvé.</td>
+                <td colspan="9" class="text-center">Aucun agent trouvé.</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
+<div class="pagination justify-content-center">
+    <span class="step-links">
+        {% if page_obj.has_previous %}
+            <a href="?page=1&q={{ request.GET.q }}">&laquo; première</a>
+            <a href="?page={{ page_obj.previous_page_number }}&q={{ request.GET.q }}">précédente</a>
+        {% endif %}
 
+        <span class="current">
+            Page {{ page_obj.number }} sur {{ page_obj.paginator.num_pages }}.
+        </span>
+
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}&q={{ request.GET.q }}">suivante</a>
+            <a href="?page={{ page_obj.paginator.num_pages }}&q={{ request.GET.q }}">dernière &raquo;</a>
+        {% endif %}
+    </span>
+</div>
 {% endblock %}

@@ -32,8 +32,11 @@ def home(request):
     solde_CDF = Transactions.objects.filter(agent=agent, devise="CDF", statut="Approuvé", type="contribution").aggregate(total=Sum('montant'))['total'] or 0
     solde_USD = Transactions.objects.filter(agent=agent, devise="USD", statut="Approuvé", type="contribution").aggregate(total=Sum('montant'))['total'] or 0
 
-    total_prets_CDF = Transactions.objects.filter(agent=agent, devise="CDF", statut="Approuvé", type="pret").aggregate(total=Sum('montant'))['total'] or 0
-    total_prets_USD = Transactions.objects.filter(agent=agent, devise="USD", statut="Approuvé", type="pret").aggregate(total=Sum('montant'))['total'] or 0
+    total_prets_CDF = Transactions.objects.filter(agent=agent, devise="CDF", statut__in=["Approuvé", "Remboursé"], type="pret").aggregate(total=Sum('montant'))['total'] or 0
+    total_prets_USD = Transactions.objects.filter(agent=agent, devise="USD", statut__in=["Approuvé", "Remboursé"], type="pret").aggregate(total=Sum('montant'))['total'] or 0
+
+    total_prets_rembourses_CDF = Transactions.objects.filter(agent=agent, devise="CDF", statut="Approuvé", type="remboursement_pret").aggregate(total=Sum('montant'))['total'] or 0
+    total_prets_rembourses_USD = Transactions.objects.filter(agent=agent, devise="USD", statut="Approuvé", type="remboursement_pret").aggregate(total=Sum('montant'))['total'] or 0
 
     total_depot_objectif_CDF = Transactions.objects.filter(agent=agent, devise="CDF", statut="Approuvé", type="depot_objectif").aggregate(total=Sum('montant'))['total'] or 0
     total_depot_objectif_USD = Transactions.objects.filter(agent=agent, devise="USD", statut="Approuvé", type="depot_objectif").aggregate(total=Sum('montant'))['total'] or 0
@@ -47,17 +50,18 @@ def home(request):
     context = {
         "agent": agent,
         "objectifs": objectifs,
-        "total_prets_CDF": total_prets_CDF,
-        "total_prets_USD": total_prets_USD,
+        "total_prets_CDF": total_prets_CDF - total_prets_rembourses_CDF,
+        "total_prets_USD": total_prets_USD - total_prets_rembourses_USD,
         "total_depot_objectif_CDF": total_depot_objectif_CDF,
         "total_depot_objectif_USD": total_depot_objectif_USD,
         "total_retraits_CDF": total_retraits_CDF,
         "total_retraits_USD": total_retraits_USD,
-        "solde_CDF": solde_CDF,
-        "solde_USD": solde_USD,
+        "solde_CDF": solde_CDF + total_prets_rembourses_CDF - total_prets_CDF - total_retraits_CDF,
+        "solde_USD": solde_USD + total_prets_rembourses_USD - total_prets_USD - total_retraits_USD,
         "transactions": transactions,
         "taches": taches
     }
+
     return render(request, "agents/home.html", context)
 
 @login_required
@@ -110,7 +114,7 @@ def voir_transaction(request, transaction_id):
                         pret.solde_remboursé += transaction.montant
                         
                         if pret.solde_remboursé >= pret.montant_remboursé:
-                            pret.statut = pret.transaction.statut = "Remboursé"
+                            pret.statut = "Remboursé"
                             pret.date_remboursement = timezone.now()
                             pret.transaction.save()
                             

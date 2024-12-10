@@ -27,7 +27,7 @@
 
         <dl class="row">
           <dt class="col-sm-3">Montant:</dt>
-          <dd class="col-sm-9">{{ transaction.montant|floatformat:2 }} {{ transaction.devise }}</dd>  <!-- Format amount -->
+          <dd class="col-sm-9">{{ transaction.montant|stringformat:".2f" }} {{ transaction.devise }}</dd>  <!-- Format amount -->
 
           <dt class="col-sm-3">Date:</dt>
           <dd class="col-sm-9">{{ transaction.date|date:"d/m/Y H:i" }}</dd>  <!-- Format date and time -->

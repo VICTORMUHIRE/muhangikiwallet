@@ -27,7 +27,7 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-0n!^rc92pcf=fr
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ["https://muhangikiwallet.com","muhangikiwallet.com"]
+ALLOWED_HOSTS = ["https://muhangikiwallet.com","muhangikiwallet.com", "*"]
 
 # Encodage UTF-8
 DEFAULT_CHARSET = 'utf-8'
@@ -92,11 +92,11 @@ WSGI_APPLICATION = 'muhangiki_wallet.wsgi.application'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
-    # 'default': {
-    #     'ENGINE': 'django.db.backends.sqlite3',
-    #     'NAME': BASE_DIR / 'db.sqlite3',
-    # },
     'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    },
+    'defaul': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'muhangikiwallet_muhangikiwallet', # Remplacez par le nom de votre base de données
         'USER': 'muhangikiwallet_muhangik', # Remplacez par votre utilisateur de base de données

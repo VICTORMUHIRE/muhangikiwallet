@@ -46,7 +46,7 @@
                                 <option value="">-- Choisissez un type de crédit --</option>
                                 {% for type_pret in types_pret %}
                                     <option value="{{ type_pret.id }}"
-                                        data-taux="{{ type_pret.taux_interet|floatformat:2 }}"
+                                        data-taux="{{ type_pret.taux_interet|stringformat:".2f" }}"
                                         data-delai="{{ type_pret.delai_remboursement }}"
                                         {% if type_pret.id == form.type_pret.value %}selected{% endif %}>
                                         {{ type_pret.nom }}

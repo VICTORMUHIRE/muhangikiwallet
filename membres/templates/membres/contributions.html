@@ -4,14 +4,14 @@
 
 {% block content %}
 
-    {% for message in messages %}  <!-- Messages display -->
-    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{message.tags}}{% endif %} alert-dismissible fade show" role="alert">
-        {{ message }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-    {% endfor %}
-
     <div class="row justify-content-center mt-5 mt-sm-0 mb-3 mb-md-5">
+        {% for message in messages %}  <!-- Messages display -->
+        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{message.tags}}{% endif %} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+        
         <div class="col-md-8 text-center">
             <div class="">
                 <div class="card-header bg-white">
@@ -20,7 +20,7 @@
                 <div class="card-body">
                     <p class="fs-5 mb-0"><span class="mb-3 fw-bolder fs-5">{{ membre.mois_contribution|date:"E" }}</span></p>
                     <p class="fs-5 mb-0">Etat : <span class="mb-3 fw-bolder fs-5">{{ contribution_actuelle }} / {{ contribution_mensuelle.montant }} {% if contribution_mensuelle.devise == 'CDF' %}FC{% else %}${% endif %}</span></p>
-                    <p class="fs-5 mb-0">Restant : <span class="mb-3 fw-bolder fs-5">{{ montant_restant|floatformat:2 }} {% if contribution_mensuelle.devise == 'CDF' %}FC{% else %}${% endif %}</span></p>
+                    <p class="fs-5 mb-0">Restant : <span class="mb-3 fw-bolder fs-5">{{ montant_restant|stringformat:".2f" }} {% if contribution_mensuelle.devise == 'CDF' %}FC{% else %}${% endif %}</span></p>
                     <div class="mt-4">
                         <a href="#" class="btn btn-sm btn-danger text-white" data-bs-toggle="modal" data-bs-target="#confirmWithdrawModal">Retirer tout</a>
                         <a href="{% url 'membres:contribuer' %}" class="btn btn-sm btn-success text-white">Contribuer</a>
@@ -29,25 +29,30 @@
             </div>
         </div>
         
-        <!-- Modal -->
+        <!-- Modal pour confirmation de retraity -->
         <div class="modal fade" id="confirmWithdrawModal" tabindex="-1" aria-labelledby="confirmWithdrawModalLabel" aria-hidden="true">
-          <div class="modal-dialog">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title" id="confirmWithdrawModalLabel">Confirmation de retrait</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-              </div>
-              <div class="modal-body">
-                Êtes-vous sûr de vouloir retirer tous vos fonds ? Cette action vous exclura définitivement de l'entreprise.
-              </div>
-              <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                <a href="{% url 'membres:retirer_tout' %}" class="btn btn-danger">Retirer</a> </div>
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="confirmWithdrawModalLabel">Confirmation de Retrait</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        Êtes-vous sûr de vouloir retirer tout votre solde ? Vous serez bani de l'entreprise
+                    </div>
+                    <div class="modal-footer">
+                        <form method="post" action="{% url 'membres:retirer_tout' %}">
+                            {% csrf_token %}
+                            <input type="password" name="mot_de_passe" class="form-control mb-2" placeholder="Entrez votre mot de passe" required>
+                            <div class="text-center">
+                                <button type="button" class="btn btn-sm btn-secondary text-white" data-bs-dismiss="modal">Annuler</button>
+                                <button type="submit" class="btn btn-sm btn-primary text-white">Confirmer</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </div>
-          </div>
         </div>
-        
-
 
         <div class="mt-4">
             <div class="card shadow-sm">

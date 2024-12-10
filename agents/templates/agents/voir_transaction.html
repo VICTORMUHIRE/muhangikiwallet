@@ -6,7 +6,7 @@
 {% block content %}
     <div class="row mt-5 mt-sm-0 mb-4 mb-md-5">
         <form method="post" enctype="multipart/form-data" id="form">
-            <h2 class="roboto-light text-center">{{ form.instance.membre }}</h2>
+            <h2 class="roboto-light text-center">{{ form.instance.membre }} - {{ form.instance.membre.numero_telephone }} </h2>
             <h4 class="text-center mb-4">
                 {% if form.instance.type == 'retrait' %}Retrait d'argent{% elif form.instance.type == 'transfert' %}Transfert d'argent{% elif form.instance.type == 'depot_objectif' %}Dépôt sur objectif{% elif form.instance.type == 'depot_inscription' %}Dépôt d'inscription{% elif form.instance.type == 'contribution' %}Contribution mensuelle{% elif form.instance.type == 'pret' %}Prêt d'argent {% elif form.instance.type == 'remboursement_pret' %}Remboursement de pret{% endif %}
             </h4>
@@ -17,7 +17,7 @@
             <div class="row mb-3">
                 <div class="form-group col-8">
                     <label for="{{ form.montant.id_for_label }}" class="form-label">{{ form.montant.label }}</label>
-                    <input type="text" class="form-control" id="{{ form.montant.id_for_label }}" name="{{ form.montant.html_name}}" value="{{ form.montant.value|floatformat:0 }}" readonly>
+                    <input type="text" class="form-control" id="{{ form.montant.id_for_label }}" name="{{ form.montant.html_name}}" value="{{ form.montant.value|stringformat:".2f" }}" readonly>
                 </div>
                 <div class="form-group col-4">
                     <label for="{{ form.devise.id_for_label }}" class="form-label">{{ form.devise.label }}</label>
@@ -101,8 +101,9 @@
             passwordInput.name = 'mot_de_passe';  // Use 'mot_de_passe' as name
             passwordInput.value = password;
             Form.appendChild(passwordInput);
-
-            Form.submit();  // Submit the withdraw form
+            
+            if (Form.checkValidity()) Form.submit()  // Submit the withdraw form
+            else Form.reportValidity();
         });
     </script>
 

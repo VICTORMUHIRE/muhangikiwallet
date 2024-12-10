@@ -6,6 +6,15 @@
 {% block content %}
 
 <div class="container mt-5">
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+    
     <div class="card shadow-sm rounded-4 border-0">
         <div class="card-header bg-white">
             <h4 class="card-title font-weight-bold">
@@ -20,12 +29,19 @@
             <h5>Détails des fonds :</h5>
             <ul>
                 <li><strong>Contributions:</strong> {{ montant_contributions|stringformat:".2f" }} {{ membre.contribution_mensuelle.devise }}</li>
-                <li><strong>Objectifs:</strong> {{ montant_objectifs|stringformat:".2f" }} {{ membre.contribution_mensuelle.devise }}</li>
-                <li><strong>Prêts remboursés:</strong> {{ montant_prets|stringformat:".2f" }} {{ membre.contribution_mensuelle.devise }}</li>
+                <li><strong>Bénéfices:</strong> {{ montant_benefices|stringformat:".2f" }} {{ membre.contribution_mensuelle.devise }}</li>
+                <li><strong>Objectifs:</strong> {{ montant_objectifs|stringformat:".2f" }} {{ membre.contribution_mensuelle.devise }}
+                <ul>
+                    {% for objectif in objectifs %}
+                    <li><strong>{{ forloop.counter }}. {{ objectif.nom }} : </strong> {{ objectif.montant|stringformat:".2f" }} {{ objectif.devise }}</li>
+                    {% endfor %}
+                </ul>
+                </li>
+                <li><strong>Total:</strong> {{ montant_total|stringformat:".2f" }} {{ membre.contribution_mensuelle.devise }}</li>
             </ul>
 
             <button type="button" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#approveModal">Approuver</button>
-             <a href="{% url 'administrateurs:refuser_retrait_tout' retrait.pk %}" class="btn btn-danger">Rejeter</a>
+            <a href="{% url 'administrateurs:refuser_retrait_tout' retrait.pk %}" class="btn btn-danger">Rejeter</a>
 
             <!-- Approve Modal -->
             <div class="modal fade" id="approveModal" tabindex="-1" aria-labelledby="approveModalLabel" aria-hidden="true">

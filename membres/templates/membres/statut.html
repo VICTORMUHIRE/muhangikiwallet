@@ -16,7 +16,250 @@
         {% endif %}
 
         <div class="card-body">
-            {% if not user.membre.status and not depot_inscription.transaction %}
+            {% if not user.membre.status and depot_inscription.statut == "Rejeté" %}
+                <p class="alert alert-danger text-center">Votre compte n'a pas été approuvé, veuillez corriger ou contacter l'administrateur</p>
+                <div class=" text-center">
+                    <!--<img src="{% static 'desaprouve.png' %}" alt="Waiting Image" class="img-fluid rounded" style="max-height: 400px; object-fit: cover;">-->
+                </div>
+
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="row">
+                        {% for field in membre_form %}
+                        {% if field.field.widget.input_type == 'file' %}
+                        <div class="col-md-4 mb-3 d-flex flex-column align-items-center">
+                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            <input type="file" class="form-control d-none {% if field.errors %}is-invalid{% endif %}" id="{{ field.id_for_label }}" name="{{ field.name }}" value="{{ field.value|default:'' }}" accept="image/*" onchange="previewImage(this);">
+
+                            <div id="imagePreview" class="image-preview text-center" onclick="document.getElementById('{{ field.id_for_label}}').click();">
+                                {% if field.value %}
+                                <img src="{{field.value.url}}" alt="Aperçu de la {{ field.label }}" class="img-fluid rounded" style="max-height: 200px; object-fit: cover;">
+                                {% else %}
+                                <label for="{{ field.id_for_label }}" class="upload-icon">
+                                    <i class="fas fa-image"></i>
+                                </label>
+                                {% endif %}
+                            </div>
+                            {% if field.errors %}
+                            <div class="invalid-feedback">
+                                {{ field.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% else %}
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+
+                            {% if field.name == 'province_residence' %}
+                                <select class="form-select {% if field.errors %}is-invalid{% endif %}" id="id_province_residence" name="{{ field.name }}">
+                                    <option value="" disabled>-- Selectionnez une province --</option>
+                                    {% for option in field.field.choices %}
+                                        {% if option.0 %}<option value="{{ option.0 }}" {% if field.value|lower == option.0|lower %}selected{% endif %}>{{ option.1 }}</option>{% endif %}
+                                    {% endfor %}
+                                </select>
+                            {% elif field.name == 'ville_residence' %}
+                            <select class="form-select" id="id_ville_residence" name="ville_residence" disabled>
+                                {% for option in field.field.choices %}
+                                    {% if field.value|lower == option.0|lower %}<option value="{{ option.0 }}">{{ option.1 }}</option> {% endif %}
+                                {% endfor %}
+                            </select>
+                            {% elif field.name == 'commune_residence' %}
+                            <select class="form-select" id="id_commune_residence" name="commune_residence" disabled>
+                                {% for option in field.field.choices %}
+                                    {% if field.value|lower == option.0|lower %}<option value="{{ option.0 }}">{{ option.1 }}</option> {% endif %}
+                                {% endfor %}
+                            </select>
+                            {% elif field.name == 'quartier_residence' %}
+                            <select class="form-select" id="id_quartier_residence" name="quartier_residence" disabled>
+                                {% for option in field.field.choices %}
+                                    {% if field.value|lower == option.0|lower %}<option value="{{ option.0 }}">{{ option.1 }}</option> {% endif %}
+                                {% endfor %}
+                            </select>
+                            {% elif field.name == 'avenue_residence' %}
+                            <select class="form-select" id="id_avenue_residence" name="avenue_residence" disabled>
+                                {% for option in field.field.choices %}
+                                    {% if field.value|lower == option.0|lower %}<option value="{{ option.0 }}">{{ option.1 }}</option> {% endif %}
+                                {% endfor %}
+                            </select>
+                            {% elif field.name == 'status' %}
+                                <input type="hidden" name="{{ field.name }}" value="{{ field.value|default:'' }}">
+                            {% else %}
+                                {% if field.field.widget.input_type == 'radio' %}
+                                    <div class="form-check">
+                                        {% for radio in field %}
+                                            <input type="{{ radio.field.widget.input_type }}" class="form-check-input {% if radio.errors %}is-invalid{% endif %}" id="{{ radio.id_for_label }}" name="{{ radio.html_name }}" value="{{ radio.choice_value }}"
+                                            {% if radio.data == radio.choice_value %}checked{% endif %}>
+                                            <label class="form-check-label" for="{{ radio.id_for_label }}">{{ radio.choice_label }}</label><br>
+                                        {% endfor %}
+                                    </div>
+                                {% elif field.field.widget.input_type == 'select' %}
+                                    <select class="form-select {% if field.errors %}is-invalid{% endif %}" id="{{ field.id_for_label }}" name="{{ field.name }}">
+                                        <option value="" disabled>-- Selectionnez une option --</option>
+                                        {% for option in field.field.choices %}
+                                            {% if option.0 %}<option value="{{ option.0 }}" {% if field.value|lower == option.0|lower %}selected{% endif %}>{{ option.1 }}</option>{% endif %}
+                                        {% endfor %}
+                                    </select>
+                                {% elif field.field.widget.input_type == 'checkbox' %}
+                                <div class="form-check">
+                                    <input type="{{ field.field.widget.input_type }}" class="form-check-input {% if field.errors %}is-invalid{% endif %}" id="{{ field.id_for_label }}" name="{{ field.name }}" {% if field.value %}checked{% endif %}>
+                                    <label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                </div>
+                                {% else %}
+                                <input type="{{ field.field.widget.input_type }}" class="form-control {% if field.errors %}is-invalid{% endif %}" id="{{ field.id_for_label }}" name="{{ field.name }}" value="{% if field.field.widget.input_type == 'date' %}{{ field.value|date:'Y-m-d' }}{% else %}{{ field.value|default:'' }}{% endif %}" placeholder="{{ field.field.widget.attrs.placeholder|default:'' }}" required>
+                                {% endif %}
+                            {% endif %}
+                            {% if field.errors %}
+                                <div class="invalid-feedback">
+                                    {{ field.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <button type="submit" class="btn btn-mw text-white w-100" id="create-account-button">Modifier</button>
+                        </div>
+                    </div>
+                </form>
+
+                <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script><script>
+                    function previewImage(input) {
+                        const previewContainer = input.parentElement.querySelector('#imagePreview');
+
+                        if (input.files && input.files[0]) {
+                            var reader = new FileReader();
+
+                            reader.onload = function(e) {
+                                previewContainer.innerHTML = `<img src="${e.target.result}" style="max-width: 200px; max-height: 200px;" alt="Image Preview">`;
+                            }
+
+                            reader.readAsDataURL(input.files[0]);
+                        } else {
+                            previewContainer.innerHTML = '<span class="upload-icon"><i class="fas fa-upload"></i></span>';
+                        }
+                    }
+
+                    $(document).ready(function() {
+                        $("#id_province_residence").change(function() {
+                        var provinceId = $(this).val();
+                        $.ajax({
+                            url: "{% url 'membres:get_villes' %}",  // Replace with the actual URL
+                            type: "GET",
+                            data: {
+                            'province_id': provinceId
+                            },
+                            dataType: "json",
+                            success: function(data) {
+                                $("#id_ville_residence").html("<option value='' disabled selected>-- Selectionnez une ville --</option>");
+                                $("#id_ville_residence").prop('disabled', false);
+
+                                $.each(data, function(key, value) {
+                                    $("#id_ville_residence").append("<option value=" + value["id"] + " type=" + value["type"] + ">" + value["nom"] + "</option>");
+                                });
+
+                                // Clear Quartier and Avenue selections
+                                $("#id_commune_residence").html("<option value='' disabled selected>-- Selectionnez une commune --</option>");
+                                $("#id_commune_residence").prop('disabled', true);
+                                $("#id_quartier_residence").html("<option value='' disabled selected>-- Selectionnez un quartier --</option>");
+                                $("#id_quartier_residence").prop('disabled', true);
+                                $("#id_avenue_residence").html("<option value='' disabled selected>-- Selectionnez une avenue --</option>");
+                                $("#id_avenue_residence").prop('disabled', true);
+                            }
+                        });
+                        });
+
+                        $("#id_ville_residence").change(function() {
+                            var villeId = $(this).val();
+
+                            // Recupere le type de la ville dans l'option selectionnnéee
+                            selectedOption = $(this).find(':selected');
+                            console.log(selectedOption.attr('type'));
+                            
+                            switch (selectedOption.attr('type')) {
+                                case 'Territoire':
+                                    $("#id_ville_residence").parent().find('label').text('Territoire de résidence');
+                                    $("#id_commune_residence").parent().find('label').text('Secteur ou Chefferie de résidence' );
+                                    $("#id_quartier_residence").parent().find('label').text('Groupement de résidence');
+                                    $("#id_avenue_residence").parent().find('label').text('Village de résidence');
+                                    break;
+                                default:
+                                    $("#id_ville_residence").parent().find('label').text('Ville de résidence');
+                                    $("#id_commune_residence").parent().find('label').text('Commune de résidence');
+                                    $("#id_quartier_residence").parent().find('label').text('Quartier de résidence');
+                                    $("#id_avenue_residence").parent().find('label').text('Avenue de résidence');
+                            }
+
+                            $.ajax({
+                                url: "{% url 'membres:get_communes' %}",
+                                type: "GET",
+                                data: {
+                                    'ville_id': villeId
+                                },
+                                dataType: "json",
+                                success: function(data) {
+                                    $("#id_commune_residence").html("<option value='' disabled selected>-- Selectionnez une commune --</option>");
+                                    $("#id_commune_residence").prop('disabled', false);
+
+                                    $.each(data, function(key, value) {
+                                        $("#id_commune_residence").append("<option value=" + value["id"] + ">" + value["nom"] + "</option>");
+                                    });
+
+                                    // Clear Quartier and Avenue selections
+                                    $("#id_quartier_residence").html("<option value='' disabled selected>-- Selectionnez un quartier --</option>");
+                                    $("#id_quartier_residence").prop('disabled', true);
+                                    $("#id_avenue_residence").html("<option value='' disabled selected>-- Selectionnez une avenue --</option>");
+                                    $("#id_avenue_residence").prop('disabled', true);
+                                }
+                            });
+                        });
+
+                        $("#id_commune_residence").change(function() {
+                            var communeId = $(this).val();
+                            $.ajax({
+                                url: "{% url 'membres:get_quartiers' %}",
+                                type: "GET",
+                                data: {
+                                    'commune_id': communeId
+                                },
+                                dataType: "json",
+                                success: function(data) {
+                                    $("#id_quartier_residence").html("<option value='' disabled selected>-- Selectionnez un quartier --</option>");
+                                    $("#id_quartier_residence").prop('disabled', false);
+                                    $.each(data, function(key, value) {
+                                        $("#id_quartier_residence").append("<option value=" + value["id"] + ">" + value["nom"] + "</option>");
+                                    });
+
+                                    // Clear Avenue selection
+                                    $("#id_avenue_residence").html("<option value='' disabled selected>-- Selectionnez une avenue --</option>");
+                                    $("#id_avenue_residence").prop('disabled', true);
+                                }
+                            });
+                        });
+
+                        $("#id_quartier_residence").change(function() {
+                            var quartierId = $(this).val();
+                            $.ajax({
+                                url: "{% url 'membres:get_avenues' %}",
+                                type: "GET",
+                                data: {
+                                    'quartier_id': quartierId
+                                },
+                                dataType: "json",
+                                success: function(data) {
+                                    $("#id_avenue_residence").html("<option value='' disabled selected>-- Selectionnez une avenue --</option>");
+                                    $("#id_avenue_residence").prop('disabled', false);
+                                    $.each(data, function(key, value) {
+                                        $("#id_avenue_residence").append("<option value=" + value["id"] + ">" + value["nom"] + "</option>");
+                                    });
+                                }
+                            });
+                        });
+                    });
+                </script>
+            {% elif not user.membre.status and not depot_inscription.transaction %}
                 <p class="alert alert-warning text-center">Votre compte est en cours d'approbation, veuillez contacter l'administrateur si la vérification persiste</p>
                 <div class=" text-center">
                     <img src="{% static 'waiting-for-results.png' %}" alt="Waiting Image" class="img-fluid rounded" style="max-height: 400px; object-fit: cover;">
@@ -55,13 +298,8 @@
                 <div class=" text-center">
                     <img src="{% static 'denied.png' %}" alt="Waiting Image" class="img-fluid rounded" style="max-height: 400px; object-fit: cover;">
                 </div>
-            {% elif not user.membre.status and not depot_inscription.statut == "Réjetté" %}
-                <p class="alert alert-danger text-center">Votre compte n'a pas été approuvé, veuillez contacter l'administrateur</p>
-                <div class=" text-center">
-                    <img src="{% static 'desaprouve.png' %}" alt="Waiting Image" class="img-fluid rounded" style="max-height: 400px; object-fit: cover;">
-                </div>
             {% elif user.membre.status and not depot_inscription.transaction %}
-                <p class="alert alert-info text-center">Votre compte a été approuvé, veuillez payer les frais d'adhésion pour finaliser l'Inscription</p>
+                <p class="alert alert-info text-center">Veuillez payer les frais d'adhésion pour finaliser l'inscription</p>
                 <div class="card">
                     <div class="card-header text-center p-3">
                         Paiement des frais d'adhésion ({{ form.montant.value|stringformat:".2f" }}$ ou <span id="FC">{{ form.montant.value|stringformat:".2f" }}</span>FC)
@@ -204,37 +442,29 @@
                     montantInput.value = montantInput.value * 2800; // Montant en CDF
                 }
             });
-
-            function previewImage(input) {
-                const previewContainer = document.getElementById('imagePreview');
-                if (input.files && input.files[0]) {
-                    var reader = new FileReader();
-
-                    reader.onload = function(e) {
-                        previewContainer.innerHTML = `<img src="${e.target.result}" style="max-width: 200px; max-height: 200px;" alt="Image Preview">`;
-                    }
-
-                    reader.readAsDataURL(input.files[0]);
-                } else {
-                    previewContainer.innerHTML = '<span class="upload-icon"><i class="fas fa-upload"></i></span>';
-                }
-            }
-        </script>
+</script>
 
 <style>
     .image-preview {
         display: flex;
         justify-content: center;
         align-items: center;
-        width: 200px; /* Adjust as needed */
-        height: 200px; /* Adjust as needed */
+        width: 200px;
+        height: 200px;
         border: 1px dashed #ccc;
-        margin-top: 10px; /* Adjust as needed */
+        margin-top: 10px;
     }
 
     .upload-icon {
-        font-size: 3em; /* Adjust as needed */
+        font-size: 3em;
         color: #ccc;
     }
+
+    .image-preview img {
+        max-width: 100%;
+        max-height: 100%;
+    }
 </style>
+
+
 {% endblock %}

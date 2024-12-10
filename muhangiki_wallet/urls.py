@@ -22,19 +22,44 @@ urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 if __name__ == "__main__":
     from administrateurs.models import Administrateurs, Users, Provinces, Villes, Communes, Quartiers, Avenues, EtatsCivil, NumerosCompte, CodesReference, ContributionsMensuelles
+    from transactions.models import Transactions, Prêts, TypesPrêt, Contributions, DepotsObjectif, Retraits, Transferts, DepotsInscription, Benefices
     
-    # Provinces.objects.all().delete()
-    # Villes.objects.all().delete()
-    # Communes.objects.all().delete()
-    # Quartiers.objects.all().delete()
-    # Avenues.objects.all().delete()
-    # EtatsCivil.objects.all().delete()
-    # NumerosCompte.objects.all().delete()
-    # CodesReference.objects.all().delete()
-    # ContributionsMensuelles.objects.all().delete()
+    # Réinitialise tous les models
+    Provinces.objects.all().delete()
+    Villes.objects.all().delete()
+    Communes.objects.all().delete()
+    Quartiers.objects.all().delete()
+    Avenues.objects.all().delete()
+    EtatsCivil.objects.all().delete()
+    NumerosCompte.objects.all().delete()
+    CodesReference.objects.all().delete()
+    ContributionsMensuelles.objects.all().delete()
+    Administrateurs.objects.all().delete()
+    Users.objects.all().delete()
 
-    # Administrateurs.objects.all().delete()
-    # Users.objects.all().delete()
+    Transactions.objects.all().delete()
+    Prêts.objects.all().delete()
+    TypesPrêt.objects.all().delete()
+    Contributions.objects.all().delete()
+    DepotsObjectif.objects.all().delete()
+    Retraits.objects.all().delete()
+    Transferts.objects.all().delete()
+    DepotsInscription.objects.all().delete()
+    Benefices.objects.all().delete()
+
+    from objectifs.models import Objectifs
+    Objectifs.objects.all().delete()
+
+    from agents.models import Agents, NumerosAgent
+    Agents.objects.all().delete()
+    NumerosAgent.objects.all().delete()
+
+    from membres.models import Membres
+    Membres.objects.all().delete()
+
+    from organisations.models import Organisations
+    Organisations.objects.all().delete()
+
 
     if len(Administrateurs.objects.all()) == 0:
         # ContributionsMensuelles.objects.create(montant=1000, description="Contribution mensuelle minimale")
@@ -44,7 +69,7 @@ if __name__ == "__main__":
         # Provinces.objects.create(nom="Haut-Katanga")
         # Provinces.objects.create(nom="Kasaï")
         # Provinces.objects.create(nom="Kasaï-Central")
-        # Provinces.objects.create(nom="Nord-Kivu")
+        Provinces.objects.create(nom="Nord-Kivu")
         # Provinces.objects.create(nom="Sud-Kivu")
 
         Villes.objects.create(province=Provinces.objects.get(nom="Nord-Kivu"), nom="Goma")
@@ -82,7 +107,7 @@ if __name__ == "__main__":
             ville_residence=Villes.objects.get(nom="Goma"),
             quartier_residence=Quartiers.objects.get(nom="Kyeshero"),
             avenue_residence=Avenues.objects.get(nom="Douglas"),
-            numero_telephone="0976465888", photo_passport="images/default.jpg",
+            numero_telephone="0976465888", photo_profile="images/default.jpg",
             carte_identite_copy="images/default.jpg",
             user=Users.objects.create_user(
                 username="0976465888",
