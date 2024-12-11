@@ -48,6 +48,12 @@ urlpatterns = [
     path("prets/<int:pret_id>", views.voir_pret, name="voir_pret"),
     path("rejeter_pret/<int:pret_id>", views.rejeter_pret, name="rejeter_pret"),
 
+    path("voir_retrait_objectif/<int:retrait_objectif_id>", views.voir_retrait_objectif, name="voir_retrait_objectif"),
+    path("rejeter_retrait_objectif/<int:retrait_objectif_id>", views.rejeter_retrait_objectif, name="rejeter_retrait_objectif"),
+
+    path("retraits/<int:retrait_id>", views.voir_retrait, name="voir_retrait"),
+    path("rejeter_retrait/<int:retrait_id>", views.rejeter_retrait, name="rejeter_retrait"),
+
     path("demande_retrait_tout/<int:retrait_id>", views.demande_retrait_tout, name="demande_retrait_tout"),
     path("refuser_retrait_tout/<int:retrait_id>", views.refuser_retrait_tout, name="refuser_retrait_tout")
 ]

@@ -54,6 +54,33 @@
                         <a href="{% url 'membres:objectif' objectif.id %}" class="btn btn-secondary btn-sm">Détails</a>
                         {% if objectif.statut == 'En cours' %}
                         <a href="{% url 'membres:dépot_objectif' objectif.id %}" class="btn btn-primary btn-sm">Déposer</a>
+                        {% if objectif.statut == 'Atteint' %}
+                            <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#retraitObjectifModal{{ objectif.id }}">
+                                Retirer
+                            </button>
+                        
+                            <!-- Modal retrait objectif -->
+                            <div class="modal fade" id="retraitObjectifModal{{ objectif.id }}" tabindex="-1" aria-labelledby="retraitObjectifModalLabel{{ objectif.id }}" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="retraitObjectifModalLabel{{ objectif.id }}">Retrait de l'objectif "{{ objectif.nom }}"</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p>Êtes-vous sûr de vouloir retirer le montant de {{ objectif.montant_cible|stringformat:".2f" }} {{ objectif.devise }} pour l'objectif "{{ objectif.nom }}"?</p>
+                                            <form method="post" action="{% url 'membres:retrait_objectif' objectif.id %}">
+                                                {% csrf_token %}
+                                                <div class="mb-3">
+                                                    <label for="password{{ objectif.id }}" class="form-label">Mot de passe :</label>
+                                                    <input type="password" class="form-control" id="password{{ objectif.id }}" name="password" required>
+                                                </div>
+                                                <button type="submit" class="btn btn-success">Confirmer le retrait</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         {% endif %}
                     </div>
 

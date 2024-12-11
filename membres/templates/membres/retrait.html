@@ -4,7 +4,7 @@
 
 {% block content %}
     <div class="row mt-5 mt-sm-0 mb-4 mb-md-5 justify-content-center">
-        {% if messages %}  <!-- Moved messages inside card body -->
+        {% if messages %}
             {% for message in messages %}
             <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}warning{% endif %} alert-dismissible fade show text-center" role="alert">
                 {{ message }}
@@ -12,9 +12,9 @@
             </div>
             {% endfor %}
         {% endif %}
-        <div class="col-md-8">  <!-- Added container for responsiveness -->
+        <div class="col-md-8">
             <div class="card border-0">
-                <div class="card-header bg-white text-center p-3 fs-4">  <!-- Consistent styling with contribuer.html -->
+                <div class="card-header bg-white text-center p-3 fs-4">
                     Effectuer un Retrait
                     <div class="fs-6">
                         <label for="total_benefices" class="form-label">Total des bénéfices:</label> <span id="total_benefices" class="font-weight-bold mb-color">{{ montant_benefices|floatformat:2 }} {{ membre.contribution_mensuelle.devise }}</span>
@@ -32,34 +32,29 @@
                         <div class="row mb-3">
                             <div class="form-group col-md-8">
                                 <label class="form-label" for="{{ form.montant.id_for_label }}">Montant à retirer</label>
-                                <input type="number" class="form-control" id="{{ form.montant.id_for_label }}" name="{{ form.montant.html_name }}" value="{{ form.montant.value|default:'' }}" placeholder="Entrez le montant">
+                                <input type="number" class="form-control" id="{{ form.montant.id_for_label }}" name="{{ form.montant.html_name }}" value="{{ form.montant.value|default:'' }}" placeholder="Entrez le montant" min="0" required>
                             </div>
                             <div class="form-group col-md-4">
                                 <label class="form-label" for="{{ form.devise.id_for_label }}">Devise</label>
-                                <input type="text" class="form-control" id="{{ form.devise.id_for_label }}" name="{{ form.devise.html_name }}" value="{{ membre.contribution_mensuelle.devise |default:'CDF'}}" readonly>
-
-                                <!-- <select class="form-control form-select" id="{{ form.devise.id_for_label }}" name="{{ form.devise.html_name }}">
-                                    <option value="CDF" {% if form.devise.value == 'CDF' %}selected{% endif %}>CDF</option>
-                                    <option value="USD" {% if form.devise.value == 'USD' %}selected{% endif %}>USD</option>
-                                </select> -->
+                                <input type="text" class="form-control" id="{{ form.devise.id_for_label }}" name="{{ form.devise.html_name }}" value="{{ membre.contribution_mensuelle.devise|default:'CDF'}}" readonly>
                             </div>
                         </div>
-
+                        
                         <div class="mb-3">
-                            <label for="{{ form.numero_agent.id_for_label }}" class="form-label">{{ form.numero_agent.label }}</label>
-                            <select class="form-control form-select" id="{{ form.numero_agent.id_for_label }}" name="{{ form.numero_agent.html_name }}">
-                                {% for reseau, numeros in numeros_categories.items %}
-                                    <optgroup label="{{ reseau }}">
-                                        {% for numero, id in numeros %}
-                                            <option value="{{ id }}">{{ numero }}</option>
-                                        {% endfor %}
-                                    </optgroup>
-                                {% endfor %}
-                            </select>
+                            <label for="taux_interet">Pourcentage de retrait : </label>
+                            <strong id="pourcentage_retrait" class="font-weight-bold mb-color">-</strong>
+                        </div>
+                        <div class="mb-3">
+                            <label for="taux_interet">Frais de retrait : </label>
+                            <strong id="frais_retrait" class="font-weight-bold mb-color">-</strong>
+                        </div>
+                        <div class="mb-3">
+                            <label for="taux_interet">Montant total à recevoir : </label>
+                            <strong id="montant_a_recevoir" class="font-weight-bold mb-color">-</strong>
                         </div>
 
                         <div class="form-group text-center">
-                            <button type="button" class="btn btn-mw" data-bs-toggle="modal" data-bs-target="#confirmationModal" {% if date.month != 12 %}disabled{% endif %}>  <!-- Button triggers modal -->
+                            <button type="button" class="btn btn-mw" data-bs-toggle="modal" data-bs-target="#confirmationModal" {% if date.month != 12 %}disabled{% endif %}>
                                 Confirmer
                             </button>
                         </div>
@@ -85,7 +80,7 @@
                             <label for="mot_de_passe" class="form-label">Mot de passe</label>
                             <input type="password" class="form-control" id="mot_de_passe" name="mot_de_passe" required>
                         </div>
-                        <button type="submit" class="btn btn-mw">Valider</button>  <!-- Submit button inside modal -->
+                        <button type="submit" class="btn btn-mw">Valider</button>
                     </form>
                 </div>
             </div>
@@ -94,36 +89,50 @@
 
 
 <script>
-        function previewImage(input) {
-            const previewContainer = document.getElementById('imagePreview');
-            if (input.files && input.files[0]) {
-                var reader = new FileReader();
+    const montantInput = document.getElementById('{{ form.montant.id_for_label }}');
+    const pourcentageRetraitInput = document.getElementById('pourcentage_retrait');
+    const fraisRetraitInput = document.getElementById('frais_retrait');
+    const montantARecevoirInput = document.getElementById('montant_a_recevoir');
+    const devise = '{{ membre.contribution_mensuelle.devise }}';
 
-                reader.onload = function(e) {
-                    previewContainer.innerHTML = `<img src="${e.target.result}" style="max-width: 200px; max-height: 200px;" alt="Image Preview">`;
-                }
+    montantInput.addEventListener('input', function() {
+        const montant = parseFloat(this.value);
+        let frais = 0;
 
-                reader.readAsDataURL(input.files[0]);
-            } else {
-                previewContainer.innerHTML = '<span class="upload-icon"><i class="fas fa-upload"></i></span>';
-            }
+        if (devise === 'CDF') montant_USD = montant / 2800;
+        else montant_USD = montant;
+
+        if (montant_USD >= 1 && montant_USD <= 10) {
+            frais = 0.085;
+        } else if (montant_USD > 10 && montant_USD <= 20) {
+            frais = 0.058;
+        } else if (montant_USD > 20 && montant_USD <= 50) {
+            frais = 0.0295;
+        } else if (montant_USD > 50 && montant_USD <= 400) {
+            frais = 1.75;
+        } else if (montant_USD > 400) {
+            frais = 0.01;
         }
+
+        pourcentageRetraitInput.textContent = (frais * 100).toFixed(2) + '%';
+        fraisRetraitInput.textContent = (frais * montant).toFixed(2) + ' ' + (devise == "CDF" ? " FC" : " $");
+        montantARecevoirInput.textContent = (montant * (1 - frais)).toFixed(2) + ' ' + (devise == "CDF" ? " FC" : " $");
+    });
 
     document.getElementById('passwordForm').addEventListener('submit', function(event) {
         event.preventDefault();
 
         const password = document.getElementById('mot_de_passe').value;
-        const withdrawForm = document.getElementById('withdraw-form');  // Target the withdraw form
+        const withdrawForm = document.getElementById('withdraw-form');
 
         const passwordInput = document.createElement('input');
         passwordInput.type = 'hidden';
-        passwordInput.name = 'mot_de_passe';  // Use 'mot_de_passe' as name
+        passwordInput.name = 'mot_de_passe';
         passwordInput.value = password;
         withdrawForm.appendChild(passwordInput);
 
-        withdrawForm.submit();  // Submit the withdraw form
+        withdrawForm.submit();
     });
 </script>
 
 {% endblock %}
-

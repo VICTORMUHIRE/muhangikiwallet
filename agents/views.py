@@ -7,7 +7,7 @@ from .models import Agents
 from .forms import AgentsForm
 from objectifs.models import Objectifs
 from objectifs.forms import ObjectifsForm
-from transactions.models import Transactions, Prêts, TypesPrêt, Contributions, DepotsObjectif, Retraits, Transferts, DepotsInscription
+from transactions.models import Transactions, Prêts, TypesPrêt, Contributions, DepotsObjectif, Retraits, Transferts, DepotsInscription, RetraitsObjectif
 from transactions.forms import TypesPrêtForm, ContributionsForm, PrêtsForm, TransfertsForm, RetraitsForm, DepotsInscriptionForm, TransactionsForm
 from django.db.models import Sum
 from django.utils import timezone
@@ -41,6 +41,9 @@ def home(request):
     total_depot_objectif_CDF = Transactions.objects.filter(agent=agent, devise="CDF", statut="Approuvé", type="depot_objectif").aggregate(total=Sum('montant'))['total'] or 0
     total_depot_objectif_USD = Transactions.objects.filter(agent=agent, devise="USD", statut="Approuvé", type="depot_objectif").aggregate(total=Sum('montant'))['total'] or 0
 
+    total_depot_inscription_CDF = Transactions.objects.filter(agent=agent, devise="CDF", statut="Approuvé", type="depot_inscription").aggregate(total=Sum('montant'))['total'] or 0
+    total_depot_inscription_USD = Transactions.objects.filter(agent=agent, devise="USD", statut="Approuvé", type="depot_inscription").aggregate(total=Sum('montant'))['total'] or 0
+
     total_retraits_CDF = Transactions.objects.filter(agent=agent, devise="CDF", statut="Approuvé", type="retrait").aggregate(total=Sum('montant'))['total'] or 0
     total_retraits_USD = Transactions.objects.filter(agent=agent, devise="USD", statut="Approuvé", type="retrait").aggregate(total=Sum('montant'))['total'] or 0
 
@@ -49,15 +52,14 @@ def home(request):
     
     context = {
         "agent": agent,
-        "objectifs": objectifs,
-        "total_prets_CDF": total_prets_CDF - total_prets_rembourses_CDF,
-        "total_prets_USD": total_prets_USD - total_prets_rembourses_USD,
+        "total_prets_CDF": float(total_prets_CDF),
+        "total_prets_USD": float(total_prets_USD),
         "total_depot_objectif_CDF": total_depot_objectif_CDF,
         "total_depot_objectif_USD": total_depot_objectif_USD,
         "total_retraits_CDF": total_retraits_CDF,
         "total_retraits_USD": total_retraits_USD,
-        "solde_CDF": solde_CDF + total_prets_rembourses_CDF - total_prets_CDF - total_retraits_CDF,
-        "solde_USD": solde_USD + total_prets_rembourses_USD - total_prets_USD - total_retraits_USD,
+        "solde_CDF": float(solde_CDF) + float(total_prets_rembourses_CDF) + float(total_depot_inscription_CDF) - float(total_prets_CDF) - float(total_retraits_CDF),
+        "solde_USD": float(solde_USD) + float(total_prets_rembourses_USD) + float(total_depot_inscription_USD) - float(total_prets_USD) - float(total_retraits_USD),
         "transactions": transactions,
         "taches": taches
     }
@@ -145,11 +147,21 @@ def voir_transaction(request, transaction_id):
                         retrait.date_approbation = timezone.now()
                         retrait.save()
 
+                    case "retrait_objectif":
+                        retrait_objectif = RetraitsObjectif.objects.filter(transaction=transaction).first()
+                        retrait_objectif.statut = "Approuvé"
+                        retrait_objectif.date_approbation = timezone.now()
+                        retrait_objectif.save()
+
+                        objectif = retrait_objectif.objectif
+                        objectif.statut = "Retiré"
+                        objectif.save()
+
                     case _: pass
 
                 transaction.save()
                 messages.success(request, "La transaction a été approuvée avec succès")
-            
+                
                 return redirect("agents:home")
             else:
                 messages.error(request, "Veuillez corriger les erreurs du formulaire")
@@ -225,6 +237,7 @@ def transactions(request):
     context = {
         "transactions": transactions,
     }
+
     return render(request, "agents/transactions.html", context)
 
 @login_required

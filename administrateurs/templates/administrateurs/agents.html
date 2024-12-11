@@ -27,11 +27,13 @@
                 <th>Nom</th>
                 <th>Prénom</th>
                 <th>Téléphone</th>
+                <th>Inscriptions (USD)</th>
                 <th>Contributions (USD)</th>
                 <th>Prêts (USD)</th>
                 <th>Remb. Prêts (USD)</th>
+                <th>Retraits (USD)</th>
                 <th>Objectifs (USD)</th>
-                <th>Total (USD)</th>
+                <th>Disponible (USD)</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -41,9 +43,11 @@
                 <td>{{ agent.nom }}</td>
                 <td>{{ agent.prenom }}</td>
                 <td>{{ agent.numero_telephone }}</td>
+                <td>{{ agent.total_depot_inscription_usd|stringformat:".2f" }}</td>
                 <td>{{ agent.total_contributions_usd|stringformat:".2f" }}</td>
                 <td>{{ agent.total_prets_usd|stringformat:".2f" }}</td>
                 <td>{{ agent.total_remboursements_prets_usd|stringformat:".2f" }}</td>
+                <td>{{ agent.total_retraits_usd|stringformat:".2f" }}</td>
                 <td>{{ agent.total_objectifs_usd|stringformat:".2f" }}</td>
                 <td>{{ agent.total_transactions_usd|stringformat:".2f" }}</td>
                 <td>

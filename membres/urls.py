@@ -20,6 +20,7 @@ urlpatterns = [
     path("objectifs/", views.objectifs, name="objectifs"),
     path("objectifs/depot/<int:objectif_id>", views.dépot_objectif, name="dépot_objectif"),
     path("objectifs/voir/<int:objectif_id>", views.objectif, name="objectif"),
+    path('objectifs/<int:objectif_id>/retrait/', views.retrait_objectif, name='retrait_objectif'),
     path("profile/", views.profile, name="profile"),
     path("notifications/", views.notifications, name="notifications"),
     path("parametres/", views.parametres, name="parametres"),

@@ -21,6 +21,8 @@
         <div class="row">
             <div class="col-md-6">
                 <p><strong>Membre :</strong> {{ pret.transaction.membre }}</p>
+                <p>Numéro : {{ pret.transaction.membre.numero_telephone }}</p>
+                <p><strong>Mois de contribution :</strong> {{ pret.transaction.membre.mois_contribution|date:"E" }}</p>
                 <p><strong>Montant :</strong> {{ pret.montant }} {{ pret.devise }}</p>
                 <p><strong>Montant à rembourser :</strong> {{ pret.montant_remboursé }} {{ pret.devise }}</p>
                 <p><strong>Date de la demande :</strong> {{ pret.date_demande }}</p>

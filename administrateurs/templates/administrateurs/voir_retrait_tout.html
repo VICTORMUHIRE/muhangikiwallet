@@ -7,14 +7,14 @@
 
 <div class="container mt-5">
     {% if messages %}
-    {% for message in messages %}
-    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-        {{ message }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-    {% endfor %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
     {% endif %}
-    
+
     <div class="card shadow-sm rounded-4 border-0">
         <div class="card-header bg-white">
             <h4 class="card-title font-weight-bold">
@@ -31,17 +31,37 @@
                 <li><strong>Contributions:</strong> {{ montant_contributions|stringformat:".2f" }} {{ membre.contribution_mensuelle.devise }}</li>
                 <li><strong>Bénéfices:</strong> {{ montant_benefices|stringformat:".2f" }} {{ membre.contribution_mensuelle.devise }}</li>
                 <li><strong>Objectifs:</strong> {{ montant_objectifs|stringformat:".2f" }} {{ membre.contribution_mensuelle.devise }}
-                <ul>
-                    {% for objectif in objectifs %}
-                    <li><strong>{{ forloop.counter }}. {{ objectif.nom }} : </strong> {{ objectif.montant|stringformat:".2f" }} {{ objectif.devise }}</li>
-                    {% endfor %}
-                </ul>
+                    <ul>
+                        {% for objectif in objectifs %}
+                            <li><strong>{{ forloop.counter }}. {{ objectif.nom }} : </strong> {{ objectif.montant|stringformat:".2f" }} {{ objectif.devise }}</li>
+                        {% endfor %}
+                    </ul>
                 </li>
                 <li><strong>Total:</strong> {{ montant_total|stringformat:".2f" }} {{ membre.contribution_mensuelle.devise }}</li>
+                <li><strong>Pourcentage retrait:</strong>{{ pourcentage_retrait|stringformat:".2f" }} %</li>
+                <li><strong>Frais retrait:</strong> {{ frais_retrait|stringformat:".2f" }} {{ membre.contribution_mensuelle.devise }}</li>
+                <li><strong>Montant à retirer :</strong> {{ montant_à_retirer|stringformat:".2f" }} {{ membre.contribution_mensuelle.devise }}</li>
             </ul>
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="numero_agent" class="form-label">Numéro de l'agent</label>
+                    <select class="form-control form-select" id="numero_agent" name="numero_agent">
+                        {% for reseau, numeros in numeros_categories.items %}
+                            <optgroup label="{{ reseau }}">
+                                {% for numero, id in numeros %}
+                                    <option value="{{ id }}">{{ numero }}</option>
+                                {% endfor %}
+                            </optgroup>
+                        {% endfor %}
+                    </select>
+                 </div>
 
-            <button type="button" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#approveModal">Approuver</button>
-            <a href="{% url 'administrateurs:refuser_retrait_tout' retrait.pk %}" class="btn btn-danger">Rejeter</a>
+                <button type="button" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#approveModal">Approuver</button>
+                <a href="{% url 'administrateurs:refuser_retrait_tout' retrait.pk %}" class="btn btn-danger" onclick="return confirm('Êtes-vous sûr de vouloir rejeter cette demande de retrait total ?')">Rejeter</a>
+            </form>
+
+
 
             <!-- Approve Modal -->
             <div class="modal fade" id="approveModal" tabindex="-1" aria-labelledby="approveModalLabel" aria-hidden="true">
@@ -55,6 +75,8 @@
                             <p>Êtes-vous sûr de vouloir approuver ce retrait total ?</p>
                             <form method="post" id="approveForm">
                                 {% csrf_token %}
+                                <input type="hidden" name="montant" value="{{ montant_à_retirer }}">
+                                <input type="hidden" name="devise" value="{{ membre.contribution_mensuelle.devise }}">
                                 <label for="password" class="form-label">Votre mot de passe:</label>
                                 <input type="password" class="form-control" id="password" name="password" required>
                             </form>

@@ -8,7 +8,7 @@
         <form method="post" enctype="multipart/form-data" id="form">
             <h2 class="roboto-light text-center">{{ form.instance.membre }} - {{ form.instance.membre.numero_telephone }} </h2>
             <h4 class="text-center mb-4">
-                {% if form.instance.type == 'retrait' %}Retrait d'argent{% elif form.instance.type == 'transfert' %}Transfert d'argent{% elif form.instance.type == 'depot_objectif' %}Dépôt sur objectif{% elif form.instance.type == 'depot_inscription' %}Dépôt d'inscription{% elif form.instance.type == 'contribution' %}Contribution mensuelle{% elif form.instance.type == 'pret' %}Prêt d'argent {% elif form.instance.type == 'remboursement_pret' %}Remboursement de pret{% endif %}
+                {% if tache.type == 'retrait' %}Retrait d'argent{% elif tache.type == 'transfert' %}Transfert d'argent{% elif tache.type == 'depot_objectif' %}Dépôt sur objectif{% elif tache.type == 'depot_inscription' %}Dépôt d'inscription{% elif tache.type == 'contribution' %}Contribution mensuelle{% elif tache.type == 'pret' %}Prêt d'argent{% elif tache.type == 'remboursement_pret' %}Remboursement de pret{% elif tache.type == 'retrait_objectif' %}Retrait d'objectif{% elif tache.type == 'retrait_tout' %}Retrait total{% endif %}
             </h4>
 
             {% csrf_token %}

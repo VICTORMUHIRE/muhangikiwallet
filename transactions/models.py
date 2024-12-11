@@ -28,7 +28,8 @@ OPERATEURS = [
 
 TRANSACTION_CHOICES = [
     ('retrait', 'Retrait'),
-    ('retrait tout', 'Retrait tout'),
+    ('retrait_tout', 'Retrait tout'),
+    ('retrait objectif', 'Retrait objectif'),
     ('transfert', 'Transfert'),
     ('depot_objectif', 'Dépôt objectif'),
     ('depot_inscription', 'Dépôt inscription'),
@@ -100,7 +101,7 @@ class Prêts(models.Model):
     date_approbation = models.DateTimeField(blank=True, null=True, verbose_name="Date d'approbation")
     date_remboursement = models.DateTimeField(verbose_name="Date de remboursement")
 
-    statut = models.CharField(max_length=20, choices=(("En attente", "En attente"), ("Approuvé", "Approuvé"), ("Remboursé", "Remboursé")), default="En attente", verbose_name="Statut")
+    statut = models.CharField(max_length=20, choices=(("En attente", "En attente"), ("Approuvé", "Approuvé"), ("Remboursé", "Remboursé"), ("Annulé", "Annulé")), default="En attente", verbose_name="Statut")
 
     def __str__(self):
         return f"Prêt de {self.montant} {self.devise} - {self.statut}"
@@ -162,9 +163,35 @@ class DepotsObjectif(models.Model):
         verbose_name = "Dépôt objectif"
         verbose_name_plural = "Dépôts objectifs"
 
-class Retraits(models.Model):
+class RetraitsObjectif(models.Model):
+    membre = models.ForeignKey(Membres, on_delete=models.CASCADE, verbose_name="Membres")
+    objectif = models.ForeignKey(Objectifs, on_delete=models.CASCADE, verbose_name="Objectifs")
+    
     montant = models.FloatField(verbose_name="Montant")
     devise = models.CharField(max_length=3, choices=DEVISE_CHOICES, verbose_name="Devise")
+    frais = models.FloatField(verbose_name="Frais")
+
+    date = models.DateField(auto_now_add=True, verbose_name="Date")
+    date_approbation = models.DateTimeField(blank=True, null=True, verbose_name="Date d'approbation")
+    
+    transaction = models.ForeignKey(Transactions, on_delete=models.CASCADE, blank=True, related_name="retrait_objectif", verbose_name="Transaction")
+    
+    description = models.TextField(blank=True, null=True, verbose_name="Description")
+    statut = models.CharField(max_length=20, choices=(("En attente", "En attente"), ("Approuvé", "Approuvé"), ("Rejeté", "Rejeté")), default="En attente", verbose_name="Statut")
+
+
+    def __str__(self):
+        return f"Retrait objectif de {self.montant} - {self.date}"
+
+    class Meta:
+        verbose_name = "Retrait objectif"
+        verbose_name_plural = "Retraits objectifs"
+
+class Retraits(models.Model):
+    membre = models.ForeignKey(Membres, on_delete=models.CASCADE, verbose_name="Membres")
+    montant = models.FloatField(verbose_name="Montant")
+    devise = models.CharField(max_length=3, choices=DEVISE_CHOICES, verbose_name="Devise")
+    frais = models.FloatField(verbose_name="Frais")
 
     date = models.DateField(auto_now_add=True, verbose_name="Date")
     date_approbation = models.DateTimeField(blank=True, null=True, verbose_name="Date d'approbation")

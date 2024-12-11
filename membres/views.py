@@ -16,14 +16,13 @@ from objectifs.models import Objectifs
 from objectifs.forms import ObjectifsForm
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import login, update_session_auth_hash
-from transactions.models import Transactions, Prêts, TypesPrêt, Contributions, DepotsObjectif, Retraits, Transferts, DepotsInscription, Benefices
+from transactions.models import Transactions, Prêts, TypesPrêt, Contributions, DepotsObjectif, Retraits, Transferts, DepotsInscription, Benefices, RetraitsObjectif
 from transactions.forms import ContributionsForm, PrêtsForm, TransfertsForm, RetraitsForm, DepotsInscriptionForm, TypesPrêtForm, TransactionsForm, DepotsObjectifForm
 from datetime import datetime, timedelta
 from django.utils import timezone
 from functools import wraps
 from random import randint
 from django.http import JsonResponse
-
 
 def verifier_membre(func):
     def verify(request, *args, **kwargs):
@@ -206,8 +205,8 @@ def home(request):
     total_prets_rembourses_CDF = Transactions.objects.filter(membre=membre, devise="CDF", statut="Approuvé", type="remboursement_pret").aggregate(total=Sum('montant'))['total'] or 0
     total_prets_rembourses_USD = Transactions.objects.filter(membre=membre, devise="USD", statut="Approuvé", type="remboursement_pret").aggregate(total=Sum('montant'))['total'] or 0
 
-    total_depot_objectif_CDF = Transactions.objects.filter(membre=membre, devise="CDF", statut="Approuvé", type="depot_objectif").aggregate(total=Sum('montant'))['total'] or 0
-    total_depot_objectif_USD = Transactions.objects.filter(membre=membre, devise="USD", statut="Approuvé", type="depot_objectif").aggregate(total=Sum('montant'))['total'] or 0
+    total_depot_objectif_CDF = Objectifs.objects.filter(membre=membre, devise="CDF", statut__in=["En cours", "Atteint", "Epuisé"]).aggregate(total=Sum('montant'))['total'] or 0
+    total_depot_objectif_USD = Objectifs.objects.filter(membre=membre, devise="USD", statut__in=["En cours", "Atteint", "Epuisé"]).aggregate(total=Sum('montant'))['total'] or 0
 
     total_retraits_CDF = Transactions.objects.filter(membre=membre, devise="CDF", statut="Approuvé", type="retrait").aggregate(total=Sum('montant'))['total'] or 0
     total_retraits_USD = Transactions.objects.filter(membre=membre, devise="USD", statut="Approuvé", type="retrait").aggregate(total=Sum('montant'))['total'] or 0
@@ -220,15 +219,15 @@ def home(request):
     context = {
         "membre": membre,
         "objectifs": objectifs,
-        "total_prets_CDF": total_prets_CDF - total_prets_rembourses_CDF,
-        "total_prets_USD": total_prets_USD - total_prets_rembourses_USD,
+        "total_prets_CDF": float(total_prets_CDF) - float(total_prets_rembourses_CDF),
+        "total_prets_USD": float(total_prets_USD) - float(total_prets_rembourses_USD),
         "total_depot_objectif_CDF": total_depot_objectif_CDF,
         "total_depot_objectif_USD": total_depot_objectif_USD,
         "solde_CDF": solde_CDF,
         "solde_USD": solde_USD,
         "transactions": transactions,
-        "benefices_CDF": benefices_CDF - total_retraits_CDF,
-        "benefices_USD": benefices_USD - total_retraits_USD,
+        "benefices_CDF": float(benefices_CDF) - float(total_retraits_CDF),
+        "benefices_USD": float(benefices_USD) - float(total_retraits_USD),
     }
 
     return render(request, "membres/home.html", context)
@@ -369,9 +368,14 @@ def demande_pret(request):
     # Convert USD to CDF for consistent comparison (using an exchange rate, adjust as needed)
     taux_de_change = 2800
     solde_total_contribution = (solde_contribution_CDF + (solde_contribution_USD * taux_de_change)) * 3
-    solde_max = (Transactions.objects.filter(devise="CDF", statut="Approuvé", type="contribution") + Transactions.objects.filter(devise="USD", statut="Approuvé", type="contribution")*taux_de_change -
-                (Transactions.objects.filter(devise="CDF", statut="Approuvé", type="pret") + Transactions.objects.filter(devise="USD", statut="Approuvé", type="pret")*taux_de_change +
-                Transactions.objects.filter(devise="CDF", statut="Approuvé", type="retrait") + Transactions.objects.filter(devise="USD", statut="Approuvé", type="retrait")*taux_de_change)) * 2/3
+    solde_max = (float(Transactions.objects.filter(devise="CDF", statut="Approuvé", type="contribution").aggregate(total=Sum('montant'))['total'] or 0) +
+                float(Transactions.objects.filter(devise="USD", statut="Approuvé", type="contribution").aggregate(total=Sum('montant'))['total'] or 0) * taux_de_change +
+                float(Transactions.objects.filter(devise="CDF", statut="Approuvé", type="depot_inscription").aggregate(total=Sum('montant'))['total'] or 0) +
+                float(Transactions.objects.filter(devise="USD", statut="Approuvé", type="depot_inscription").aggregate(total=Sum('montant'))['total'] or 0) * taux_de_change -
+                (float(Transactions.objects.filter(devise="CDF", statut="Approuvé", type="pret").aggregate(total=Sum('montant'))['total'] or 0) +
+                float(Transactions.objects.filter(devise="USD", statut="Approuvé", type="pret").aggregate(total=Sum('montant'))['total'] or 0) * taux_de_change +
+                float(Transactions.objects.filter(devise="CDF", statut="Approuvé", type="retrait").aggregate(total=Sum('montant'))['total'] or 0) +
+                float(Transactions.objects.filter(devise="USD", statut="Approuvé", type="retrait").aggregate(total=Sum('montant'))['total'] or 0) * taux_de_change)) * 2/3
 
     solde_total_contribution = solde_total_contribution * 3 if solde_total_contribution < solde_max else solde_max
 
@@ -594,6 +598,35 @@ def dépot_objectif(request, objectif_id):
 
     return render(request, "membres/depot_objectif.html", context)
 
+# Vue pour retrait d'objectif
+@login_required
+@verifier_membre
+def retrait_objectif(request, objectif_id):
+    objectif = get_object_or_404(Objectifs, membre=request.user.membre, pk=objectif_id, statut='Atteint')
+
+    if request.method == 'POST':
+        password = request.POST.get('password')
+        if check_password(password, request.user.password):  # Check password
+            # Create a withdrawal transaction (similar to other transaction types)
+            RetraitsObjectif.objects.create(
+                membre=request.user.membre,
+                objectif=objectif,
+                montant=objectif.montant_cible,
+                devise=objectif.devise,
+                transaction=Transactions.objects.create(
+                    membre=request.user.membre,
+                    montant=objectif.montant_cible,
+                    devise=objectif.devise,
+                    type="retrait_objectif"
+                )
+            )
+
+            messages.success(request, f"Retrait de {objectif.montant_cible} {objectif.devise} pour l'objectif '{objectif.nom}' envoyé avec succès")
+            return redirect('membres:objectifs')
+        else:
+            messages.error(request, "Mot de passe incorrect")
+    return redirect('membres:objectifs')
+
 # Vue pour voir un objectif en details
 @login_required
 @verifier_membre
@@ -609,12 +642,7 @@ def retrait(request):
     reseaux = NumerosAgent.objects.values_list('reseau', flat=True).distinct()
 
     montant_retraits = Transactions.objects.filter(membre=membre, devise="CDF" if membre.contribution_mensuelle.devise == "CDF" else "USD", statut="Approuvé", type="retrait").aggregate(total=Sum('montant'))['total'] or 0
-    montant_benefices = Benefices.objects.filter(membre=membre, devise="CDF" if membre.contribution_mensuelle.devise == "CDF" else "USD", statut=True).aggregate(total=Sum('montant'))['total'] or 0 - montant_retraits
-
-    numeros_categories = {reseau: [] for reseau in reseaux}
-    for reseau in reseaux:
-        for numero_agent in NumerosAgent.objects.filter(reseau=reseau):
-            numeros_categories[reseau].append((numero_agent.numero, numero_agent.pk))
+    montant_benefices = float(Benefices.objects.filter(membre=membre, devise="CDF" if membre.contribution_mensuelle.devise == "CDF" else "USD", statut=True).aggregate(total=Sum('montant'))['total'] or 0) - float(montant_retraits)
 
     if request.method == "POST":
         form = TransactionsForm(request.POST)
@@ -625,16 +653,26 @@ def retrait(request):
 
                 if not Transactions.objects.filter(membre=membre, type="retrait", statut="En attente").exists():
                     if transaction.montant > 0 and transaction.montant <= montant_benefices:
-                        transaction.membre = membre
-                        transaction.agent = transaction.numero_agent.agent
-                        transaction.type = "retrait"
-                        transaction.statut = "En attente"
-                        transaction.save()
+                        montant = transaction.montant if membre.contribution_mensuelle.devise == "USD" else transaction.montant / 2800
 
-                        retrait = Retraits.objects.create(
-                            transaction=transaction,
+                        # montant selon les frais de retrait
+                        if montant >= 1 and montant <= 10: montant = frais = 0.085
+                        elif montant > 10 and montant <= 20: montant = frais = 0.058
+                        elif montant > 20 and montant <= 50: montant = frais = 0.0295
+                        elif montant > 50 and montant <= 400: montant = frais = 1.75
+                        elif montant > 400: montant = frais = 0.01
+                        
+                        Retraits.objects.create(
+                            membre=membre,
                             montant=transaction.montant,
-                            devise=transaction.devise
+                            frais=frais,
+                            devise=transaction.devise,
+                            transaction=Transactions.objects.create(
+                                membre=membre,
+                                montant=transaction.montant,
+                                devise=transaction.devise,
+                                type="retrait"
+                            )
                         )
 
                         messages.success(request, "Votre demande de retrait a été soumise avec succès !")
@@ -654,7 +692,6 @@ def retrait(request):
     context = {
         "form": form,
         "membre": membre,
-        "numeros_categories": numeros_categories,
         "montant_benefices": montant_benefices - montant_retraits,
         "date": timezone.now()
     }
@@ -787,15 +824,17 @@ def retirer_tout(request):
     membre = request.user.membre
     
     montant_contributions = Transactions.objects.filter(membre=membre, devise=membre.contribution_mensuelle.devise, type="contribution", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
-    montant_objectifs = ((DepotsObjectif.objects.filter(transaction__membre=membre, devise="CDF", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0) + (DepotsObjectif.objects.filter(transaction__membre=membre, devise="USD", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0) * 2800) * (1/2800 if membre.contribution_mensuelle.devise == "USD" else 1)
+    montant_objectifs = (float(DepotsObjectif.objects.filter(transaction__membre=membre, devise="CDF", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0) + float(DepotsObjectif.objects.filter(transaction__membre=membre, devise="USD", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0) * 2800) * (1/2800 if membre.contribution_mensuelle.devise == "USD" else 1)
     montant_benefices = Benefices.objects.filter(membre=membre, devise=membre.contribution_mensuelle.devise, statut=True).aggregate(Sum('montant'))['montant__sum'] or 0
-    montant_total = float(montant_contributions) + montant_objectifs + float(montant_benefices)
+    montant_retrait = Transactions.objects.filter(membre=membre, devise=membre.contribution_mensuelle.devise, type="retrait", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
+
+    montant_total = float(montant_contributions) + montant_objectifs + float(montant_benefices) - float(montant_retrait)
 
     if request.method == "POST":
         mot_de_passe = request.POST.get('mot_de_passe')
         
         if check_password(mot_de_passe, request.user.password):
-            if not Transactions.objects.filter(membre=membre, type="retrait tout", statut="En attente").exists():
+            if not Transactions.objects.filter(membre=membre, type="retrait_tout", statut="En attente").exists():
                 if not Prêts.objects.filter(membre=request.user.membre, statut="Approuvé").exists():
                     if montant_benefices + montant_contributions > 0:
                         Transactions.objects.create(
@@ -803,8 +842,7 @@ def retirer_tout(request):
                             montant=montant_total,
                             devise=membre.contribution_mensuelle.devise,
                             description=f"Retrait total du solde",
-                            type="retrait tout",
-                            statut="En attente"
+                            type="retrait_tout"
                         )
                         messages.success(request, "Votre demande de retrait a été soumise avec succès ! Veuillez attendre l'approbation de l'admin")
                     else:

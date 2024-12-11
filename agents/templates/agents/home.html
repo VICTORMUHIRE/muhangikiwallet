@@ -18,7 +18,7 @@
         <div class="card h-100 shadow-sm rounded-4 border-0 bg-light" style="background-color: color(srgb 0 1 0 / 0.1) !important;">
             <div class="card-body d-flex flex-column align-items-center justify-content-center">
                 <i class="fas fa-wallet fa-3x text-success"></i>
-                <h5 class="card-title my-3 font-weight-bold text-center">Capital total</h5>
+                <h5 class="card-title my-3 font-weight-bold text-center">Solde disponible</h5>
                 <h6 class="card-subtitle mb-2 text-muted">CDF : {{ solde_CDF|stringformat:".2f" }}</h6>
                 <h6 class="card-subtitle text-muted">USD : {{ solde_USD|stringformat:".2f" }}</h6>
             </div>
@@ -30,7 +30,7 @@
         <div class="card h-100 shadow-sm rounded-4 border-0 bg-light" style="background-color: color(srgb 1 0 0 / 0.1) !important;">
             <div class="card-body d-flex flex-column align-items-center justify-content-center">
                 <i class="fas fa-hand-holding-usd fa-3x text-danger"></i>
-                <h5 class="card-title my-3 font-weight-bold text-center">Crédits</h5>
+                <h5 class="card-title my-3 font-weight-bold text-center">Crédits octroyés</h5>
                 <h6 class="card-subtitle mb-2 text-muted">CDF : {{ total_prets_CDF|stringformat:".2f" }}</h6>
                 <h6 class="card-subtitle text-muted">USD : {{ total_prets_USD|stringformat:".2f" }}</h6>
             </div>
@@ -42,7 +42,7 @@
         <div class="card h-100 shadow-sm rounded-4 border-0 bg-light"  style="background-color: color(srgb 1 0.65 0 / 0.1) !important;">
             <div class="card-body d-flex flex-column align-items-center justify-content-center">
                 <i class="fas fa-chart-line fa-3x mw-color"></i>
-                <h5 class="card-title my-3 font-weight-bold text-center">Retraits</h5>
+                <h5 class="card-title my-3 font-weight-bold text-center">Retraits effectués</h5>
                 <h6 class="card-subtitle mb-2 text-muted">CDF : {{ total_retraits_CDF|stringformat:".2f" }}</h6>
                 <h6 class="card-subtitle text-muted">USD : {{ total_retraits_USD|stringformat:".2f" }}</h6>
             </div>
@@ -54,7 +54,7 @@
         <div class="card h-100 shadow-sm rounded-4 border-0 bg-light"  style="background-color: color(srgb 0 0 1 / 0.1) !important;">
             <div class="card-body d-flex flex-column align-items-center justify-content-center">
                 <i class="fas fa-bullseye fa-3x text-primary"></i>
-                <h5 class="card-title my-3 font-weight-bold text-center">{{ objectifs.count }} {{objectifs.count|pluralize:"Objectif, Objectifs"}}</h5>
+                <h5 class="card-title my-3 font-weight-bold text-center">Objectifs</h5>
                 <h6 class="card-subtitle mb-2 text-muted">CDF : {{ total_depot_objectif_CDF|stringformat:".2f" }}</h6>
                 <h6 class="card-subtitle text-muted">USD : {{ total_depot_objectif_USD|stringformat:".2f" }}</h6>
             </div>
@@ -73,15 +73,15 @@
                     <ul class="list-group list-group-flush">
                         {% for tache in taches %}
                         <li class="list-group-item p-2 rounded-4">
-                            <a class="btn btn-light text-start" href="{% url 'agents:voir_transaction' tache.pk %}">
-                                <span class="badge bg-primary">{% if tache.type == 'retrait' %}Retrait d'argent{% elif tache.type == 'transfert' %}Transfert d'argent{% elif tache.type == 'depot_objectif' %}Dépôt sur objectif{% elif tache.type == 'depot_inscription' %}Dépôt d'inscription{% elif tache.type == 'contribution' %}Contribution mensuelle{% elif tache.type == 'pret' %}Prêt d'argent{% elif tache.type == 'remboursement_pret' %}Remboursement de pret{% endif %}</span>
-                                <div class="d-flex justify-content-between mt-3 flex-grow-1">
+                            <a class="d-flex justify-content-between btn btn-light text-start" href="{% url 'agents:voir_transaction' tache.pk %}">
+                                <div>
+                                    <span class="badge bg-primary">{% if tache.type == 'retrait' %}Retrait d'argent{% elif tache.type == 'transfert' %}Transfert d'argent{% elif tache.type == 'depot_objectif' %}Dépôt sur objectif{% elif tache.type == 'depot_inscription' %}Dépôt d'inscription{% elif tache.type == 'contribution' %}Contribution mensuelle{% elif tache.type == 'pret' %}Prêt d'argent{% elif tache.type == 'remboursement_pret' %}Remboursement de pret{% elif tache.type == 'retrait_objectif' %}Retrait d'objectif{% elif tache.type == 'demande_retrait_tout' %}Retrait total{% endif %}</span>
                                     <div>
                                         <strong class="text-center">{{ tache.membre }}</strong>
                                         <span class="text-muted small mb-0">{{ tache.montant|stringformat:".2f" }} {{ tache.devise }}</span>
                                     </div>
-                                    <small class="text-muted">{{ tache.date|date:"d/m/Y" }}</small>
                                 </div>
+                                <small class="text-muted">{{ tache.date|date:"d/m/Y" }}</small>
                             </a>
                         </li>
                     {% empty %}
@@ -106,7 +106,7 @@
                         <div class="d-flex align-items-center gap-3">
                             <i class="{% if transaction.type == 'retrait' %}fas fa-minus-circle{% elif transaction.type == 'transfert' %}fas fa-exchange-alt{% elif transaction.type == 'depot_objectif' %}fas fa-piggy-bank{% elif transaction.type == 'depot_inscription' %}fas fa-sign-in-alt{% elif transaction.type == 'contribution' %}fas fa-donate{% elif transaction.type == 'pret' %}fas fa-hand-holding-usd{% elif transaction.type == 'remboursement_pret' %}fas fa-money-bill-wave{% endif %}"></i>
                             <div class="text-dark fw-bold text-start">
-                                {% if transaction.type == 'retrait' %}Retrait d'argent{% elif transaction.type == 'transfert' %}Transfert d'argent{% elif transaction.type == 'depot_objectif' %}Dépôt sur objectif{% elif transaction.type == 'depot_inscription' %}Dépôt d'inscription{% elif transaction.type == 'contribution' %}Contribution mensuelle{% elif transaction.type == 'pret' %}Prêt d'argent{% elif transaction.type == 'remboursement_pret' %}Remboursement{% endif %}
+                                {% if transaction.type == 'retrait' %}Retrait d'argent{% elif transaction.type == 'transfert' %}Transfert d'argent{% elif transaction.type == 'depot_objectif' %}Dépôt sur objectif{% elif transaction.type == 'depot_inscription' %}Dépôt d'inscription{% elif transaction.type == 'contribution' %}Contribution mensuelle{% elif transaction.type == 'pret' %}Prêt d'argent{% elif transaction.type == 'remboursement_pret' %}Remboursement{% elif transaction.type == 'retrait_objectif' %}Retrait d'objectif{% elif transaction.type == 'retrait_tout' %}Retrait total{% endif %}
                                 <div>
                                     <span class="text-muted small mb-0">{{ transaction.montant|stringformat:".2f" }} {{ transaction.devise }}</span>
                                     <span class="transaction-status">
