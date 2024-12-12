@@ -70,7 +70,7 @@ if __name__ == "__main__":
         # Provinces.objects.create(nom="Kasaï")
         # Provinces.objects.create(nom="Kasaï-Central")
         Provinces.objects.create(nom="Nord-Kivu")
-        # Provinces.objects.create(nom="Sud-Kivu")
+        Provinces.objects.create(nom="Sud-Kivu")
 
         Villes.objects.create(province=Provinces.objects.get(nom="Nord-Kivu"), nom="Goma")
         # Villes.objects.create(province=Provinces.objects.get(nom="Nord-Kivu"), nom="Butembo", type="Territoire")
@@ -118,5 +118,30 @@ if __name__ == "__main__":
                 type="administrateur",
                 is_staff=True,
                 is_superuser=True
+            )
+        )
+
+        ContributionsMensuelles.objects.create(montant=10)
+        ContributionsMensuelles.objects.create(montant=100)
+
+        Agents.objects.create(
+            nom="Kakule", postnom="Sikahimbula", prenom="Rock",
+            sexe="M", lieu_naissance="Goma", date_naissance="1999-1-1",
+            etat_civil="Marié", type_carte_identite="CNI", num_carte_identite="AD1234567890",
+            province_residence=Provinces.objects.get(nom="Nord-Kivu"),
+            commune_residence=Communes.objects.get(nom="Goma"),
+            ville_residence=Villes.objects.get(nom="Goma"),
+            quartier_residence=Quartiers.objects.get(nom="Kyeshero"),
+            avenue_residence=Avenues.objects.get(nom="Douglas"), numero_residence="123",
+            numero_telephone="0999999999", photo_profile="images/default.jpg",
+            carte_identite_copy="images/default.jpg",
+            user=Users.objects.create_user(
+                username="0999999999",
+                email="kakule2@gmail.com",
+                password="1234",
+                first_name="Kakule",
+                last_name="Rock",
+                type="agent",
+                is_staff=True
             )
         )

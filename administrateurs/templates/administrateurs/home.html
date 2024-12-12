@@ -5,6 +5,13 @@
 
 {% block content %}
 <div class="row mt-5 mt-sm-0 mb-5 mb-sm-3 justify-content-center">
+    {% for message in messages %}
+    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{message.tags}}{% endif %} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+
     <h4 class="text-center mb-4">
         Tableau de Bord Administrateur
     </h4>
@@ -13,7 +20,7 @@
         <div class="card h-100 shadow-sm rounded-4 border-0 bg-light" style="background-color: color(srgb 0 1 0 / 0.1) !important;">
             <div class="card-body d-flex flex-column align-items-center justify-content-center">
                 <i class="fas fa-wallet fa-3x text-success"></i>
-                <h5 class="card-title my-3 font-weight-bold text-center">Capital total</h5>
+                <h5 class="card-title my-3 text-center">Capital total</h5>
                 <h6 class="card-subtitle mb-2 text-muted">CDF : {{ solde_total_entreprise_cdf|stringformat:".2f" }}</h6>
                 <h6 class="card-subtitle text-muted">USD : {{ solde_total_entreprise_usd|stringformat:".2f" }}</h6>
             </div>
@@ -25,7 +32,7 @@
         <div class="card h-100 shadow-sm rounded-4 border-0 bg-light" style="background-color: color(srgb 1 0 0 / 0.1) !important;">
             <div class="card-body d-flex flex-column align-items-center justify-content-center">
                 <i class="fas fa-hand-holding-usd fa-3x text-danger"></i>
-                <h5 class="card-title my-3 font-weight-bold text-center">Crédits</h5>
+                <h5 class="card-title my-3 text-center">Crédits</h5>
                 <h6 class="card-subtitle mb-2 text-muted">CDF : {{ total_dettes_cdf|stringformat:".2f" }}</h6>
                 <h6 class="card-subtitle text-muted">USD : {{ total_dettes_usd|stringformat:".2f" }}</h6>
             </div>
@@ -37,7 +44,7 @@
         <div class="card h-100 shadow-sm rounded-4 border-0 bg-light"  style="background-color: color(srgb 1 0.65 0 / 0.1) !important;">
             <div class="card-body d-flex flex-column align-items-center justify-content-center">
                 <i class="fas fa-chart-line fa-3x mw-color"></i>
-                <h5 class="card-title my-3 font-weight-bold text-center">Bénéfices</h5>
+                <h5 class="card-title my-3 text-center">Bénéfices</h5>
                 <h6 class="card-subtitle mb-2 text-muted">CDF : {{ total_benefices_cdf|stringformat:".2f" }}</h6>
                 <h6 class="card-subtitle text-muted">USD : {{ total_benefices_usd|stringformat:".2f" }}</h6>
             </div>
@@ -49,7 +56,7 @@
         <div class="card h-100 shadow-sm rounded-4 border-0 bg-light"  style="background-color: color(srgb 0 0 1 / 0.1) !important;">
             <div class="card-body d-flex flex-column align-items-center justify-content-center">
                 <i class="fas fa-bullseye fa-3x text-primary"></i>
-                <h5 class="card-title my-3 font-weight-bold text-center">{{ objectifs.count }} Objectif{{objectifs.count|pluralize:"s"}}</h5>
+                <h5 class="card-title my-3 text-center">{{ objectifs.count }} Objectif{{objectifs.count|pluralize:"s"}}</h5>
                 <h6 class="card-subtitle mb-2 text-muted">CDF : {{ total_depots_objectifs_cdf|stringformat:".2f" }}</h6>
                 <h6 class="card-subtitle text-muted">USD : {{ total_depots_objectifs_usd|stringformat:".2f" }}</h6>
             </div>
@@ -61,16 +68,12 @@
         <div class="bg-light d-flex rounded-4 shadow-sm">
             <a class="text-center btn btn-sm btn-light flex-grow-1 p-3" href="{% url 'administrateurs:agents' %}">
                 <i class="fas fa-user-tie fa-3x text-warning mb-2"></i>
-                <h5 class="card-title font-weight-bold">{{ nombre_agents }} Agent{{ nombre_agents|pluralize:"s" }}</h5>
+                <h5 class="card-title">{{ nombre_agents }} Agent{{ nombre_agents|pluralize:"s" }}</h5>
             </a>
             <a class="text-center btn btn-sm btn-light flex-grow-1 p-3" href="{% url 'administrateurs:membres' %}">
                 <i class="fas fa-users fa-3x text-primary mb-2"></i>
-                <h5 class="card-title font-weight-bold">{{ nombre_membres }} Membre{{ nombre_membres|pluralize:"s" }}</h5>
+                <h5 class="card-title">{{ nombre_membres }} Membre{{ nombre_membres|pluralize:"s" }}</h5>
             </a>
-            <!-- <a class="text-center btn btn-sm btn-light flex-grow-1 p-2" href="{% url 'administrateurs:organisations' %}">
-                <i class="fas fa-building fa-3x text-success mb-2"></i>
-                <h5 class="card-title font-weight-bold">{{ nombre_organisations }} Organisation{{ nombre_organisations|pluralize:"s" }}</h5>
-            </a> -->
         </div>
     </div>
 
@@ -78,7 +81,7 @@
         <div class="col-md-6">
             <div class="card shadow-sm rounded-4 border-0 h-100">
                 <div class="card-header bg-white rounded-top-4">
-                    <h5 class="card-title font-weight-bold">
+                    <h5 class="card-title">
                         <i class="fas fa-tasks fa-fw mw-color"></i> Tâches à realiser
                     </h5>
                 </div><div class="card-body p-0">
@@ -99,9 +102,9 @@
                             <a class="btn d-block text-start btn-light d-flex justify-content-between" href="{% url 'administrateurs:voir_pret' demande_pret.pk %}">
                                 <div>
                                     <div class="badge bg-danger">Demande de pret</div>
-                                    <h6 class="text-center">{{ demande_pret.membre }}</h6>
+                                    <h6 class="text-center">{{ demande_pret.membre }} - {{ demande_pret.montant|stringformat:".2f" }} {{ demande_pret.devise }}</h6>
                                 </div>
-                                <span>{{ demande_pret.transaction.date }}</span>
+                                {% comment %} <span>{{ demande_pret.transaction.date }}</span> {% endcomment %}
                             </a>
                         </li>
                         {% endfor %}
@@ -110,9 +113,9 @@
                             <a class="btn d-block text-start btn-light d-flex justify-content-between" href="{% url 'administrateurs:voir_retrait' demande_retrait.pk %}">
                                 <div>
                                     <div class="badge bg-danger">Demande de retrait</div>
-                                    <h6 class="text-center">{{ demande_retrait.membre }}</h6>
+                                    <h6 class="text-center">{{ demande_retrait.membre }} - {{ demande_retrait.montant|stringformat:".2f" }} {{ demande_retrait.devise }}</h6>
                                 </div>
-                                <span>{{ demande_retrait.date }}</span>
+                                {% comment %} <span>{{ demande_retrait.date }}</span> {% endcomment %}
                             </a>
                         </li>
                         {% endfor %}
@@ -121,9 +124,20 @@
                             <a class="btn d-block text-start btn-light d-flex justify-content-between" href="{% url 'administrateurs:voir_retrait_objectif' demande_retrait_objectif.pk %}">
                                 <div>
                                     <div class="badge bg-danger">Retrait objectif</div>
-                                    <h6 class="text-center">{{ demande_retrait_objectif.membre }}</h6>
+                                    <h6 class="text-center">{{ demande_retrait_objectif.membre }} - {{ demande_retrait_objectif.montant|stringformat:".2f" }} {{ demande_retrait_objectif.devise }}</h6>
                                 </div>
-                                <span>{{ demande_retrait_objectif.date }}</span>
+                                {% comment %} <span>{{ demande_retrait_objectif.date }}</span> {% endcomment %}
+                            </a>
+                        </li>
+                        {% endfor %}
+                        {% for demande_annulation_objectif in demandes_annulation_objectif %}
+                        <li class="list-group-item p-2 rounded-4">
+                            <a class="btn d-block text-start btn-light d-flex justify-content-between" href="{% url 'administrateurs:voir_annulation_objectif' demande_annulation_objectif.pk %}">
+                                <div>
+                                    <div class="badge bg-danger">Annulation objectif</div>
+                                    <h6 class="text-center">{{ demande_annulation_objectif.membre }} - {{ demande_annulation_objectif.montant|stringformat:".2f" }} {{ demande_annulation_objectif.devise }}</h6>
+                                </div>
+                                {% comment %} <span>{{ demande_retrait_objectif.date }}</span> {% endcomment %}
                             </a>
                         </li>
                         {% endfor %}
@@ -131,10 +145,10 @@
                         <li class="list-group-item p-2 rounded-4">
                             <a class="btn d-block text-start btn-light d-flex justify-content-between" href="{% url 'administrateurs:demande_retrait_tout' demande_retrait_tout.pk %}">
                                 <div>
-                                    <div class="badge bg-danger">Demande de pret</div>
-                                    <h6 class="text-center">{{ demande_retrait_tout.membre }}</h6>
+                                    <div class="badge bg-danger">Retrait total</div>
+                                    <h6 class="text-center">{{ demande_retrait_tout.membre }} - {{ demande_retrait_tout.montant|stringformat:".2f" }} {{ demande_retrait_tout.devise }}</h6>
                                 </div>
-                                <span>{{ demande_retrait_tout.date }}</span>
+                                {% comment %} <span>{{ demande_retrait_tout.date }}</span> {% endcomment %}
                             </a>
                         </li>
                         {% endfor %}
@@ -148,29 +162,40 @@
         <div class="col-md-6">
             <div class="card shadow-sm rounded-4 border-0">
                 <div class="card-header bg-white rounded-top-4">
-                    <h5 class="card-title font-weight-bold">
+                    <h5 class="card-title">
                         <i class="fas fa-history fa-fw mw-color"></i> Dernières Transactions
                     </h5>
                 </div>
                 <div class="card-body">
                 {% for transaction in transactions|slice:":5" %}
                 <a href="{% url 'administrateurs:transaction' transaction.id %}" class="d-block btn btn-light bg-white transaction-item {% if transaction.type == 'retrait' %}transaction-retrait{% elif transaction.type == 'transfert' %}transaction-transfert{% elif transaction.type == 'depot_objectif' %}transaction-depot-objectif{% elif transaction.type == 'depot_inscription' %}transaction-depot-inscription{% elif transaction.type == 'contribution' %}transaction-contribution{% elif 'pret' in transaction.type %}transaction-pret{% endif %}">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div class="d-flex align-items-center gap-3">
-                            <i class="{% if transaction.type == 'retrait' %}fas fa-minus-circle{% elif transaction.type == 'transfert' %}fas fa-exchange-alt{% elif transaction.type == 'depot_objectif' %}fas fa-piggy-bank{% elif transaction.type == 'depot_inscription' %}fas fa-sign-in-alt{% elif transaction.type == 'contribution' %}fas fa-donate{% elif transaction.type == 'pret' %}fas fa-hand-holding-usd{% elif transaction.type == 'remboursement_pret' %}fas fa-money-bill-wave{% endif %}"></i>
-                            <div class="text-dark fw-bold text-start">
-                                {% if transaction.type == 'retrait' %}Retrait d'argent{% elif transaction.type == 'transfert' %}Transfert d'argent{% elif transaction.type == 'depot_objectif' %}Dépôt sur objectif{% elif transaction.type == 'depot_inscription' %}Dépôt d'inscription{% elif transaction.type == 'contribution' %}Contribution mensuelle{% elif transaction.type == 'pret' %}Prêt d'argent{% elif transaction.type == 'remboursement_pret' %}Remboursement{% elif transaction.type == 'retrait_objectif' %}Retrait d'objectif{% elif transaction.type == 'retrait_tout' %}Retrait total{% endif %}
-                                <div>
-                                    <span class="text-muted small mb-0">{{ transaction.montant|stringformat:".2f" }} {{ transaction.devise }}</span>
-                                    <span class="transaction-status">
-                                        <span class="badge {% if transaction.statut == 'Approuvé' %}bg-success{% elif transaction.statut == 'Rejeté' %}bg-danger{% elif transaction.statut == 'Remboursé' %}bg-info{% else %}bg-warning{% endif %}">{{ transaction.statut }}</span>
-                                    </span>
-                                </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <i class="{% if 'retrait' in transaction.type  or 'annulation' in transaction.type %}fas fa-minus-circle{% elif transaction.type == 'transfert' %}fas fa-exchange-alt{% elif transaction.type == 'depot_objectif' %}fas fa-piggy-bank{% elif transaction.type == 'depot_inscription' %}fas fa-sign-in-alt{% elif transaction.type == 'contribution' %}fas fa-donate{% elif transaction.type == 'pret' %}fas fa-hand-holding-usd{% elif transaction.type == 'remboursement_pret' %}fas fa-money-bill-wave{% endif %}"></i>
+                        <div class="flex-grow-1">
+                            <div class="text-dark d-flex align-items-center justify-content-between mb-1">
+                                <span class="fw-bold">
+                                    {% if transaction.type == 'retrait' %}Retrait d'argent
+                                    {% elif transaction.type == 'transfert' %}Transfert d'argent
+                                    {% elif transaction.type == 'depot_objectif' %}Dépôt sur objectif
+                                    {% elif transaction.type == 'depot_inscription' %}Dépôt d'inscription
+                                    {% elif transaction.type == 'contribution' %}Contribution mensuelle
+                                    {% elif transaction.type == 'pret' %}Prêt d'argent
+                                    {% elif transaction.type == 'remboursement_pret' %}Remboursement
+                                    {% elif transaction.type == 'retrait_objectif' %}Retrait d'objectif
+                                    {% elif transaction.type == 'retrait_tout' %}Retrait total
+                                    {% elif transaction.type == 'annulation_objectif' %}Annulation Objectif
+                                    {% endif %}
+                                </span>
+                                <span class="badge accordion {% if transaction.statut == 'Approuvé' %}bg-success{% elif transaction.statut == 'Rejeté' %}bg-danger{% elif transaction.statut == 'Remboursé' %}bg-info{% else %}bg-warning{% endif %}">
+                                    {% if transaction.statut == 'Demande' %}En attente{% else %}{{ transaction.statut }}{% endif %}
+                                </span>
                             </div>
-                        </div>
-                        <div class="transaction-date text-muted small text-center">
-                            <span>{{ transaction.date|date:"d/m/Y" }}</span>
-                            <span class="ms-2">{{ transaction.date|date:"H:i" }}</sp>
+
+                            <div class="text-muted small d-flex justify-content-between">
+                                <span>{{ transaction.montant|stringformat:".2f" }} {{ transaction.devise }}</span>
+                                <span class="d-md-none">{{ transaction.date|date:"d/m/Y" }}</span>
+                                <span class="d-none d-md-inline">{{ transaction.date|date:"d E Y  H:i" }}</span>
+                            </div>
                         </div>
                     </div>
                 </a>

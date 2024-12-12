@@ -5,6 +5,12 @@
 {% block content %}
 
     <div class="row justify-content-center mt-5 mt-sm-0 mb-5">
+        {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{message.tags}}{% endif %} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
 
         <div class="col-md-8 text-center">
             <div class="mb-4">
@@ -15,7 +21,7 @@
                     <p class="fs-5 mb-0">Solde total</p>
                     <h4 class="mb-3 fw-bolder fs-5">{{ solde_objectifs_CDF|stringformat:".2f" }} FC - {{ solde_objectifs_USD|stringformat:".2f" }} $</h4>
                     
-                    <button type="button" class="btn btn-sm  btn-primary text-white" data-bs-toggle="modal" data-bs-target="#ajouterObjectifModal">
+                    <button type="button" class="btn btn-sm  btn-mw text-white" data-bs-toggle="modal" data-bs-target="#ajouterObjectifModal">
                         Ajouter un objectif
                     </button>
                 </div>
@@ -23,14 +29,7 @@
         </div>
 
 
-        <div class="col-md-8"> <!-- Column for goals display -->
-            {% for message in messages %}  <!-- Messages display -->
-                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{message.tags}}{% endif %} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            {% endfor %}
-
+        <div class="col-md-8">
             {% for objectif in objectifs %}
             <div class="card shadow-sm mb-3">  <!-- Card for each goal -->
                 <div class="card-header bg-white text-center">
@@ -38,8 +37,9 @@
                 </div>
                 <div class="card-body">
                     <div class="progress position-relative mb-3" style="height: 25px;">  <!-- Enhanced progress bar -->
-                        <div class="progress-bar" role="progressbar" style="width: {{ objectif.pourcentage|stringformat:'.2f' }}%" aria-valuenow="{{ objectif.montant }}" aria-valuemin="0" aria-valuemax="{{ objectif.montant_cible }}"></div>
-                        <span class="position-absolute top-50 start-50 translate-middle fw-bold">{{ objectif.pourcentage|stringformat:".2f" }}%</span>
+                        <div class="progress-bar progress-bar-animated bg-{% if  objectif.statut == 'Annulé' %}danger{% elif  objectif.pourcentage < 85 and objectif.pourcentage >= 70 %}info{% elif  objectif.pourcentage < 70 and objectif.pourcentage >= 50 %}mw btn-mw{% elif  objectif.pourcentage < 50 and objectif.pourcentage >= 30 %}warning{% elif  objectif.pourcentage < 30 %}danger{% else %}success{% endif %}"
+                            role="progressbar" style="width: {{ objectif.pourcentage|stringformat:'.2f' }}%" aria-valuenow="{{ objectif.montant }}" aria-valuemin="0" aria-valuemax="{{ objectif.montant_cible }}"></div>
+                        <span class="position-absolute top-50 start-50 translate-middle fw-bold text-white">{{ objectif.pourcentage|stringformat:".2f" }}%</span>
                     </div>
 
                     <!-- Clearer display of amounts and date -->
@@ -52,13 +52,40 @@
 
                     <div class="text-center mt-2"> <!-- Centered Deposit button -->
                         <a href="{% url 'membres:objectif' objectif.id %}" class="btn btn-secondary btn-sm">Détails</a>
+                        {% if objectif.statut not in 'Atteint Retiré Annulé' %}
+                            <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#AnnulereObjectifModalLabel{{ objectif.id }}">
+                                Annuler
+                            </button>
+                            
+                            <!-- Modal retrait objectif -->
+                            <div class="modal fade" id="AnnulereObjectifModalLabel{{ objectif.id }}" tabindex="-1" aria-labelledby="AnnulereObjectifModalLabel{{ objectif.id }}" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="retraitObjectifModalLabel{{ objectif.id }}">Retrait de l'objectif "{{ objectif.nom }}"</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p>Êtes-vous sûr de vouloir annuler l'objectif <strong>{{ objectif.nom }}</strong> de <strong>{{ objectif.montant_cible|stringformat:".2f" }} {{ objectif.devise }}</strong> ?</p>
+                                            <form method="post" action="{% url 'membres:annuler_objectif' objectif.id %}">
+                                                {% csrf_token %}
+                                                <div class="mb-3">
+                                                    <input type="password" class="form-control" id="password{{ objectif.id }}" name="password" placeholder="Entrez votre mot de passe" required>
+                                                </div>
+                                                <button type="submit" class="btn btn-sm btn-danger">Confirmer</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
                         {% if objectif.statut == 'En cours' %}
-                        <a href="{% url 'membres:dépot_objectif' objectif.id %}" class="btn btn-primary btn-sm">Déposer</a>
-                        {% if objectif.statut == 'Atteint' %}
-                            <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#retraitObjectifModal{{ objectif.id }}">
+                        <a href="{% url 'membres:depot_objectif' objectif.id %}" class="btn btn-primary btn-sm">Déposer</a>
+                        {% elif objectif.statut == 'Atteint' %}
+                            <button type="button" class="btn btn-mw btn-sm" data-bs-toggle="modal" data-bs-target="#retraitObjectifModal{{ objectif.id }}">
                                 Retirer
                             </button>
-                        
+                            
                             <!-- Modal retrait objectif -->
                             <div class="modal fade" id="retraitObjectifModal{{ objectif.id }}" tabindex="-1" aria-labelledby="retraitObjectifModalLabel{{ objectif.id }}" aria-hidden="true">
                                 <div class="modal-dialog">
@@ -68,14 +95,13 @@
                                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                         </div>
                                         <div class="modal-body">
-                                            <p>Êtes-vous sûr de vouloir retirer le montant de {{ objectif.montant_cible|stringformat:".2f" }} {{ objectif.devise }} pour l'objectif "{{ objectif.nom }}"?</p>
+                                            <p>Êtes-vous sûr de vouloir retirer le montant de <strong>{{ objectif.montant_cible|stringformat:".2f" }} {{ objectif.devise }}</strong> pour l'objectif <strong>{{ objectif.nom }}</strong>?</p>
                                             <form method="post" action="{% url 'membres:retrait_objectif' objectif.id %}">
                                                 {% csrf_token %}
                                                 <div class="mb-3">
-                                                    <label for="password{{ objectif.id }}" class="form-label">Mot de passe :</label>
-                                                    <input type="password" class="form-control" id="password{{ objectif.id }}" name="password" required>
+                                                    <input type="password" class="form-control" id="password{{ objectif.id }}" name="password" placeholder="Entrez votre mot de passe" required>
                                                 </div>
-                                                <button type="submit" class="btn btn-success">Confirmer le retrait</button>
+                                                <button type="submit" class="btn btn-sm btn-success">Confirmer le retrait</button>
                                             </form>
                                         </div>
                                     </div>
@@ -83,13 +109,12 @@
                             </div>
                         {% endif %}
                     </div>
-
                 </div>
             </div>
             {% empty %}
                 <div class="card shadow-sm">
                     <div class="card-body text-center">
-                        <p>Aucun objectif pour le moment.</p>
+                        <p>Aucun objectif pour le moment</p>
                     </div>
                 </div>
             {% endfor %}
@@ -115,11 +140,13 @@
                                 {% if field.field.widget.input_type == 'select' %}
                                     <select class="form-select {% if field.errors %}is-invalid{% endif %}" id="{{ field.id_for_label }}" name="{{ field.name }}">
                                         {% for option in field.field.choices %}
-                                            <option value="{{ option.0 }}" {% if field.value == option.0 %}selected{% endif %}>{{ option.1 }}</option>
+                                            {% if option.0 %}<option value="{{ option.0 }}" {% if field.value|lower == option.0|lower %}selected{% endif %}>{{ option.1 }}</option>{% endif %}
                                         {% endfor %}
                                     </select>
+                                {% elif field.name == "description" %}
+                                    <textarea class="form-control {% if field.errors %}is-invalid{% endif %}" id="{{ field.id_for_label }}" name="{{ field.name }}"></textarea>
                                 {% else %}
-                                    <input type="{{ field.field.widget.input_type }}" class="form-control {% if field.errors %}is-invalid{% endif %}" id="{{ field.id_for_label }}" name="{{ field.name }}" value="{{ field.value|default:'' }}">
+                                    <input type="{{ field.field.widget.input_type }}" class="form-control {% if field.errors %}is-invalid{% endif %}" id="{{ field.id_for_label }}" name="{{ field.name }}" value="{% if field.field.widget.input_type == 'date' %}{{ field.value|date:'Y-m-d' }}{% else %}{{ field.value|default:'' }}{% endif %}" placeholder="{{ field.field.widget.attrs.placeholder|default:'' }}">
                                 {% endif %}
                                 {% if field.errors %}
                                     <div class="invalid-feedback">

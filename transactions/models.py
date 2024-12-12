@@ -29,13 +29,14 @@ OPERATEURS = [
 TRANSACTION_CHOICES = [
     ('retrait', 'Retrait'),
     ('retrait_tout', 'Retrait tout'),
-    ('retrait objectif', 'Retrait objectif'),
+    ('retrait_objectif', 'Retrait objectif'),
+    ('annulation_objectif', 'Annulation objectif'),
     ('transfert', 'Transfert'),
     ('depot_objectif', 'Dépôt objectif'),
     ('depot_inscription', 'Dépôt inscription'),
     ('contribution', 'Contribution'),
     ('pret', 'Prêt'),
-    ('remboursement_pret', 'Remboursement_pret')
+    ('remboursement_pret', 'Remboursement pret')
 ]
 
 # Définition du modèle de transaction
@@ -59,7 +60,7 @@ class Transactions(models.Model):
     description = models.TextField(blank=True, null=True, verbose_name="Description")
     type = models.CharField(max_length=20, choices=TRANSACTION_CHOICES, verbose_name="Type de transaction")
 
-    statut = models.CharField(max_length=20, choices=STATUS_CHOICES, default="Initialisation", verbose_name="Statut")
+    statut = models.CharField(max_length=20, choices=STATUS_CHOICES, default="Demande", verbose_name="Statut")
 
     def __str__(self):
         return f"Transaction de {self.montant} {self.devise} - {self.type} - {self.date}"
@@ -69,7 +70,7 @@ class Transactions(models.Model):
         verbose_name_plural = "Transactions"
 
 # Modèle pour les types de pret
-class TypesPrêt(models.Model):
+class TypesPret(models.Model):
     nom = models.CharField(max_length=45, verbose_name="Nom du type de pret")
     description = models.TextField(blank=True, null=True, verbose_name="Description")
     taux_interet = models.DecimalField(max_digits=5, decimal_places=2, verbose_name="Taux d'intérêt (%)")
@@ -83,19 +84,17 @@ class TypesPrêt(models.Model):
         verbose_name_plural = "Types de prets"
 
 # Modèle pour les prets
-class Prêts(models.Model):
+class Prets(models.Model):
     administrateur = models.ForeignKey(Administrateurs, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Administrateur")
     membre = models.ForeignKey(Membres, blank=True, null=True, on_delete=models.CASCADE, verbose_name="Membres")
 
-    type_pret = models.ForeignKey(TypesPrêt, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Type de pret")
+    type_pret = models.ForeignKey(TypesPret, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Type de pret")
     transaction = models.ForeignKey(Transactions, on_delete=models.CASCADE, blank=True, null=True, related_name="pret", verbose_name="Transaction")
 
     montant = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Montant du pret")
     montant_remboursé = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Montant remboursé")
     solde_remboursé = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Solde remboursé")
     devise = models.CharField(max_length=3, choices=DEVISE_CHOICES, verbose_name="Devise")
-    
-    preuve = models.ImageField(upload_to="preuves/contributions/", verbose_name="Preuve de contribution")
 
     date_demande = models.DateTimeField(auto_now_add=True, verbose_name="Date de demande")
     date_approbation = models.DateTimeField(blank=True, null=True, verbose_name="Date d'approbation")
@@ -110,8 +109,25 @@ class Prêts(models.Model):
         verbose_name = "Prêt"
         verbose_name_plural = "Prêts"
 
+class RemboursementsPret(models.Model):
+    pret = models.ForeignKey(Prets, on_delete=models.CASCADE, verbose_name="Pret")
+    montant = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Montant du remboursement")
+    devise = models.CharField(max_length=3, choices=DEVISE_CHOICES, verbose_name="Devise")
+    date = models.DateTimeField(auto_now_add=True, verbose_name="Date de remboursement")
+    transaction = models.ForeignKey(Transactions, on_delete=models.CASCADE, blank=True, null=True, related_name="remboursement_pret", verbose_name="Transaction")
+    
+    description = models.TextField(blank=True, null=True, verbose_name="Description")
+    statut = models.CharField(max_length=20, choices=(("En attente", "En attente"), ("Approuvé", "Approuvé"), ("Rejeté", "Rejeté"),  ("Annulé", "Annulé")), default="En attente", verbose_name="Statut")
+
+    def __str__(self):
+        return f"Remboursement de pret de {self.montant} {self.devise} - {self.date}"
+
+    class Meta:
+        verbose_name = "Remboursement de pret"
+        verbose_name_plural = "Remboursements de prets"
+
 class Benefices(models.Model):
-    pret = models.ForeignKey(Prêts, on_delete=models.CASCADE, verbose_name="Prêt")
+    pret = models.ForeignKey(Prets, on_delete=models.CASCADE, verbose_name="Prêt")
     membre = models.ForeignKey(Membres, blank=True, null=True, on_delete=models.CASCADE, verbose_name="Membre")
     
     montant = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Montant du bénéfice")
@@ -125,14 +141,14 @@ class Contributions(models.Model):
     montant = models.FloatField(verbose_name="Montant")
     devise = models.CharField(max_length=3, choices=DEVISE_CHOICES, verbose_name="Devise")
 
-    date = models.DateField(auto_now_add=True, verbose_name="Date")
+    date = models.DateTimeField(auto_now_add=True, verbose_name="Date")
     date_approbation = models.DateTimeField(blank=True, null=True, verbose_name="Date d'approbation")
     mois = models.DateField(verbose_name="Mois")
     
     transaction = models.ForeignKey(Transactions, on_delete=models.CASCADE, blank=True, related_name="contribution", verbose_name="Transaction")
 
     description = models.TextField(blank=True, null=True, verbose_name="Description")
-    statut = models.CharField(max_length=20, choices=(("En attente", "En attente"), ("Approuvé", "Approuvé"), ("Rejeté", "Rejeté")), default="En attente", verbose_name="Statut")
+    statut = models.CharField(max_length=20, choices=(("En attente", "En attente"), ("Approuvé", "Approuvé"), ("Rejeté", "Rejeté"),  ("Annulé", "Annulé")), default="En attente", verbose_name="Statut")
 
     def __str__(self):
         return f"Contribution de {self.montant} - {self.date}"
@@ -147,13 +163,13 @@ class DepotsObjectif(models.Model):
     montant = models.FloatField(verbose_name="Montant")
     devise = models.CharField(max_length=3, choices=DEVISE_CHOICES, verbose_name="Devise")
 
-    date = models.DateField(auto_now_add=True, verbose_name="Date")
+    date = models.DateTimeField(auto_now_add=True, verbose_name="Date")
     date_approbation = models.DateTimeField(blank=True, null=True, verbose_name="Date d'approbation")
     
     transaction = models.ForeignKey(Transactions, on_delete=models.CASCADE, blank=True, related_name="depot_objectif", verbose_name="Transaction")
     
     description = models.TextField(blank=True, null=True, verbose_name="Description")
-    statut = models.CharField(max_length=20, choices=(("En attente", "En attente"), ("Approuvé", "Approuvé"), ("Rejeté", "Rejeté")), default="En attente", verbose_name="Statut")
+    statut = models.CharField(max_length=20, choices=(("En attente", "En attente"), ("Approuvé", "Approuvé"), ("Rejeté", "Rejeté"),  ("Annulé", "Annulé")), default="En attente", verbose_name="Statut")
 
 
     def __str__(self):
@@ -171,13 +187,13 @@ class RetraitsObjectif(models.Model):
     devise = models.CharField(max_length=3, choices=DEVISE_CHOICES, verbose_name="Devise")
     frais = models.FloatField(verbose_name="Frais")
 
-    date = models.DateField(auto_now_add=True, verbose_name="Date")
+    date = models.DateTimeField(auto_now_add=True, verbose_name="Date")
     date_approbation = models.DateTimeField(blank=True, null=True, verbose_name="Date d'approbation")
     
     transaction = models.ForeignKey(Transactions, on_delete=models.CASCADE, blank=True, related_name="retrait_objectif", verbose_name="Transaction")
     
     description = models.TextField(blank=True, null=True, verbose_name="Description")
-    statut = models.CharField(max_length=20, choices=(("En attente", "En attente"), ("Approuvé", "Approuvé"), ("Rejeté", "Rejeté")), default="En attente", verbose_name="Statut")
+    statut = models.CharField(max_length=20, choices=(("En attente", "En attente"), ("Approuvé", "Approuvé"), ("Rejeté", "Rejeté"),  ("Annulé", "Annulé")), default="En attente", verbose_name="Statut")
 
 
     def __str__(self):
@@ -187,19 +203,42 @@ class RetraitsObjectif(models.Model):
         verbose_name = "Retrait objectif"
         verbose_name_plural = "Retraits objectifs"
 
+class AnnulationObjectif(models.Model):
+    membre = models.ForeignKey(Membres, on_delete=models.CASCADE, verbose_name="Membres")
+    objectif = models.ForeignKey(Objectifs, on_delete=models.CASCADE, verbose_name="Objectifs")
+    
+    montant = models.FloatField(verbose_name="Montant")
+    devise = models.CharField(max_length=3, choices=DEVISE_CHOICES, verbose_name="Devise")
+    frais = models.FloatField(verbose_name="Frais")
+
+    date = models.DateTimeField(auto_now_add=True, verbose_name="Date")
+    date_approbation = models.DateTimeField(blank=True, null=True, verbose_name="Date d'approbation")
+    
+    transaction = models.ForeignKey(Transactions, on_delete=models.CASCADE, blank=True, related_name="annulation_objectif", verbose_name="Transaction")
+    
+    description = models.TextField(blank=True, null=True, verbose_name="Description")
+    statut = models.CharField(max_length=20, choices=(("En attente", "En attente"), ("Approuvé", "Approuvé"), ("Rejeté", "Rejeté"),  ("Annulé", "Annulé")), default="En attente", verbose_name="Statut")
+
+    def __str__(self):
+        return f"Annulation de l'objectif de {self.montant} {self.devise} - {self.date}"
+
+    class Meta:
+        verbose_name = "Annulation objectif"
+        verbose_name_plural = "Annulations objectifs"
+
 class Retraits(models.Model):
     membre = models.ForeignKey(Membres, on_delete=models.CASCADE, verbose_name="Membres")
     montant = models.FloatField(verbose_name="Montant")
     devise = models.CharField(max_length=3, choices=DEVISE_CHOICES, verbose_name="Devise")
     frais = models.FloatField(verbose_name="Frais")
 
-    date = models.DateField(auto_now_add=True, verbose_name="Date")
+    date = models.DateTimeField(auto_now_add=True, verbose_name="Date")
     date_approbation = models.DateTimeField(blank=True, null=True, verbose_name="Date d'approbation")
 
     transaction = models.ForeignKey(Transactions, on_delete=models.CASCADE, blank=True, related_name="retrait", verbose_name="Transaction")
 
     description = models.TextField(blank=True, null=True, verbose_name="Description")
-    statut = models.CharField(max_length=20, choices=(("En attente", "En attente"), ("Approuvé", "Approuvé"), ("Rejeté", "Rejeté")), default="En attente", verbose_name="Statut")
+    statut = models.CharField(max_length=20, choices=(("En attente", "En attente"), ("Approuvé", "Approuvé"), ("Rejeté", "Rejeté"),  ("Annulé", "Annulé")), default="En attente", verbose_name="Statut")
 
 
 
@@ -216,13 +255,13 @@ class DepotsInscription(models.Model):
     montant = models.FloatField(verbose_name="Montant", default=10)
     devise = models.CharField(max_length=3, choices=DEVISE_CHOICES, default="USD", verbose_name="Devise")
 
-    date = models.DateField(auto_now_add=True, verbose_name="Date")
+    date = models.DateTimeField(auto_now_add=True, verbose_name="Date")
     date_approbation = models.DateTimeField(blank=True, null=True, verbose_name="Date d'approbation")
 
     transaction = models.ForeignKey(Transactions, on_delete=models.CASCADE, blank=True, null=True, related_name="depot_inscription", verbose_name="Transaction")
     
     description = models.TextField(blank=True, null=True, verbose_name="Description")
-    statut = models.CharField(max_length=20, choices=(("En attente", "En attente"), ("Approuvé", "Approuvé"), ("Rejeté", "Rejeté")), default="En attente", verbose_name="Statut")
+    statut = models.CharField(max_length=20, choices=(("En attente", "En attente"), ("Approuvé", "Approuvé"), ("Rejeté", "Rejeté"),  ("Annulé", "Annulé")), default="En attente", verbose_name="Statut")
 
     def __str__(self):
         return f"Dépôt inscription de {self.montant} - {self.date}"
@@ -240,7 +279,7 @@ class Transferts(models.Model):
     montant = models.FloatField(verbose_name="Montant")
     devise = models.CharField(max_length=3, choices=DEVISE_CHOICES, verbose_name="Devise")
 
-    date = models.DateField(auto_now_add=True, verbose_name="Date")
+    date = models.DateTimeField(auto_now_add=True, verbose_name="Date")
     date_approbation = models.DateTimeField(blank=True, null=True, verbose_name="Date d'approbation")
     
     transaction = models.ForeignKey(Transactions, on_delete=models.CASCADE, blank=True, related_name="transfert", verbose_name="Transaction")

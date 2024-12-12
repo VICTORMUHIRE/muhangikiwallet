@@ -16,32 +16,12 @@ urlpatterns = [
     path("membres/<int:membre_id>/refuser/", views.refuser_membre, name="refuser_membre"),
 
     path("agents/", views.agents, name="agents"),
-    path("agents/creer/", views.creer_agent, name="creer_agent"), # Assuming you have these views
-    path("agents/<int:agent_id>/", views.voir_agent, name="voir_agent"), # Similar to membre views
+    path("agents/creer/", views.creer_agent, name="creer_agent"),
+    path("agents/<int:agent_id>/", views.voir_agent, name="voir_agent"),
     path("agents/<int:agent_id>/modifier/", views.modifier_agent, name="modifier_agent"),
     path("agents/<int:agent_id>/supprimer/", views.supprimer_agent, name="supprimer_agent"),
 
-    path("organisations/", views.organisations, name="organisations"),
-    path("organisations/creer/", views.creer_organisation, name="creer_organisation"),
-    path("organisations/<int:organisation_id>/", views.voir_organisation, name="voir_organisation"), # Add a view for this
-    path("organisations/<int:organisation_id>/modifier/", views.modifier_organisation, name="modifier_organisation"),
-    path("organisations/<int:organisation_id>/supprimer/", views.supprimer_organisation, name="supprimer_organisation"),
-
-    path("administrateurs/", views.administrateurs, name="administrateurs"),
-    path("administrateurs/creer/", views.creer_administrateur, name="creer_administrateur"), # Add a view for this
-    path("administrateurs/<int:administrateur_id>/", views.voir_administrateur, name="voir_administrateur"), # Add a view for this
-    path("administrateurs/<int:administrateur_id>/modifier/", views.modifier_administrateur, name="modifier_administrateur"), # Add a view for this
-    path("administrateurs/<int:administrateur_id>/supprimer/", views.supprimer_administrateur, name="supprimer_administrateur"), # Add a view for this
-    
-    path("transactions/cdf/creer/", views.creer_transaction_cdf, name="creer_transaction_cdf"),
-    path("transactions/usd/creer/", views.creer_transaction_usd, name="creer_transaction_usd"),
-
-    path("types_pret/", views.types_pret, name="types_pret"),
-    path("types_pret/creer/", views.creer_type_pret, name="creer_type_pret"),
-    path("types_pret/<int:type_pret_id>/modifier/", views.modifier_type_pret, name="modifier_type_pret"),
-    path("types_pret/<int:type_pret_id>/supprimer/", views.supprimer_type_pret, name="supprimer_type_pret"),
-
-    path("transactions/", views.transactions, name="transactions"), # If you have views for this
+    path("transactions/", views.transactions, name="transactions"),
     path("transaction/<int:transaction_id>", views.transaction, name="transaction"),
     
     path("prets/", views.prets, name="prets"),
@@ -50,6 +30,9 @@ urlpatterns = [
 
     path("voir_retrait_objectif/<int:retrait_objectif_id>", views.voir_retrait_objectif, name="voir_retrait_objectif"),
     path("rejeter_retrait_objectif/<int:retrait_objectif_id>", views.rejeter_retrait_objectif, name="rejeter_retrait_objectif"),
+    
+    path("voir_annulation_objectif/<int:annulation_objectif_id>", views.voir_annulation_objectif, name="voir_annulation_objectif"),
+    path("rejeter_annulation_objectif/<int:annulation_objectif_id>", views.rejeter_annulation_objectif, name="rejeter_annulation_objectif"),
 
     path("retraits/<int:retrait_id>", views.voir_retrait, name="voir_retrait"),
     path("rejeter_retrait/<int:retrait_id>", views.rejeter_retrait, name="rejeter_retrait"),

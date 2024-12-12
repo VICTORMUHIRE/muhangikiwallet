@@ -32,7 +32,7 @@
 
                             <div id="imagePreview" class="image-preview text-center" onclick="document.getElementById('{{ field.id_for_label}}').click();">
                                 {% if field.value %}
-                                <img src="/static{{field.value.url}}" alt="Aperçu de la {{ field.label }}" class="img-fluid rounded" style="max-height: 200px; object-fit: cover;">
+                                <img src="{{field.value.url}}" alt="Aperçu de la {{ field.label }}" class="img-fluid rounded" style="max-height: 200px; object-fit: cover;">
                                 {% else %}
                                 <label for="{{ field.id_for_label }}" class="upload-icon">
                                     <i class="fas fa-image"></i>

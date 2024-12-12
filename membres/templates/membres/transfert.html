@@ -95,8 +95,8 @@
         passwordInput.value = password;
         transferForm.appendChild(passwordInput);
 
-        // Soumettre le formulaire
-        transferForm.submit();
+        if (transferForm.checkValidity()) transferForm.submit()
+        else transferForm.reportValidity();
     });
 </script>
 

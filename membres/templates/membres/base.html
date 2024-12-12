@@ -163,7 +163,7 @@
                 <li class="nav-item dropdown">
                     <a class="nav-link text-dark d-flex align-items-center justify-content-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         {% if user.membre.photo_profile.url %}
-                        <img src="/static{{user.membre.photo_profile.url}}" alt="Photo de profil" class="rounded-circle" height="30">
+                        <img src="{{user.membre.photo_profile.url}}" alt="Photo de profil" class="rounded-circle" height="30">
                         {% elif request.user.membre.sexe == 'M' %}
                         <i class="fas fa-user-circle fa-2x"></i>
                         {% else %}
@@ -230,8 +230,8 @@
                         </li>
                         <li class="nav-item">
                             <a class="nav-link {% if '/transactions/' in request.path %}active{% endif %}" href="{% url 'membres:transactions' %}">
-                                <i class="fa fa-history"></i>
-                                Historique
+                                <i class="fa fa-exchange-alt"></i>
+                                Transactions
                             </a>
                         </li>
                         <li class="nav-item">
@@ -245,7 +245,7 @@
                         <li class="nav-item dropdown">
                             <a class="nav-link text-dark d-flex align-items-center justify-content-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 {% if user.membre.photo_profile.url %}
-                                <img src="/static{{user.membre.photo_profile.url}}" alt="Photo de profil" class="rounded-4" height="30"> 
+                                <img src="{{user.membre.photo_profile.url}}" alt="Photo de profil" class="rounded-4" height="30"> 
                                 {% elif request.user.membre.sexe == 'M' %}
                                 <i class="fas fa-user-circle fa-2x"></i>
                                 {% else %}
@@ -300,7 +300,7 @@
     {% if request.user.is_authenticated %}
     <div class="bottom-app-bar">
             <a href="{% url 'membres:home' %}" class="nav-link {% if request.path == '/membres/' %}active{% endif %}">
-                <i class="fa fa-home"></i> 
+                <i class="fa fa-home"></i>
                 <span>Accueil</span>
             </a>
             <a href="{% url 'membres:contributions' %}" class="nav-link {% if '/contributions/' in request.path %}active{% endif %}">
@@ -357,15 +357,5 @@
 
     <script src="{% static 'js/bootstrap/bootstrap.bundle.min.js' %}"></script>
     <script src="{% static 'js/script.js' %}"></script>
-
-    <script>
-        // JavaScript pour le menu de profil
-        const profileMenu = document.getElementById('profileMenu');
-        const openProfileMenuButton = document.getElementById('openProfileMenu');
-
-        openProfileMenuButton.addEventListener('click', () => {
-            profileMenu.style.display = profileMenu.style.display === 'block' ? 'none' : 'block';
-        });
-    </script>
 </body>
 </html>

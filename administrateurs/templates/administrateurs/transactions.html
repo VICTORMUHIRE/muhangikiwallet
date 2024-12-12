@@ -3,35 +3,38 @@
 {% block title %}Historique des transactions{% endblock %}
 
 {% block content %}
-    <div class="row mt-5 mt-sm-0 mb-5 mx-1">
+    <div class="row mt-5 mt-sm-0 mb-5 mx-1 justify-content-center">
         <div class="col-md-12">
             <h1 class="text-center mb-4">Historique des transactions</h1>
         </div>
         
-        <div class="list-group p-0">
+        <div class="list-group p-0 col-md-6">
             {% for transaction in transactions %}
-            <a href="{% url 'administrateurs:transaction' transaction.pk %}" class="list-group-item list-group-item-action d-flex w-100 align-items-center justify-content-between">
-                <div class="d-flex flex-column align-items-center justify-content-center flex-md-row gap-md-2">
+            <a href="{% url 'administrateurs:transaction' transaction.pk %}" class="list-group-item list-group-item-action">
+                <div class="d-flex align-items-center justify-content-between mb-1">
                     <h5 class="mb-1">
                         {% if transaction.type == 'retrait' %}Retrait d'argent
                         {% elif transaction.type == 'transfert' %}Transfert d'argent
                         {% elif transaction.type == 'depot_objectif' %}Dépôt sur objectif
                         {% elif transaction.type == 'depot_inscription' %}Dépôt d'inscription
                         {% elif transaction.type == 'contribution' %}Contribution
-                        {% elif transaction.type == 'pret' %}pret d'argent
+                        {% elif transaction.type == 'pret' %}Prêt d'argent
                         {% elif transaction.type == 'remboursement_pret' %}Remboursement
+                        {% elif transaction.type == 'retrait_objectif' %}Retrait d'objectif
+                        {% elif transaction.type == 'retrait_tout' %}Retrait total
+                        {% elif transaction.type == 'annulation_objectif' %}Annulation Objectif
                         {% endif %}
                     </h5>
-                    <p class="mb-0">
-                        <span class="fw-bolder">{{ transaction.montant }} {{ transaction.devise }}</span>
-                        <span class="ms-1 badge {% if transaction.statut == 'Approuvé' %}bg-success{% elif transaction.statut == 'Rejeté' %}bg-danger{% else %}bg-warning{% endif %}">{{ transaction.statut }}</span>
-                    </p>
+                    <span class="ms-1 badge {% if transaction.statut == 'Approuvé' %}bg-success{% elif transaction.statut == 'Rejeté' %}bg-danger{% else %}bg-warning{% endif %}">
+                        {% if transaction.statut == 'Demande' %}En attente{% else %}{{ transaction.statut }}{% endif %}
+                    </span>
                 </div>
-                <div class="text-center text-muted">
-                    <small class="d-none d-md-inline">{{ transaction.date|date:"d E Y" }}</small>
+
+                <div class="text-muted small d-flex justify-content-between">
+                    <span class="fw-bolder">{{ transaction.montant }} {{ transaction.devise }}</span>
+                    
+                    <small class="d-none d-md-inline">{{ transaction.date|date:"d E Y  H:i" }}</small>
                     <small class="d-md-none">{{ transaction.date|date:"d/m/Y" }}</small>
-                    <small class="d-md-none">{{ transaction.date|date:"H:i" }}</small>
-                    <small class="d-none d-md-inline">{{ transaction.date|date:"H:i:s" }}</small>
                 </div>
             </a>
             {% empty %}
@@ -41,4 +44,3 @@
     </div>
 
 {% endblock %}
-

@@ -141,7 +141,7 @@
                             previewContainer.innerHTML = '<span class="upload-icon"><i class="fas fa-upload"></i></span>';
                         }
                     }
-
+                    
                     $(document).ready(function() {
                         $("#id_province_residence").change(function() {
                         var provinceId = $(this).val();
@@ -348,6 +348,23 @@
                         </form>
                     </div>
                 </div>
+                <script>
+                    function previewImage(input) {
+                        const previewContainer = input.parentElement.querySelector('#imagePreview');
+
+                        if (input.files && input.files[0]) {
+                            var reader = new FileReader();
+
+                            reader.onload = function(e) {
+                                previewContainer.innerHTML = `<img src="${e.target.result}" style="max-width: 200px; max-height: 200px;" alt="Image Preview">`;
+                            }
+
+                            reader.readAsDataURL(input.files[0]);
+                        } else {
+                            previewContainer.innerHTML = '<span class="upload-icon"><i class="fas fa-upload"></i></span>';
+                        }
+                    }
+                </script>
             {% elif user.membre.status and depot_inscription.transaction.statut == "En attente" %}
                 <p class="alert alert-success text-center">Votre paiement est en cours de vérification, si cela persiste veuillez contacter l'administrateur !</p>
                 <div class=" text-center">

@@ -23,7 +23,7 @@
             <div class="card mb-3">
                 <div class="card-body text-center">
                     {% if user.membre.photo_profile.url %}
-                    <img src="/static{{user.membre.photo_profile.url}}" alt="Photo de profil" class="img-fluid rounded-4 mb-3" style="max-width: 150px; max-height: 150px;">
+                    <img src="{{user.membre.photo_profile.url}}" alt="Photo de profil" class="img-fluid rounded-4 mb-3" style="max-width: 150px; max-height: 150px;">
                     {% else %}
                     <i class="fas fa-user-circle fa-8x text-secondary mb-3"></i>
                     {% endif %}
@@ -48,7 +48,7 @@
                                     <div class="col-md-6 mb-3">
                                         <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
                                         <div class="photo-preview-container">
-                                            <img id="photo-preview" src="/static/{{field.value.url}}" alt="Aperçu de la photo" class="img-fluid rounded" style="max-height: 200px; object-fit: cover;">
+                                            <img id="photo-preview" src="/{{field.value.url}}" alt="Aperçu de la photo" class="img-fluid rounded" style="max-height: 200px; object-fit: cover;">
                                         </div>
                                         {% if field.errors %}
                                             <div class="invalid-feedback">
@@ -59,7 +59,7 @@
                                 {% elif 'ot de passe' not in field.label %}
                                 <div class="col-md-6 mb-3">
                                     <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
-                                    <input type="text" class="form-control {% if field.errors %}is-invalid{% endif %}" id="{{ field.id_for_label }}" name="{{ field.name }}" value="{% if field.field.widget.input_type == 'select' %}{% for option in field.options %}{% if option.value == field.value %}{{ option.label }}{% endif %}{% else %}{{ field.value }}{% endif %}" readonly>
+                                    <input type="text" class="form-control {% if field.errors %}is-invalid{% endif %}" id="{{ field.id_for_label }}" name="{{ field.name }}" value="{% if field.field.widget.input_type == 'select' %}{% for option in field.field.choices %}{% if field.value|lower == option.0|lower %}{{ option.1 }}{% endif %}{% endfor %}{% else %}{{ field.value }}{% endif %}" readonly>
                                     {% if field.errors %}
                                         <div class="invalid-feedback">
                                             {{ field.errors }}

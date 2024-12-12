@@ -8,7 +8,18 @@
         <form method="post" enctype="multipart/form-data" id="form">
             <h2 class="roboto-light text-center">{{ form.instance.membre }} - {{ form.instance.membre.numero_telephone }} </h2>
             <h4 class="text-center mb-4">
-                {% if tache.type == 'retrait' %}Retrait d'argent{% elif tache.type == 'transfert' %}Transfert d'argent{% elif tache.type == 'depot_objectif' %}Dépôt sur objectif{% elif tache.type == 'depot_inscription' %}Dépôt d'inscription{% elif tache.type == 'contribution' %}Contribution mensuelle{% elif tache.type == 'pret' %}Prêt d'argent{% elif tache.type == 'remboursement_pret' %}Remboursement de pret{% elif tache.type == 'retrait_objectif' %}Retrait d'objectif{% elif tache.type == 'retrait_tout' %}Retrait total{% endif %}
+                {% if transaction.type == 'retrait' %}Retrait d'argent
+                {% elif transaction.type == 'transfert' %}Transfert d'argent
+                {% elif transaction.type == 'depot_objectif' %}Dépôt sur objectif
+                {% elif transaction.type == 'depot_inscription' %}Dépôt d'inscription
+                {% elif transaction.type == 'contribution' %}Contribution mensuelle
+                {% elif transaction.type == 'pret' %}Prêt d'argent
+                {% elif transaction.type == 'remboursement_pret' %}Remboursement de pret
+                {% elif transaction.type == 'retrait_objectif' %}Retrait d'objectif
+                {% elif transaction.type == 'retrait_tout' %}Retrait total
+                {% elif transaction.type == 'annulation_objectif' %}Annulation Objectif
+                {% else %}{{ transaction.type }}
+                {% endif %}
             </h4>
 
             {% csrf_token %}
@@ -34,8 +45,10 @@
             <div class="mb-3 d-flex flex-column align-items-center justify-content-center">
                 <label for="{{ form.preuve.id_for_label }}" class="form-label">{{ form.preuve.label }}</label>
                 {% if form.instance.preuve %}
-                    <img src="/static{{ form.preuve.value.url }}" class="img-fluid rounded" style="max-height: 200px; object-fit: cover;">
+                <a href="{{ transaction.preuve.url }}" target="_blank" rel="noopener noreferrer">
+                    <img src="{{ form.preuve.value.url }}" class="img-fluid rounded" style="max-height: 200px; object-fit: cover;">
                     <input type="hidden" name="{{ form.preuve.html_name }}" id="{{ form.preuve.id_for_label }}" value="{{ form.preuve.value }}">
+                </a>
                 {% else %}
                     <input type="file" class="form-control d-none" id="{{ form.preuve.id_for_label }}" name="{{ form.preuve.html_name }}" onchange="previewImage(this);" required>
                     <div id="imagePreview" class="image-preview text-center" onclick="document.getElementById('{{ form.preuve.id_for_label }}').click();">
@@ -45,7 +58,7 @@
             </div>
 
             <div class="text-center">
-                <a class="btn btn-danger text-white w-25" href="{% url 'agents:rejetter_depot_inscription' form.instance.pk %}" onclick="return confirm('Êtes-vous sûr de vouloir rejeter cette transaction ?')">Refuser</a>
+                <a class="btn btn-danger text-white w-25" href="{% url 'agents:rejetter_transaction' form.instance.pk %}" onclick="return confirm('Êtes-vous sûr de vouloir rejeter cette transaction ?')">Refuser</a>
                 <button type="button" class="btn btn-mw text-white w-25" id="submitBtn" data-bs-toggle="modal" data-bs-target="#confirmationModal">Accepter</button>
             </div>
         </form>
@@ -56,7 +69,7 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="confirmationModalLabel">Confirmation du retrait</h5>
+                    <h5 class="modal-title" id="confirmationModalLabel">Confirmation de la transaction</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -98,11 +111,11 @@
 
             const passwordInput = document.createElement('input');
             passwordInput.type = 'hidden';
-            passwordInput.name = 'mot_de_passe';  // Use 'mot_de_passe' as name
+            passwordInput.name = 'mot_de_passe';
             passwordInput.value = password;
             Form.appendChild(passwordInput);
             
-            if (Form.checkValidity()) Form.submit()  // Submit the withdraw form
+            if (Form.checkValidity()) Form.submit()
             else Form.reportValidity();
         });
     </script>

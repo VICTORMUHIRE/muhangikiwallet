@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import Transactions, Contributions, Retraits, DepotsObjectif, Transferts, Prêts, TypesPrêt, DepotsInscription, Fidelites
+from .models import Transactions, Contributions, Retraits, DepotsObjectif, Transferts, Prets, TypesPret, DepotsInscription, Fidelites
 
 
 # Formulaire de transaction
@@ -14,15 +14,15 @@ class TransactionsForm(forms.ModelForm):
             "devise": forms.Select(attrs={"class": "form-control form-select"}),
         }
 
-class PrêtsForm(forms.ModelForm):
+class PretsForm(forms.ModelForm):
     class Meta:
-        model = Prêts
+        model = Prets
         fields = ["type_pret", "montant", "devise"]
 
 # Formulaire de type de pret
-class TypesPrêtForm(forms.ModelForm):
+class TypesPretForm(forms.ModelForm):
     class Meta:
-        model = TypesPrêt
+        model = TypesPret
         fields = ["nom", "taux_interet", "delai_remboursement"]
 
 class ContributionsForm(forms.ModelForm):

@@ -92,22 +92,32 @@
                     </div>
                     <div class="card-body">
                         {% for demande in demandes_pret %}
-                            <div class="card mb-3">
-                                <div class="card-body d-flex align-items-center justify-content-between">
-                                    <div class="card-title">
-                                        <span class="badge bg-{% if demande.transaction.statut == 'Approuvé' %}success{% elif demande.statut == 'Rejeté' %}danger{% elif demande.statut == 'Remboursé' %}info{% else %}warning{% endif %}">
-                                            {% if demande.statut == 'Approuvé' and demande.transaction.statut == 'En attente' %}En attente{% else %}{{ demande.statut }}{% endif %}
-                                        </span>
-                                        <p class="card-text fs-6"><strong>Montant:</strong> {{ demande.montant_remboursé }} {{ demande.devise }}</p>
-                                    </div>
-                                    <span class="card-text ">
-                                        <small class="d-none d-md-inline">{{ demande.date|date:"d E Y" }}</small>
-                                        <small class="d-md-none">{{ demande.date|date:"d M Y" }}</small>
-                                        <small class="d-md-none">{{ demande.date|date:"H:i" }}</small>
-                                        <small class="d-none d-md-inline">{{ demande.date|date:"H:i:s" }}</small>
+                            <div onclick="location.href='{% url 'membres:transaction' demande.transaction.pk %}'" class="btn btn-light card mb-3">
+                                <div class="card-title d-flex align-items-center justify-content-between">
+                                    <span class="badge bg-{% if demande.transaction.statut == 'Approuvé' %}success{% elif demande.statut == 'Rejeté' %}danger{% elif demande.statut == 'Remboursé' %}info{% else %}warning{% endif %}">
+                                        {% if demande.statut == 'Approuvé' and demande.transaction.statut == 'En attente' %}En attente{% else %}{{ demande.statut }}{% endif %}
                                     </span>
-                                    {% if demande.transaction.statut == 'Approuvé' %}
+                                    {% if demande.statut == 'Approuvé' %}
+                                    <span class="card-text "><strong class="fw-bold"> limite : </strong>
+                                        <small class="d-none d-md-inline">{{ demande.date_remboursement|date:"d E Y" }}</small>
+                                        <small class="d-md-none">{{ demande.date_remboursement|date:"d M Y" }}</small>
+                                        <small class="d-md-none">{{ demande.date_remboursement|date:"H:i" }}</small>
+                                        <small class="d-none d-md-inline">{{ demande.date_remboursement|date:"H:i:s" }}</small>
+                                    </span>
+                                    {% endif %}
+                                </div>
+
+                                <div class="card-title d-flex align-items-center justify-content-between">
+                                    <span class="card-text fs-6"><strong>Montant:</strong> {{ demande.montant_remboursé }} {{ demande.devise }}</span>
+                                    {% if demande.statut == 'Approuvé' %}
                                         <a class="btn btn-sm btn-primary text-white" href="{% url 'membres:rembourser_pret' demande.transaction.pk %}">Rembourser</a>
+                                    {% else %}
+                                    <span class="card-text ">
+                                        <small class="d-none d-md-inline">{{ demande.date_demande|date:"d E Y" }}</small>
+                                        <small class="d-md-none">{{ demande.date_demande|date:"d M Y" }}</small>
+                                        <small class="d-md-none">{{ demande.date_demande|date:"H:i" }}</small>
+                                        <small class="d-none d-md-inline">{{ demande.date_demande|date:"H:i:s" }}</small>
+                                    </span>
                                     {% endif %}
                                 </div>
                             </div>

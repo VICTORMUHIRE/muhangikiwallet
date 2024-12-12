@@ -1,5 +1,6 @@
 from django.db import models
 from membres.models import Membres
+from agents.models import Agents, NumerosAgent
 from organisations.models import Organisations
 
 # Définition du modèle de type d'objectif
@@ -15,6 +16,9 @@ class Objectifs(models.Model):
     membre = models.ForeignKey(Membres, blank=True, null=True, on_delete=models.CASCADE, verbose_name="Client")
     organisation = models.ForeignKey(Organisations, blank=True, null=True, on_delete=models.CASCADE, verbose_name="Organisations")
     operateur = models.CharField(max_length=20, choices=(("membre", "membre"), ("organisation", "organisation")), verbose_name="Opérateur")
+    
+    agent = models.ForeignKey(Agents, blank=True, null=True, on_delete=models.CASCADE, verbose_name="Agents")
+    numero_agent = models.ForeignKey(NumerosAgent, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Numéro de l'agent")
 
     montant = models.FloatField(verbose_name="Montant", default=0)
     montant_cible = models.FloatField(verbose_name="Montant cible")

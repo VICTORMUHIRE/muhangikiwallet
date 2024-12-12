@@ -54,7 +54,7 @@
         <div class="card h-100 shadow-sm rounded-4 border-0 bg-light"  style="background-color: color(srgb 0 0 1 / 0.1) !important;">
             <div class="card-body d-flex flex-column align-items-center justify-content-center">
                 <i class="fas fa-bullseye fa-3x text-primary"></i>
-                <h5 class="card-title my-3 font-weight-bold text-center">Objectifs</h5>
+                <h5 class="card-title my-3 font-weight-bold text-center">Dépots objectifs</h5>
                 <h6 class="card-subtitle mb-2 text-muted">CDF : {{ total_depot_objectif_CDF|stringformat:".2f" }}</h6>
                 <h6 class="card-subtitle text-muted">USD : {{ total_depot_objectif_USD|stringformat:".2f" }}</h6>
             </div>
@@ -102,22 +102,33 @@
                 <div class="card-body">
                     {% for transaction in transactions|slice:":5" %}
                 <a href="{% url 'agents:transaction' transaction.id %}" class="d-block btn btn-light bg-white transaction-item {% if transaction.type == 'retrait' %}transaction-retrait{% elif transaction.type == 'transfert' %}transaction-transfert{% elif transaction.type == 'depot_objectif' %}transaction-depot-objectif{% elif transaction.type == 'depot_inscription' %}transaction-depot-inscription{% elif transaction.type == 'contribution' %}transaction-contribution{% elif transaction.type == 'pret' %}transaction-pret{% endif %}">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div class="d-flex align-items-center gap-3">
-                            <i class="{% if transaction.type == 'retrait' %}fas fa-minus-circle{% elif transaction.type == 'transfert' %}fas fa-exchange-alt{% elif transaction.type == 'depot_objectif' %}fas fa-piggy-bank{% elif transaction.type == 'depot_inscription' %}fas fa-sign-in-alt{% elif transaction.type == 'contribution' %}fas fa-donate{% elif transaction.type == 'pret' %}fas fa-hand-holding-usd{% elif transaction.type == 'remboursement_pret' %}fas fa-money-bill-wave{% endif %}"></i>
-                            <div class="text-dark fw-bold text-start">
-                                {% if transaction.type == 'retrait' %}Retrait d'argent{% elif transaction.type == 'transfert' %}Transfert d'argent{% elif transaction.type == 'depot_objectif' %}Dépôt sur objectif{% elif transaction.type == 'depot_inscription' %}Dépôt d'inscription{% elif transaction.type == 'contribution' %}Contribution mensuelle{% elif transaction.type == 'pret' %}Prêt d'argent{% elif transaction.type == 'remboursement_pret' %}Remboursement{% elif transaction.type == 'retrait_objectif' %}Retrait d'objectif{% elif transaction.type == 'retrait_tout' %}Retrait total{% endif %}
-                                <div>
-                                    <span class="text-muted small mb-0">{{ transaction.montant|stringformat:".2f" }} {{ transaction.devise }}</span>
-                                    <span class="transaction-status">
-                                        <span class="badge {% if transaction.statut == 'Approuvé' %}bg-success{% elif transaction.statut == 'Rejeté' %}bg-danger{% elif transaction.statut == 'Remboursé' %}bg-info{% else %}bg-warning{% endif %}">{{ transaction.statut }}</span>
-                                    </span>
-                                </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <i class="{% if 'retrait' in transaction.type  or 'annulation' in transaction.type %}fas fa-minus-circle{% elif transaction.type == 'transfert' %}fas fa-exchange-alt{% elif transaction.type == 'depot_objectif' %}fas fa-piggy-bank{% elif transaction.type == 'depot_inscription' %}fas fa-sign-in-alt{% elif transaction.type == 'contribution' %}fas fa-donate{% elif transaction.type == 'pret' %}fas fa-hand-holding-usd{% elif transaction.type == 'remboursement_pret' %}fas fa-money-bill-wave{% endif %}"></i>
+                        <div class="flex-grow-1">
+                            <div class="text-dark d-flex align-items-center justify-content-between mb-1">
+                                <span class="fw-bold">
+                                    {% if transaction.type == 'retrait' %}Retrait d'argent
+                                    {% elif transaction.type == 'transfert' %}Transfert d'argent
+                                    {% elif transaction.type == 'depot_objectif' %}Dépôt sur objectif
+                                    {% elif transaction.type == 'depot_inscription' %}Dépôt d'inscription
+                                    {% elif transaction.type == 'contribution' %}Contribution mensuelle
+                                    {% elif transaction.type == 'pret' %}Prêt d'argent
+                                    {% elif transaction.type == 'remboursement_pret' %}Remboursement
+                                    {% elif transaction.type == 'retrait_objectif' %}Retrait d'objectif
+                                    {% elif transaction.type == 'retrait_tout' %}Retrait total
+                                    {% elif transaction.type == 'annulation_objectif' %}Annulation Objectif
+                                    {% endif %}
+                                </span>
+                                <span class="badge accordion {% if transaction.statut == 'Approuvé' %}bg-success{% elif transaction.statut == 'Rejeté' %}bg-danger{% elif transaction.statut == 'Remboursé' %}bg-info{% else %}bg-warning{% endif %}">
+                                    {% if transaction.statut == 'Demande' %}En attente{% else %}{{ transaction.statut }}{% endif %}
+                                </span>
                             </div>
-                        </div>
-                        <div class="transaction-date text-muted small text-center">
-                            <span>{{ transaction.date|date:"d/m/Y" }}</span>
-                            <!-- <span class="ms-2">{{ transaction.date|date:"H:i" }}</span> -->
+
+                            <div class="text-muted small d-flex justify-content-between">
+                                <span>{{ transaction.montant|stringformat:".2f" }} {{ transaction.devise }}</span>
+                                <span class="d-md-none">{{ transaction.date|date:"d/m/Y" }}</span>
+                                <span class="d-none d-md-inline">{{ transaction.date|date:"d E Y  H:i" }}</span>
+                            </div>
                         </div>
                     </div>
                 </a>

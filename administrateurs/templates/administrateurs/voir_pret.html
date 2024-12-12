@@ -20,12 +20,13 @@
     <div class="card-body">
         <div class="row">
             <div class="col-md-6">
-                <p><strong>Membre :</strong> {{ pret.transaction.membre }}</p>
-                <p>Numéro : {{ pret.transaction.membre.numero_telephone }}</p>
-                <p><strong>Mois de contribution :</strong> {{ pret.transaction.membre.mois_contribution|date:"E" }}</p>
-                <p><strong>Montant :</strong> {{ pret.montant }} {{ pret.devise }}</p>
-                <p><strong>Montant à rembourser :</strong> {{ pret.montant_remboursé }} {{ pret.devise }}</p>
+                <p><strong>Membre :</strong> {{ pret.membre }}</p>
+                <p>Numéro : {{ pret.membre.numero_telephone }}</p>
+                <p><strong>Contribution actuel :</strong> {{ pret.membre.mois_contribution|date:"E" }} : {{ pret.membre.capital|stringformat:'.2f' }} / {{ pret.membre.contribution_mensuelle.montant|stringformat:'.2f' }}</p>
+                <p><strong>Montant :</strong> {{ pret.montant|stringformat:'.2f' }} {{ pret.devise }}</p>
+                <p><strong>Montant à rembourser :</strong> {{ pret.montant_remboursé|stringformat:'.2f' }} {{ pret.devise }}</p>
                 <p><strong>Date de la demande :</strong> {{ pret.date_demande }}</p>
+                <p><strong>Date limite :</strong> {{ pret.date_remboursement }}</p>
                 <p><strong>Statut :</strong>
                     {% if pret.statut == 'Approuvé' %}
                         <span class="badge bg-success">{{ pret.statut }}</span>

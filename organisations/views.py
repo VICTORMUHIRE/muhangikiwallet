@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Sum
 
-from transactions.models import Transactions, Prêts, TypesPrêt
+from transactions.models import Transactions, Prets, TypesPret
 from .models import Organisations
 from .forms import OrganisationsForm
 from django.contrib.auth import logout, login
@@ -19,8 +19,8 @@ def home(request):
     solde_USD = organisation.compte_USD
 
     # Calcul du montant total des prets accordés à l'organisation
-    total_prets_CDF = Prêts.objects.filter(organisation=organisation, devise="CDF", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
-    total_prets_USD = Prêts.objects.filter(organisation=organisation, devise="USD", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
+    total_prets_CDF = Prets.objects.filter(organisation=organisation, devise="CDF", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
+    total_prets_USD = Prets.objects.filter(organisation=organisation, devise="USD", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
 
     # Récupérer les 4 dernières transactions de l'organisation
     transactions = Transactions.objects.filter(organisation=organisation).order_by('-date')[:4]
@@ -105,7 +105,7 @@ def membres(request):
 # Vue pour la page de gestion des types de pret (à implémenter)
 @login_required
 def types_pret(request):
-    types_pret = TypesPrêt.objects.all()
+    types_pret = TypesPret.objects.all()
     context = {
         "types_pret": types_pret,
     }
@@ -114,21 +114,21 @@ def types_pret(request):
 # Vue pour la page de modification d'un type de pret (à implémenter)
 @login_required
 def modifier_type_pret(request, type_pret_id):
-    type_pret = get_object_or_404(TypesPrêt, pk=type_pret_id)
+    type_pret = get_object_or_404(TypesPret, pk=type_pret_id)
     # Logique pour modifier le type de pret
     return render(request, "organisations/modifier_type_pret.html")
 
 # Vue pour la page de suppression d'un type de pret (à implémenter)
 @login_required
 def supprimer_type_pret(request, type_pret_id):
-    type_pret = get_object_or_404(TypesPrêt, pk=type_pret_id)
+    type_pret = get_object_or_404(TypesPret, pk=type_pret_id)
     # Logique pour supprimer le type de pret
     return redirect("organisations:types_pret")
 
 # Vue pour la page de gestion des prets (à implémenter)
 @login_required
 def prets(request):
-    prets = Prêts.objects.all()
+    prets = Prets.objects.all()
     context = {
         "prets": prets,
     }

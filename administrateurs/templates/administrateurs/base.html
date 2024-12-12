@@ -160,7 +160,7 @@
                 <li class="nav-item dropdown">
                     <a class="nav-link text-dark d-flex align-items-center justify-content-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         {% if user.admin.photo_profile %}
-                        <img src="/static{{user.admin.photo_profile.url}}" alt="Photo de profil" class="rounded-circle" height="30"> 
+                        <img src="{{user.admin.photo_profile.url}}" alt="Photo de profil" class="rounded-circle" height="30"> 
                         {% elif user.admin.sexe == 'M' %}
                         <i class="fas fa-user-circle fa-2x"></i>
                         {% else %}
@@ -208,7 +208,7 @@
                     <ul class="navbar-nav d-flex justify-content-center flex-grow-1">
                         {% if request.user.is_authenticated %}
                         <li class="nav-item">
-                            <a class="nav-link {% if request.path == '/membres/' %}active{% endif %}" aria-current="page" href="{% url 'administrateurs:home' %}">
+                            <a class="nav-link {% if request.path == '/administrateurs/' %}active{% endif %}" aria-current="page" href="{% url 'administrateurs:home' %}">
                                 <i class="fa fa-home"></i>
                                 Accueil
                             </a>
@@ -225,12 +225,6 @@
                                 Agents
                             </a>
                         </li>
-                        <!-- <li class="nav-item">
-                            <a class="nav-link {% if '/organisations/' in request.path %}active{% endif %}" href="{% url 'administrateurs:organisations' %}">
-                                <i class="fa fa-building"></i>
-                                Organisations
-                            </a>
-                        </li> -->
                         <li class="nav-item">
                             <a class="nav-link {% if '/transactions/' in request.path %}active{% endif %}" href="{% url 'administrateurs:transactions' %}">
                                 <i class="fa fa-exchange-alt"></i>
@@ -248,7 +242,7 @@
                         <li class="nav-item dropdown">
                             <a class="nav-link text-dark d-flex align-items-center justify-content-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 {% if user.admin.photo_profile %}
-                                <img src="/static{{user.admin.photo_profile.url}}" alt="Photo de profil" class="rounded-circle" height="30"> 
+                                <img src="{{user.admin.photo_profile.url}}" alt="Photo de profil" class="rounded-circle" height="30"> 
                                 {% elif user.admin.sexe == 'M' %}
                                 <i class="fas fa-user-circle fa-2x"></i>
                                 {% else %}
@@ -259,11 +253,11 @@
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
                                 <li><a class="dropdown-item" href="#">
                                     <i class="fa fa-user"></i>
-                                    Mon profil 
+                                    Mon profil
                                 </a></li>
                                 <li><a class="dropdown-item" href="#">
                                     <i class="fa fa-bell"></i>
-                                    Notifications 
+                                    Notifications
                                     <span class="badge bg-secondary">3</span>
                                 </a></li>
                                 <li><hr class="dropdown-divider"></li>
@@ -302,8 +296,8 @@
     <!-- Barre d'application en bas (pour mobile) -->
     {% if request.user.is_authenticated %}
     <div class="bottom-app-bar">
-            <a href="{% url 'administrateurs:home' %}" class="nav-link {% if request.path == '/membres/' %}active{% endif %}">
-                <i class="fa fa-home"></i> 
+            <a href="{% url 'administrateurs:home' %}" class="nav-link {% if request.path == '/administrateurs/' %}active{% endif %}">
+                <i class="fa fa-home"></i>
                 <span>Accueil</span>
             </a>
             <a href="{% url 'administrateurs:agents' %}" class="nav-link {% if '/agents/' in request.path %}active{% endif %}">
@@ -314,10 +308,10 @@
                 <i class="fa fa-users"></i>
                 <span>Membres</span>
             </a>
-            <!-- <a href="{% url 'administrateurs:transactions' %}" class="nav-link {% if '/transactions/' in request.path %}active{% endif %}">
+            <a href="{% url 'administrateurs:transactions' %}" class="nav-link {% if '/transactions/' in request.path %}active{% endif %}">
                 <i class="fa fa-exchange-alt"></i>
                 <span>Transactions</span>
-            </a> -->
+            </a>
             <a  href="/admin" class="nav-link {% if '/parametres/' in request.path %}active{% endif %}">
                 <i class="fa fa-cog"></i>
                 <span>Paramètres</span>
@@ -346,15 +340,5 @@
 
     <script src="{% static 'js/bootstrap/bootstrap.bundle.min.js' %}"></script>
     <script src="{% static 'js/script.js' %}"></script>
-
-    <script>
-        // JavaScript pour le menu de profil
-        const profileMenu = document.getElementById('profileMenu');
-        const openProfileMenuButton = document.getElementById('openProfileMenu');
-
-        openProfileMenuButton.addEventListener('click', () => {
-            profileMenu.style.display = profileMenu.style.display === 'block' ? 'none' : 'block';
-        });
-    </script>
 </body>
 </html>

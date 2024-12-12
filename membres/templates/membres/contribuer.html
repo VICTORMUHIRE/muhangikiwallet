@@ -33,7 +33,7 @@
                     <div class="row mb-3">
                         <div class="form-group col-md-8">
                             <label class="form-label" for="{{ form.montant.id_for_label }}">Contribution mensuelle</label>
-                            <input type="number" class="form-control" id="{{ form.montant.id_for_label }}" name="{{ form.montant.html_name }}" value="{{ montant_restant|stringformat:'.2f' }}" required>
+                            <input type="number" class="form-control" id="{{ form.montant.id_for_label }}" name="{{ form.montant.html_name }}" value="{% if form.montant.value %}{{ form.montant.value|stringformat:'.2f' }}{% else %}{{ montant_restant|stringformat:'.2f' }}{% endif %}" required>
                         </div>
                         <div class="form-group col-md-4">
                             <div class="form-group">
@@ -123,7 +123,8 @@
             passwordInput.value = password;
             contributionForm.appendChild(passwordInput);
 
-            contributionForm.submit();
+            if (contributionForm.checkValidity()) contributionForm.submit()
+            else contributionForm.reportValidity();
         });
 
     </script>

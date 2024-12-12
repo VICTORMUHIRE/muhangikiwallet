@@ -5,20 +5,19 @@
 
 {% block content %}
 
-<div class="container mt-5">
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        {% endfor %}
-    {% endif %}
+<div class="row mt-5 mt-sm-0 mb-5 mb-sm-3 justify-content-center">
+    {% for message in messages %}
+    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{message.tags}}{% endif %} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
 
-    <div class="card shadow-sm rounded-4 border-0">
+    <div class="card shadow-sm rounded-4 border-0 col-10 col-md-6">
         <div class="card-header bg-white">
-            <h4 class="card-title font-weight-bold">
-                Demande de retrait total - {{ membre.nom }} {{ membre.prenom }} {{ membre.postnom }}
+            <h4 class="card-title text-center font-weight-bold">
+                <p class="mb-0">Demande de retrait total</p>
+                {{ membre.nom }} {{ membre.prenom }} {{ membre.postnom }}
             </h4>
         </div>
         <div class="card-body">
@@ -26,27 +25,32 @@
             <p><strong>Numéro de téléphone:</strong> {{ membre.numero_telephone }}</p>
             <p><strong>Date de la demande:</strong> {{ retrait.date }}</p>
 
-            <h5>Détails des fonds :</h5>
+            <h5 class="text-center">Détails des fonds</h5>
             <ul>
                 <li><strong>Contributions:</strong> {{ montant_contributions|stringformat:".2f" }} {{ membre.contribution_mensuelle.devise }}</li>
                 <li><strong>Bénéfices:</strong> {{ montant_benefices|stringformat:".2f" }} {{ membre.contribution_mensuelle.devise }}</li>
-                <li><strong>Objectifs:</strong> {{ montant_objectifs|stringformat:".2f" }} {{ membre.contribution_mensuelle.devise }}
+                
+                <li class="my-2"><strong>Objectifs:</strong> {{ montant_objectifs|stringformat:".2f" }} {{ membre.contribution_mensuelle.devise }}
                     <ul>
                         {% for objectif in objectifs %}
-                            <li><strong>{{ forloop.counter }}. {{ objectif.nom }} : </strong> {{ objectif.montant|stringformat:".2f" }} {{ objectif.devise }}</li>
+                            <li><strong>{{ forloop.counter }}. {{ objectif.nom }} : </strong> {% if objectif.statut != 'Retiré' %}{{ objectif.montant|stringformat:".2f" }}{% else %} 0 {% endif %} {{ objectif.devise }}, <strong class="text-muted">{{ objectif.statut }}</strong></li>
                         {% endfor %}
                     </ul>
                 </li>
                 <li><strong>Total:</strong> {{ montant_total|stringformat:".2f" }} {{ membre.contribution_mensuelle.devise }}</li>
-                <li><strong>Pourcentage retrait:</strong>{{ pourcentage_retrait|stringformat:".2f" }} %</li>
+                <li><strong>Pourcentage retrait:</strong> {{ pourcentage_retrait|stringformat:".2f" }} %</li>
                 <li><strong>Frais retrait:</strong> {{ frais_retrait|stringformat:".2f" }} {{ membre.contribution_mensuelle.devise }}</li>
                 <li><strong>Montant à retirer :</strong> {{ montant_à_retirer|stringformat:".2f" }} {{ membre.contribution_mensuelle.devise }}</li>
             </ul>
-            <form method="post">
+
+            <form method="post" id="form">
                 {% csrf_token %}
+                <input type="hidden" class="form-control" id="{{ form.montant.id_for_label }}" name="{{ form.montant.html_name }}" value="{{ montant_à_retirer|stringformat:'.2f' }}">
+                <input type="hidden" class="form-select" id="{{ form.devise.id_for_label }}" name="{{ form.devise.html_name }}" value="{{ membre.contribution_mensuelle.devise }}">
+
                 <div class="mb-3">
-                    <label for="numero_agent" class="form-label">Numéro de l'agent</label>
-                    <select class="form-control form-select" id="numero_agent" name="numero_agent">
+                    <label for="{{ form.numero_agent.id_for_label }}" class="form-label">Numéro de l'agent</label>
+                    <select class="form-control form-select" id="{{ form.numero_agent.id_for_label }}" name="{{ form.numero_agent.html_name }}">
                         {% for reseau, numeros in numeros_categories.items %}
                             <optgroup label="{{ reseau }}">
                                 {% for numero, id in numeros %}
@@ -55,42 +59,60 @@
                             </optgroup>
                         {% endfor %}
                     </select>
-                 </div>
-
-                <button type="button" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#approveModal">Approuver</button>
-                <a href="{% url 'administrateurs:refuser_retrait_tout' retrait.pk %}" class="btn btn-danger" onclick="return confirm('Êtes-vous sûr de vouloir rejeter cette demande de retrait total ?')">Rejeter</a>
-            </form>
-
-
-
-            <!-- Approve Modal -->
-            <div class="modal fade" id="approveModal" tabindex="-1" aria-labelledby="approveModalLabel" aria-hidden="true">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="approveModalLabel">Confirmation d'approbation</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            <p>Êtes-vous sûr de vouloir approuver ce retrait total ?</p>
-                            <form method="post" id="approveForm">
-                                {% csrf_token %}
-                                <input type="hidden" name="montant" value="{{ montant_à_retirer }}">
-                                <input type="hidden" name="devise" value="{{ membre.contribution_mensuelle.devise }}">
-                                <label for="password" class="form-label">Votre mot de passe:</label>
-                                <input type="password" class="form-control" id="password" name="password" required>
-                            </form>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                            <button type="submit" class="btn btn-success" form="approveForm">Approuver</button>
-                        </div>
-                    </div>
                 </div>
-            </div>
 
+                <div class="text-center">
+                    <button type="button" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#passwordConfirmModal">Approuver</button>
+                    <a href="{% url 'administrateurs:refuser_retrait_tout' retrait.pk %}" class="btn btn-danger" onclick="return confirm('Êtes-vous sûr de vouloir rejeter cette demande de retrait total ?')">Rejeter</a>
+                </div>
+            </form>
         </div>
     </div>
 </div>
+
+<!-- Modal -->
+<div class="modal fade" id="passwordConfirmModal" tabindex="-1" aria-labelledby="passwordConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">  <!-- Make modal centered -->
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="passwordConfirmModalLabel">Confirmation du mot de passe</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="passwordForm">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="mot_de_passe" class="form-label">Mot de passe</label>
+                        <input type="password" class="form-control" id="mot_de_passe" name="mot_de_passe" required>
+                    </div>
+                    <div class="modal-footer">  <!-- Submit in footer -->
+                        <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Annuler</button>
+                        <button type="submit" class="btn btn-mw">Confirmer</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Gestionnaire d'événements pour le bouton "Confirmer" dans le modal
+    document.getElementById('passwordForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        var password = document.getElementById('mot_de_passe').value;
+        var Form = document.getElementById('form');
+
+        // Ajouter le mot de passe au formulaire avant la soumission
+        var passwordInput = document.createElement('input');
+        passwordInput.type = 'hidden';
+        passwordInput.name = 'password';
+        passwordInput.value = password;
+        Form.appendChild(passwordInput);
+
+        // Soumettre le formulaire
+        Form.submit();
+    });
+</script>
 
 {% endblock %}

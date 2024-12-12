@@ -6,14 +6,14 @@
 
 {% block content %}
 
-<div class="container mt-5 mt-sm-0 mb-5">
-  <div class="card">
-    <div class="card-header">
-      <h2 class="text-center fw-bolder">Détails de la Transaction</h2>
+<div class="row mt-5 mt-0 mb-5 justify-content-center">
+  <div class="card bg-white col-11 col-md-6">
+    <div class="card-header bg-white">
+      <h2 class="text-center fw-bolder bg-white">Détails de la Transaction</h2>
     </div>
     <div class="card-body">
       {% if transaction %}
-        <h3>
+        <h3 class="text-center">
           {% if transaction.type == 'retrait' %}Retrait d'argent
           {% elif transaction.type == 'transfert' %}Transfert d'argent
           {% elif transaction.type == 'depot_objectif' %}Dépôt sur objectif
@@ -21,68 +21,55 @@
           {% elif transaction.type == 'contribution' %}Contribution mensuelle
           {% elif transaction.type == 'pret' %}Prêt d'argent
           {% elif transaction.type == 'remboursement_pret' %}Remboursement de pret
-          {% else %}Transaction Inconnue
+          {% elif transaction.type == 'retrait_objectif' %}Retrait d'objectif
+          {% elif transaction.type == 'retrait_tout' %}Retrait total
+          {% elif transaction.type == 'annulation_objectif' %}Annulation Objectif
+          {% else %}{{ transaction.type }}
           {% endif %}
         </h3>
 
-        <dl class="row">
-          <dt class="col-sm-3">Montant:</dt>
-          <dd class="col-sm-9">{{ transaction.montant|stringformat:".2f" }} {{ transaction.devise }}</dd>  <!-- Format amount -->
+        <dl class="row justify-content-center">
+          <dt class="col-5">Montant</dt>
+          <dd class="col-6">{{ transaction.montant|stringformat:".2f" }} {{ transaction.devise }}</dd>  <!-- Format amount -->
 
-          <dt class="col-sm-3">Date:</dt>
-          <dd class="col-sm-9">{{ transaction.date|date:"d/m/Y H:i" }}</dd>  <!-- Format date and time -->
+          <dt class="col-5">Date</dt>
+          <dd class="col-6">{{ transaction.date|date:"d/m/Y H:i" }}</dd>  <!-- Format date and time -->
 
-          <dt class="col-sm-3">Utilisateur:</dt>
-          <dd class="col-sm-9">{{ transaction.membre }}</dd>
-
-          {% if transaction.objectif %}
-            <dt class="col-sm-3">Objectif:</dt>
-            <dd class="col-sm-9">
-              {% if transaction.objectif.id %}  <!-- Check if objectif.id exists -->
-                <a href="{% url 'membres:objectif' transaction.objectif.id %}">{{ transaction.objectif.nom }}</a>
-              {% else %}
-                -
-              {% endif %}
-            </dd>
-          {% endif %}
+          <dt class="col-5">Utilisateur</dt>
+          <dd class="col-6">{{ transaction.membre }}</dd>
 
           {% if transaction.type == 'transfert' and transaction.destinataire %} <!-- Check if destinataire exists -->
-            <dt class="col-sm-3">Destinataire:</dt>
-            <dd class="col-sm-9">{{ transaction.destinataire.username }}</dd>
+            <dt class="col-5">Destinataire</dt>
+            <dd class="col-6">{{ transaction.destinataire.username }}</dd>
           {% endif %}
 
           {% if transaction.type == 'pret' %}
-            <dt class="col-sm-3">Taux d'intérêt:</dt>
-            <dd class="col-sm-9">10%</dd>  <!-- Format interest rate -->
+            <dt class="col-5">Taux d'intérêt</dt>
+            <dd class="col-6">10%</dd>
 
-            <dt class="col-sm-3">Délai de remboursement:</dt>
-            <dd class="col-sm-9">120 jours</dd>
+            <dt class="col-5">Montant à rembourser</dt>
+            <dd class="col-6">{{ transaction.pret.montant_remboursé }}</dd>
+
+            <dt class="col-5">Date de fin</dt>
+            <dd class="col-6">{{ transaction.pret.date_remboursement|date:"d/m/Y H:i" }}</dd>
           {% endif %}
 
           {% if transaction.preuve %}
-            <dt class="col-sm-3">Preuve:</dt>
-            <dd class="col-sm-9">
-              {% if transaction.preuve.url|slice:":4" in "http" or transaction.preuve.url|slice:":5" in "https" %} <!--- more robust URL handling -->
-                <a href="{{ transaction.preuve.url }}" target="_blank" rel="noopener noreferrer">Voir la preuve (Lien externe)</a>  <!-- Added rel attribute for security -->
-              {% else %}
-                <a href="{{ transaction.preuve.url }}" target="_blank" rel="noopener noreferrer">  <!-- Added rel attribute for security -->
-                  <img src="/static{{ transaction.preuve.url }}" alt="Preuve de transaction" style="max-width: 200px;" onerror="this.src='{% static 'images/placeholder.png' %}'">  <!-- Placeholder image -->
-                </a>
-              {% endif %}
-
+            <dt class="text-center">Preuve de la transaction</dt>
+            <dd class="text-center">
+              <a href="{{ transaction.preuve.url }}" target="_blank" rel="noopener noreferrer">
+                <img src="{{ transaction.preuve.url }}" alt="Preuve de transaction" style="max-width: 200px;">
+              </a>
             </dd>
           {% endif %}
-
-
         </dl>
       {% else %}
         <p>Aucune transaction trouvée.</p>
       {% endif %}
+        <div class="text-center">
+            <button class="btn btn-secondary" onclick="window.history.back()">Retour</button>  <!-- Corrected link -->
+        </div>
     </div>
-    <div class="card-footer text-center">
-        <a href="{% url 'membres:transactions' %}" class="btn btn-secondary">Retour</a>  <!-- Corrected link -->
-    </div>
-
   </div>
 </div>
 

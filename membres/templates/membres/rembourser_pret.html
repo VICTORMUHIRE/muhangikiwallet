@@ -31,7 +31,7 @@
                         <div class="row mb-3">
                             <div class="form-group col-md-8">
                                 <label class="form-label" for="{{ form.montant.id_for_label }}">Montant</label>
-                                <input type="number" class="form-control" id="{{ form.montant.id_for_label }}" name="{{ form.montant.html_name }}" value="{{ form.montant.value|default:0 }}" placeholder="Entrez le montant">
+                                <input type="number" class="form-control" id="{{ form.montant.id_for_label }}" name="{{ form.montant.html_name }}" value="{% if form.montant.value %}{{ form.montant.value|stringformat:'.2f' }}{% else %}{{ montant_restant|stringformat:'.2f' }}{% endif %}" placeholder="Entrez le montant">
                             </div>
 
                             <div class="form-group col-md-4">
@@ -145,8 +145,9 @@
         passwordInput.value = password;
         loanForm.appendChild(passwordInput);
 
-        // Soumettre le formulaire
-        loanForm.submit();
+        
+        if (loanForm.checkValidity()) loanForm.submit()
+        else loanForm.reportValidity();
     });
 </script>
 

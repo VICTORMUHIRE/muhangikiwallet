@@ -16,7 +16,7 @@
         {% endfor %}
     {% endif %}
 
-    <div class="col-12 d-flex justify-content-between mb-3">
+    <div class="col-12 d-flex align-items-center justify-content-between mb-3">
         <form class="d-flex" role="search" method="get">
             <input class="form-control me-2 form-control-sm" type="search" placeholder="Rechercher" aria-label="Search" name="q" value="{{ request.GET.q }}">
             <button class="btn btn-outline-success btn-sm" type="submit">Rechercher</button>
@@ -26,40 +26,43 @@
 
     <div class="col-12">
         <div class="card shadow-sm rounded-4">
-            <div class="card-body">
-                <table id="membres-table" class="table table-striped" style="width:100%">
-                    <thead>
+            <div class="card-body table-responsive p-0">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-warning">
                         <tr>
-                            <th>Nom</th>
-                            <th>Prénom</th>
-                            <th>Postnom</th>
+                            <th>Membre</th>
                             <th>Numéro</th>
                             <th>Sexe</th>
+                            <th>Niveau</th>
+                            <th>Objectifs</th>
                             <th>Contributions</th>
                             <th>Bénéfices</th>
                             <th>Dette</th>
-                            <th>%</th>
+                            <th>Pourcentage</th>
                             <th>Statut</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for membre in membres %}
-                        <tr>
-                            <td>{{ membre.nom }}</td>
-                            <td>{{ membre.prenom }}</td>
-                            <td>{{ membre.postnom }}</td>
+                        <tr onclick="location.href='{% url 'administrateurs:voir_membre' membre.pk %}'">
+                            <td>
+                                <img src="{{ membre.photo_profile.url }}" style="max-width: 80px; max-height: 50px;">
+                                {{ membre.nom }} {{ membre.postnom }}
+                            </td>
                             <td>{{ membre.numero_telephone }}</td>
                             <td>{{ membre.sexe }}</td>
-                            <td>{{ membre.solde_contributions }} {{ membre.devise }}</td> {# Replace with actual field or method #}
-                            <td>{{ membre.benefice_membre|stringformat:".2f" }} {% if membre.contribution_mensuelle.devise == "CDF" %} FC {% else %} $ {% endif %}</td> {# Replace with actual field or method #}
-                            <td>{{ membre.dette.montant_remboursé|default:0 }}  {{ membre.dette.devise|default:"$" }}</td> {# Replace with actual field or method #}
-                            <td>{{ membre.pourcentage|default:0|stringformat:".2f" }}%</td> {# Replace with actual field or method #}
+                            <td>{{ membre.mois_contribution|date:'E' }}</td>
+                            <td>{{ membre.solde_objecticfs|stringformat:".2f" }} $</td>
+                            <td>{{ membre.solde_contributions|stringformat:".2f" }} {{ membre.devise }}</td>
+                            <td>{{ membre.benefice_membre|stringformat:".2f" }} {% if membre.contribution_mensuelle.devise == "CDF" %} FC {% else %} $ {% endif %}</td>
+                            <td>{{ membre.dette.montant_remboursé|stringformat:".2f" }} {{ membre.dette.devise|default:"$" }}</td>
+                            <td>{{ membre.pourcentage|stringformat:".2f" }}%</td>
                             <td>{{ membre.status|yesno:"Actif, Inactif" }}</td>
-                            <td>
-                                <a href="{% url 'administrateurs:voir_membre' membre.pk %}" class="btn btn-sm btn-info"><i class="fas fa-eye"></i></a>
+                            <td class="d-flex justify-content-center">
+                                {% comment %} <a href="{% url 'administrateurs:voir_membre' membre.pk %}" class="btn btn-sm btn-info"><i class="fas fa-eye"></i></a> {% endcomment %}
                                 <a href="{% url 'administrateurs:modifier_membre' membre.pk %}" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></a>
-                                <a href="{% url 'administrateurs:supprimer_membre' membre.pk %}" class="btn btn-sm btn-danger ms-2" onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce membre ?')"><i class="fas fa-trash-alt"></i></a>
+                                {% comment %} <a href="{% url 'administrateurs:supprimer_membre' membre.pk %}" class="btn btn-sm btn-danger ms-2" onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce membre ?')"><i class="fas fa-trash-alt"></i></a> {% endcomment %}
                             </td>
                         </tr>
                         {% empty %}

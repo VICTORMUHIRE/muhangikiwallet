@@ -161,7 +161,7 @@
                 <li class="nav-item dropdown">
                     <a class="nav-link text-dark d-flex align-items-center justify-content-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         {% if user.agent.photo_profile %}
-                        <img src="/static{{user.agent.photo_profile.url}}" alt="Photo de profil" class="rounded-circle" height="30">
+                        <img src="{{user.agent.photo_profile.url}}" alt="Photo de profil" class="rounded-circle" height="30">
                         {% elif user.agent.sexe == 'M' %}
                         <i class="fas fa-user-circle fa-2x"></i>
                         {% else %}
@@ -209,7 +209,7 @@
                     <ul class="navbar-nav d-flex justify-content-center flex-grow-1">
                         {% if request.user.is_authenticated %}
                         <li class="nav-item">
-                            <a class="nav-link {% if request.path == '/membres/' %}active{% endif %}" aria-current="page" href="{% url 'agents:home' %}">
+                            <a class="nav-link {% if request.path == '/agents/' %}active{% endif %}" aria-current="page" href="{% url 'agents:home' %}">
                                 <i class="fa fa-home"></i>
                                 Accueil
                             </a>
@@ -232,7 +232,7 @@
                         <li class="nav-item dropdown">
                             <a class="nav-link text-dark d-flex align-items-center justify-content-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 {% if user.agent.photo_profile %}
-                                <img src="/static{{user.agent.photo_profile.url}}" alt="Photo de profil" class="rounded-circle" height="30"> 
+                                <img src="{{user.agent.photo_profile.url}}" alt="Photo de profil" class="rounded-circle" height="30"> 
                                 {% elif user.agent.sexe == 'M' %}
                                 <i class="fas fa-user-circle fa-2x"></i>
                                 {% else %}
@@ -286,7 +286,7 @@
     <!-- Barre d'application en bas (pour mobile) -->
     {% if request.user.is_authenticated %}
     <div class="bottom-app-bar">
-            <a href="{% url 'agents:home' %}" class="nav-link {% if request.path == '/membres/' %}active{% endif %}">
+            <a href="{% url 'agents:home' %}" class="nav-link {% if request.path == '/agents/' %}active{% endif %}">
                 <i class="fa fa-home"></i> 
                 <span>Accueil</span>
             </a>
@@ -322,15 +322,5 @@
 
     <script src="{% static 'js/bootstrap/bootstrap.bundle.min.js' %}"></script>
     <script src="{% static 'js/script.js' %}"></script>
-
-    <script>
-        // JavaScript pour le menu de profil
-        const profileMenu = document.getElementById('profileMenu');
-        const openProfileMenuButton = document.getElementById('openProfileMenu');
-
-        openProfileMenuButton.addEventListener('click', () => {
-            profileMenu.style.display = profileMenu.style.display === 'block' ? 'none' : 'block';
-        });
-    </script>
 </body>
 </html>
