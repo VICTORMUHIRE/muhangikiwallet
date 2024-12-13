@@ -41,7 +41,11 @@
 
             <h2 class="mw-color text-center mb-4">Connexion</h2>
             
-            {% if messages %} <p class="alert alert-danger text-center">Nom d'utilisateur incorrect ou mot de passe incorrect</p>{% endif %}
+            {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}warning{% endif %} fade show" role="alert">
+                {{ message }}
+            </div>
+            {% endfor %}
             
             <form method="post" class="mb-4">
                 {% csrf_token %}

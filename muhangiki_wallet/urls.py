@@ -20,9 +20,9 @@ urlpatterns = [
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
-if __name__ == "__main__":
+if __name__ != "__main__":
     from administrateurs.models import Administrateurs, Users, Provinces, Villes, Communes, Quartiers, Avenues, EtatsCivil, NumerosCompte, CodesReference, ContributionsMensuelles
-    from transactions.models import Transactions, Prêts, TypesPrêt, Contributions, DepotsObjectif, Retraits, Transferts, DepotsInscription, Benefices
+    from transactions.models import Transactions, Prets, TypesPret, Contributions, DepotsObjectif, Retraits, Transferts, DepotsInscription, Benefices
     
     # Réinitialise tous les models
     Provinces.objects.all().delete()
@@ -38,8 +38,8 @@ if __name__ == "__main__":
     Users.objects.all().delete()
 
     Transactions.objects.all().delete()
-    Prêts.objects.all().delete()
-    TypesPrêt.objects.all().delete()
+    Prets.objects.all().delete()
+    TypesPret.objects.all().delete()
     Contributions.objects.all().delete()
     DepotsObjectif.objects.all().delete()
     Retraits.objects.all().delete()

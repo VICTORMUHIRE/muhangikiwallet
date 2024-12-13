@@ -13,13 +13,11 @@
                 </div>
 
                 <h2 class="mw-color text-center mb-4">Création de compte</h2>
-                {% if messages %}
-                <ul class="messages-list">
-                    {% for message in messages %}
-                    <li {% if message.tags %} class="alert alert-{{ message.tags }}"{% endif %}>{{ message }}</li>
-                    {% endfor %}
-                </ul>
-                {% endif %}
+                {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}warning{% endif %} fade show" role="alert">
+                    {{ message }}
+                </div>
+                {% endfor %}
 
                 <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}

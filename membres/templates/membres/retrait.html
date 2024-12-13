@@ -102,7 +102,7 @@
         if (devise === 'CDF') montant_USD = montant / 2800;
         else montant_USD = montant;
 
-        if (montant_USD >= 1 && montant_USD <= 10) {
+        if (montant_USD > 0 && montant_USD <= 10) {
             frais = 0.085;
         } else if (montant_USD > 10 && montant_USD <= 20) {
             frais = 0.058;

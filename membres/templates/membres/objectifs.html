@@ -67,7 +67,7 @@
                                         </div>
                                         <div class="modal-body">
                                             <p>Êtes-vous sûr de vouloir annuler l'objectif <strong>{{ objectif.nom }}</strong> de <strong>{{ objectif.montant_cible|stringformat:".2f" }} {{ objectif.devise }}</strong> ?</p>
-                                            <form method="post" action="{% url 'membres:annuler_objectif' objectif.id %}">
+                                            <form method="post" action="{% url 'membres:annulation_objectif' objectif.id %}">
                                                 {% csrf_token %}
                                                 <div class="mb-3">
                                                     <input type="password" class="form-control" id="password{{ objectif.id }}" name="password" placeholder="Entrez votre mot de passe" required>

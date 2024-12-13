@@ -493,7 +493,7 @@ def voir_pret(request, pret_id):
     
     if request.method == "POST":
         mot_de_passe = request.POST.get("password")
-        transaction_form = TransactionsForm(request.POST)
+        transaction_form = TransactionsForm(request.POST, instance=pret.transaction)
 
         if check_password(mot_de_passe, request.user.password):
             if transaction_form.is_valid():
@@ -509,13 +509,9 @@ def voir_pret(request, pret_id):
                 transaction.montant = pret.montant
                 transaction.devise = pret.devise
 
-                transaction.type = "pret"
                 transaction.statut = "En attente"
-                # pret.statut = "Approuvé"
-                
-                pret.transaction = transaction
 
-                pret.transaction.save()
+                transaction.save()
                 pret.save()
             
                 messages.success(request, "Le pret a été approuvé avec succès")
@@ -526,7 +522,7 @@ def voir_pret(request, pret_id):
     
     context = {
         "form": PretsForm(instance=pret),
-        "transaction_form": TransactionsForm(),
+        "transaction_form": TransactionsForm(instance=pret.transaction),
         "numeros_categories": numeros_categories,
         "pret": pret
     }
@@ -538,11 +534,13 @@ def voir_pret(request, pret_id):
 def rejeter_pret(request, pret_id):
     pret = get_object_or_404(Prets, pk=pret_id)
 
-    pret.statut = "Rejeté"
+    pret.statut = pret.transaction.statut = "Rejeté"
     pret.date = timezone.now()
+
+    pret.transaction.save()
     pret.save()
     messages.success(request, "Le pret a été rejeté avec succès")
-    return redirect("administrateurs:home", pret_id=pret.pk)
+    return redirect("administrateurs:home")
 
 @login_required
 @verifier_admin

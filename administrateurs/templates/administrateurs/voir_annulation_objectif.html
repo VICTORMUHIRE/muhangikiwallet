@@ -15,10 +15,10 @@
 
         <p><strong>Membre:</strong> {{ membre.nom }} {{ membre.prenom }} {{ membre.postnom }}</p>
         <p><strong>Numéro de téléphone:</strong> {{ membre.numero_telephone }}</p>
-        <p><strong>Date de la demande:</strong> {{ annuler_objectif.date }}</p>
-        <p><strong>Objectif:</strong> {{ annuler_objectif.objectif.nom }}</p>
-        <p><strong>Type:</strong> {{ annuler_objectif.objectif.type }}</p>
-        <p><strong>Montant total:</strong> {{ annuler_objectif.montant|stringformat:".2f" }} {{ membre.contribution_mensuelle.devise }}</p>
+        <p><strong>Date de la demande:</strong> {{ annulation_objectif.date }}</p>
+        <p><strong>Objectif:</strong> {{ annulation_objectif.objectif.nom }}</p>
+        <p><strong>Type:</strong> {{ annulation_objectif.objectif.type }}</p>
+        <p><strong>Montant total:</strong> {{ annulation_objectif.montant|stringformat:".2f" }} {{ membre.contribution_mensuelle.devise }}</p>
         <p><strong>Pourcentage retrait:</strong> {{ pourcentage_retrait|stringformat:".2f" }} %</p>
         <p><strong>Frais retrait:</strong> {{ frais_retrait|stringformat:".2f" }} {{ membre.contribution_mensuelle.devise }}</p>
         <p><strong>Montant à retirer:</strong> {{ montant_à_retirer|stringformat:".2f" }} {{ membre.contribution_mensuelle.devise }}</p>
@@ -26,7 +26,7 @@
         <form method="post" id="form">
             {% csrf_token %}
             <input type="hidden" class="form-control" id="{{ form.montant.id_for_label }}" name="{{ form.montant.html_name }}" value="{{ montant_à_retirer|stringformat:'.2f' }}">
-            <input type="hidden" class="form-select" id="{{ form.devise.id_for_label }}" name="{{ form.devise.html_name }}" value="{{ annuler_objectif.devise }}">
+            <input type="hidden" class="form-select" id="{{ form.devise.id_for_label }}" name="{{ form.devise.html_name }}" value="{{ annulation_objectif.devise }}">
 
             <div class="mb-3">
                 <label for="{{ form.numero_agent.id_for_label }}" class="form-label">Numéro de l'agent</label>
@@ -43,7 +43,7 @@
 
             <div class="d-flex justify-content-center">
                 <input type="button" value="Approuver" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#passwordConfirmModal">
-                <a href="{% url 'administrateurs:rejeter_annulation_objectif' annuler_objectif.pk %}" class="btn btn-danger" onclick="return confirm('Êtes-vous sûr de vouloir rejeter cette demande ?')">Rejeter</a>
+                <a href="{% url 'administrateurs:rejeter_annulation_objectif' annulation_objectif.pk %}" class="btn btn-danger" onclick="return confirm('Êtes-vous sûr de vouloir rejeter cette demande ?')">Rejeter</a>
             </div>
         </form>
     </div>

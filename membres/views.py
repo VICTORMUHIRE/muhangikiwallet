@@ -397,8 +397,13 @@ def demande_pret(request):
                     if not Prets.objects.filter(membre=request.user.membre, statut="En attente").exists():
                         if not Prets.objects.filter(membre=request.user.membre, transaction__statut__in=["Demande", "En attente"], statut__in=["En attente", "Approuvé"]).exists():
                             if pret.montant_remboursé > 0 and pret.montant_remboursé * (2800 if pret.devise == "USD" else 1) <= solde_total_contribution:
-                                # transaction.save()
-                                # pret.transaction = transaction
+                                
+                                pret.transaction = Transactions.objects.create(
+                                    membre=request.user.membre,
+                                    montant=pret.montant,
+                                    devise=pret.devise,
+                                    type="pret",
+                                )
 
                                 pret.save()  # Enregistrer l'objet pret
                                 messages.success(request, 'Votre demande de pret a été soumise avec succès !')
@@ -586,7 +591,7 @@ def depot_objectif(request, objectif_id):
                             depot_objectif.save()
 
                             messages.success(request, "Votre dépôt sur objectif a été soumis avec succès !")
-                            return redirect('membres:dépot_objectif', objectif_id=objectif_id, permanent=True)
+                            return redirect('membres:depot_objectif', objectif_id=objectif_id, permanent=True)
                         else:
                             messages.error(request, "Le montant doit être supérieur à zéro et inférieur ou égal au montant cible de l'objectif")
                     
