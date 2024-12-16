@@ -75,7 +75,19 @@
                         <li class="list-group-item p-2 rounded-4">
                             <a class="d-flex justify-content-between btn btn-light text-start" href="{% url 'agents:voir_transaction' tache.pk %}">
                                 <div>
-                                    <span class="badge bg-primary">{% if tache.type == 'retrait' %}Retrait d'argent{% elif tache.type == 'transfert' %}Transfert d'argent{% elif tache.type == 'depot_objectif' %}Dépôt sur objectif{% elif tache.type == 'depot_inscription' %}Dépôt d'inscription{% elif tache.type == 'contribution' %}Contribution mensuelle{% elif tache.type == 'pret' %}Prêt d'argent{% elif tache.type == 'remboursement_pret' %}Remboursement de pret{% elif tache.type == 'retrait_objectif' %}Retrait d'objectif{% elif tache.type == 'demande_retrait_tout' %}Retrait total{% endif %}</span>
+                                    <span class="badge bg-primary">
+                                        {% if tache.type == 'retrait' %}Retrait d'argent
+                                        {% elif tache.type == 'transfert' %}Transfert d'argent
+                                        {% elif tache.type == 'depot_objectif' %}Dépôt sur objectif
+                                        {% elif tache.type == 'depot_inscription' %}Dépôt d'inscription
+                                        {% elif tache.type == 'contribution' %}Contribution mensuelle
+                                        {% elif tache.type == 'pret' %}Prêt d'argent
+                                        {% elif tache.type == 'remboursement_pret' %}Remboursement de pret
+                                        {% elif tache.type == 'retrait_objectif' %}Retrait d'objectif
+                                        {% elif tache.type == 'demande_retrait_tout' %}Retrait total
+                                        {% elif transaction.type == 'retrait_tout' %}Retrait total
+                                        {% elif transaction.type == 'annulation_objectif' %}Annulation Objectif
+                                        {% endif %}</span>
                                     <div>
                                         <strong class="text-center">{{ tache.membre }}</strong>
                                         <span class="text-muted small mb-0">{{ tache.montant|stringformat:".2f" }} {{ tache.devise }}</span>

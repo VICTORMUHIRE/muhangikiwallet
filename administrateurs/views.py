@@ -51,15 +51,15 @@ def home(request):
     solde_total_entreprise_usd = Transactions.objects.filter(devise="USD", type="contribution", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
 
     # Solde de toutes les dettes
-    total_dettes_cdf = Prets.objects.filter(devise="CDF", transaction__statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
-    total_dettes_usd = Prets.objects.filter(devise="USD", transaction__statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
+    total_dettes_cdf = Prets.objects.filter(devise="CDF", statut__in=["Approuvé", "Remboursé"]).aggregate(Sum('montant'))['montant__sum'] or 0
+    total_dettes_usd = Prets.objects.filter(devise="USD", statut__in=["Approuvé", "Remboursé"]).aggregate(Sum('montant'))['montant__sum'] or 0
 
     total_prets_remboursees_CDF = Transactions.objects.filter(devise="CDF", statut="Approuvé", type="remboursement_pret").aggregate(total=Sum('montant'))['total'] or 0
     total_prets_remboursees_USD = Transactions.objects.filter(devise="USD", statut="Approuvé", type="remboursement_pret").aggregate(total=Sum('montant'))['total'] or 0
 
     # Solde de toutes les dettes
-    total_montant_dettes_rembouser_cdf = Prets.objects.filter(devise="CDF", transaction__statut="Approuvé").aggregate(total=Sum('montant_remboursé'))['total'] or 0
-    total_montant_dettes_rembouser_usd = Prets.objects.filter(devise="USD", transaction__statut="Approuvé").aggregate(total=Sum('montant_remboursé'))['total'] or 0
+    total_montant_dettes_rembouser_cdf = Prets.objects.filter(devise="CDF", statut__in=["Approuvé", "Remboursé"]).aggregate(total=Sum('montant_remboursé'))['total'] or 0
+    total_montant_dettes_rembouser_usd = Prets.objects.filter(devise="USD", statut__in=["Approuvé", "Remboursé"]).aggregate(total=Sum('montant_remboursé'))['total'] or 0
 
     # Calcul du solde total des dépôts sur les objectifs
     total_depots_objectifs_cdf = Objectifs.objects.filter(devise="CDF", statut__in=["En cours", "Atteint", "Epuisé"]).aggregate(Sum('montant'))['montant__sum'] or 0
@@ -81,8 +81,8 @@ def home(request):
     total_retraits_cdf = Retraits.objects.filter(devise="CDF", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
     total_retraits_usd = Retraits.objects.filter(devise="USD", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
 
-    total_benefices_cdf = float(total_montant_dettes_rembouser_cdf - total_dettes_cdf) * 0.1
-    total_benefices_usd = float(total_montant_dettes_rembouser_usd - total_dettes_usd) * 0.1
+    total_benefices_cdf = float(total_montant_dettes_rembouser_cdf - total_dettes_cdf) * 0.5
+    total_benefices_usd = float(total_montant_dettes_rembouser_usd - total_dettes_usd) * 0.5
 
     # Nombre total de membres, organisations et agents
     nombre_membres = Membres.objects.count()
@@ -170,7 +170,7 @@ def membres(request):
                                 float(Objectifs.objects.filter(membre=membre, devise="USD", statut__in=["En cours", "Atteint", "Epuisé"]).aggregate(total=Sum('montant'))['total'] or 0)
         
         membre.solde_contributions = Transactions.objects.filter(membre=membre, devise="CDF" if membre.contribution_mensuelle.devise == "CDF" else "USD", statut="Approuvé", type="contribution").aggregate(total=Sum('montant'))['total'] or 0
-        membre.benefice_membre = Benefices.objects.filter(membre=membre).aggregate(Sum('montant'))['montant__sum'] or 0 - (Transactions.objects.filter(membre=membre, statut="Approuvé", type="retrait").aggregate(Sum('montant'))['montant__sum'] or 0)
+        membre.benefice_membre = float(Benefices.objects.filter(membre=membre).aggregate(Sum('montant'))['montant__sum'] or 0) - float(Transactions.objects.filter(membre=membre, statut="Approuvé", type="retrait").aggregate(Sum('montant'))['montant__sum'] or 0)
         
         if total_contributions_CDF > 0:  # Avoid ZeroDivisionError
             membre.pourcentage = float(membre.solde_contributions * (2800 if membre.contribution_mensuelle.devise == "USD" else 1) / total_contributions_CDF) * 100
@@ -685,9 +685,8 @@ def voir_retrait(request, retrait_id):
 
                 transaction = transaction_form.save(commit=False)
 
+                transaction.membre = membre
                 transaction.agent = transaction.numero_agent.agent
-                transaction.montant = retrait.montant
-                transaction.devise = retrait.devise
                 transaction.statut = "En attente"
 
                 transaction.save()
@@ -742,7 +741,7 @@ def demande_retrait_tout(request, retrait_id):
     if montant_total_USD > 0 and montant_total_USD <= 10: frais = 0.085
     elif montant_total_USD > 10 and montant_total_USD <= 20: frais = 0.058
     elif montant_total_USD > 20 and montant_total_USD <= 50: frais = 0.0295
-    elif montant_total_USD > 50 and montant_total_USD <= 400: frais = 0.175
+    elif montant_total_USD > 50 and montant_total_USD <= 400: frais = 0.0175
     elif montant_total_USD > 400: frais = 0.01
 
     reseaux = NumerosAgent.objects.values_list('reseau', flat=True).distinct()
@@ -765,9 +764,10 @@ def demande_retrait_tout(request, retrait_id):
                 retrait.date_approbation = timezone.now()
                 retrait.administrateur = request.user.admin
 
-                depot_inscription = DepotsInscription.objects.get(transaction__membre=membre)
+                depot_inscription = DepotsInscription.objects.get(membre=membre)
                 # depot_inscription.statut = "En attente"
                 depot_inscription.transaction = None
+                depot_inscription.montant = 10
                 depot_inscription.save()
 
                 retrait.statut = "En attente"

@@ -42,8 +42,8 @@ def home(request):
     total_depot_objectif_CDF = Transactions.objects.filter(agent=agent, devise="CDF", statut="Approuvé", type="depot_objectif").aggregate(total=Sum('montant'))['total'] or 0
     total_depot_objectif_USD = Transactions.objects.filter(agent=agent, devise="USD", statut="Approuvé", type="depot_objectif").aggregate(total=Sum('montant'))['total'] or 0
 
-    total_retrait_objectif_CDF = Transactions.objects.filter(agent=agent, devise="CDF", statut="Approuvé", type="retrait_objectif").aggregate(total=Sum('montant'))['total'] or 0
-    total_retrait_objectif_USD = Transactions.objects.filter(agent=agent, devise="USD", statut="Approuvé", type="retrait_objectif").aggregate(total=Sum('montant'))['total'] or 0
+    total_retrait_objectif_CDF = RetraitsObjectif.objects.filter(transaction__agent=agent, devise="CDF", transaction__statut="Approuvé").aggregate(total=Sum('montant'))['total'] or 0
+    total_retrait_objectif_USD = RetraitsObjectif.objects.filter(transaction__agent=agent, devise="USD", transaction__statut="Approuvé").aggregate(total=Sum('montant'))['total'] or 0
 
     total_annulation_objectif_CDF = Transactions.objects.filter(agent=agent, devise="CDF", statut="Approuvé", type="annulation_objectif").aggregate(total=Sum('montant'))['total'] or 0
     total_annulation_objectif_USD = Transactions.objects.filter(agent=agent, devise="USD", statut="Approuvé", type="annulation_objectif").aggregate(total=Sum('montant'))['total'] or 0
@@ -119,7 +119,7 @@ def voir_transaction(request, transaction_id):
                         pret.save()
 
                         # Calculate benefit amount
-                        montant_benefice = (float(pret.montant_remboursé) - float(pret.montant)) * 0.9 * (2800 if pret.devise == "USD" else 1)
+                        montant_benefice = (float(pret.montant_remboursé) - float(pret.montant)) * 0.5 * (2800 if pret.devise == "USD" else 1)
                         devise_pret = pret.devise
                         
                         total_contributions_CDF = Transactions.objects.filter(devise="CDF", statut="Approuvé", type="contribution").aggregate(total=Sum('montant'))['total'] or 0
@@ -195,8 +195,9 @@ def voir_transaction(request, transaction_id):
                         membre = transaction.membre
 
                         for pret in Prets.objects.filter(membre=membre, transaction__statut="Approuvé"):
+                            pret.membre = None
                             pret.transaction = None
-                            pret.statut = "Annulé"
+                            # pret.statut = "Annulé"
                             pret.save()
 
                         Transactions.objects.filter(membre=membre).delete()
@@ -275,10 +276,10 @@ def rejetter_transaction(request, transaction_id):
             remboursement_pret.statut = "Rejeté"
             remboursement_pret.save()
 
-        case "depot_objectif":
-            depot_objectif = DepotsObjectif.objects.get(transaction=transaction)
-            depot_objectif.statut = "Rejeté"
-            depot_objectif.save()
+        # case "depot_objectif":
+        #     depot_objectif = DepotsObjectif.objects.get(transaction=transaction)
+        #     depot_objectif.statut = "Rejeté"
+        #     depot_objectif.save()
 
         case "depot_inscription":
             depot_inscription = DepotsInscription.objects.get(transaction=transaction)

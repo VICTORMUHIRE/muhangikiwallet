@@ -72,43 +72,40 @@ def statut(request):
         
         mot_de_passe = request.POST.get('mot_de_passe')
 
-        if check_password(mot_de_passe, request.user.password):
-            if form.is_valid():
-                try:
-                    transaction = form.save(commit=False)
+        if form.is_valid():
+            if check_password(mot_de_passe, request.user.password):
+                transaction = form.save(commit=False)
 
-                    transaction.devise = depot_inscription.devise
-                    transaction.montant = depot_inscription.montant
-                    transaction.agent = transaction.numero_agent.agent
-                    transaction.membre=request.user.membre
-                    transaction.type="depot_inscription"
-                    transaction.statut = "En attente"
+                transaction.devise = depot_inscription.devise
+                transaction.montant = depot_inscription.montant
+                transaction.agent = transaction.numero_agent.agent
+                transaction.membre=request.user.membre
+                transaction.type="depot_inscription"
+                transaction.statut = "En attente"
 
-                    depot_inscription.date = timezone.now()
-                    depot_inscription.transaction = transaction
-                    
-                    transaction.save()
-                    depot_inscription.save()
-
-                    messages.success(request, "Votre dépot d'inscription a été soumise avec succès !")
-                    return redirect('membres:home')
-
-                except Agents.DoesNotExist:
-                    messages.error(request, "Numéro d'agent invalide")
-            
-            elif membre_form.is_valid():
-                membre_form.save()
-
-                depot_inscription.statut = "En attente"
+                depot_inscription.date = timezone.now()
+                depot_inscription.transaction = transaction
+                
+                transaction.save()
                 depot_inscription.save()
 
-                messages.success(request, "Vos informations ont été modifiées avec succès !")
+                messages.success(request, "Votre dépot d'inscription a été soumise avec succès !")
                 return redirect('membres:home')
+            
             else:
-                messages.error(request, "Veuillez corriger les erreurs du formulaire")
+                messages.error(request, "Mot de passe incorrect")
 
+        elif membre_form.is_valid():
+            membre_form.save()
+
+            depot_inscription.statut = "En attente"
+            depot_inscription.save()
+
+            messages.success(request, "Vos informations ont été modifiées avec succès !")
+            return redirect('membres:home')
+        
         else:
-            messages.error(request, "Mot de passe incorrect")
+            messages.error(request, "Veuillez corriger les erreurs du formulaire")
 
     else:
         form = TransactionsForm(initial={"montant": depot_inscription.montant, "devise": depot_inscription.devise})
@@ -257,7 +254,7 @@ def profile(request):
             messages.success(request, 'Photo de profil mise à jour avec succès.')
             return redirect('membres:profile')
     else:
-        form = MembresForm(instance=membre)
+        form = ModifierMembresForm(instance=membre)
 
     context = {
         "form": form
@@ -393,7 +390,7 @@ def demande_pret(request):
 
                 pret.date_remboursement = datetime.now() + timedelta(days=120) #timedelta(days=pret.type_pret.delai_remboursement)  # Définir la date de remboursement
                 
-                if not Transactions.objects.filter(membre=request.user.membre, type="retrait_tout", statut="En attente").exists():
+                if not Transactions.objects.filter(membre=request.user.membre, type="retrait_tout", statut__in=["En attente", "Demande"]).exists():
                     if not Prets.objects.filter(membre=request.user.membre, statut="En attente").exists():
                         if not Prets.objects.filter(membre=request.user.membre, transaction__statut__in=["Demande", "En attente"], statut__in=["En attente", "Approuvé"]).exists():
                             if pret.montant_remboursé > 0 and pret.montant_remboursé * (2800 if pret.devise == "USD" else 1) <= solde_total_contribution:
@@ -631,7 +628,7 @@ def retrait_objectif(request, objectif_id):
         password = request.POST.get('password')
 
         if check_password(password, request.user.password):
-            if not Transactions.objects.filter(membre=membre, type="retrait_tout", statut="En attente").exists():
+            if not Transactions.objects.filter(membre=membre, type="retrait_tout", statut__in=["En attente", "Demande"]).exists():
                 if not RetraitsObjectif.objects.filter(membre=membre, transaction__statut__in=["Demande", "En attente"], statut__in=["En attente", "Approuvé"]).exists():
                     montant_total_USD = objectif.montant_cible / 2800 if objectif.devise == "CDF" else objectif.montant_cible
     
@@ -681,7 +678,7 @@ def annulation_objectif(request, objectif_id):
         password = request.POST.get('password')
 
         if check_password(password, request.user.password):
-            if not Transactions.objects.filter(membre=membre, type="retrait_tout", statut="En attente").exists():
+            if not Transactions.objects.filter(membre=membre, type="retrait_tout", statut__in=["En attente", "Demande"]).exists():
                 if not Transactions.objects.filter(membre=membre, type="annulation_objectif", statut="Demande").exists():
                     montant_total_USD = objectif.montant / 2800 if objectif.devise == "CDF" else objectif.montant
     
@@ -742,7 +739,7 @@ def retrait(request):
             if form.is_valid():
                 transaction = form.save(commit=False)
 
-                if not Transactions.objects.filter(membre=membre, type="retrait_tout", statut="En attente").exists():
+                if not Transactions.objects.filter(membre=membre, type="retrait_tout", statut__in=["En attente", "Demande"]).exists():
                     if not Retraits.objects.filter(membre=membre, transaction__statut__in=["Demande", "En attente"], statut__in=["En attente", "Approuvé"]).exists():
                         if transaction.montant > 0 and transaction.montant <= montant_benefices:
                             montant = transaction.montant if membre.contribution_mensuelle.devise == "USD" else transaction.montant / 2800
@@ -929,7 +926,7 @@ def retirer_tout(request):
         mot_de_passe = request.POST.get('mot_de_passe')
         
         if check_password(mot_de_passe, request.user.password):
-            if not Transactions.objects.filter(membre=membre, type="retrait_tout", statut="En attente").exists():
+            if not Transactions.objects.filter(membre=membre, type="retrait_tout", statut__in=["En attente", "Demande"]).exists():
                 if not Prets.objects.filter(membre=request.user.membre, statut="Approuvé").exists():
                     if montant_total > 0:
                         Transactions.objects.create(

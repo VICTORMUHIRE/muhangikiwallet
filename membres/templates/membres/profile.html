@@ -48,7 +48,7 @@
                                     <div class="col-md-6 mb-3">
                                         <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
                                         <div class="photo-preview-container">
-                                            <img id="photo-preview" src="/{{field.value.url}}" alt="Aperçu de la photo" class="img-fluid rounded" style="max-height: 200px; object-fit: cover;">
+                                            <img id="photo-preview" src="{{field.value.url}}" alt="Aperçu de la photo" class="img-fluid rounded" style="max-height: 200px; object-fit: cover;">
                                         </div>
                                         {% if field.errors %}
                                             <div class="invalid-feedback">
@@ -56,7 +56,7 @@
                                             </div>
                                         {% endif %}
                                     </div>
-                                {% elif 'ot de passe' not in field.label %}
+                                {% elif 'profile' not in field.label %}
                                 <div class="col-md-6 mb-3">
                                     <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
                                     <input type="text" class="form-control {% if field.errors %}is-invalid{% endif %}" id="{{ field.id_for_label }}" name="{{ field.name }}" value="{% if field.field.widget.input_type == 'select' %}{% for option in field.field.choices %}{% if field.value|lower == option.0|lower %}{{ option.1 }}{% endif %}{% endfor %}{% else %}{{ field.value }}{% endif %}" readonly>

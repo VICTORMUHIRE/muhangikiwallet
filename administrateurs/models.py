@@ -54,7 +54,7 @@ class Provinces(models.Model):
 
 class Villes(models.Model):
     province = models.ForeignKey(Provinces, on_delete=models.CASCADE)
-    nom = models.CharField(max_length=45, unique=True)
+    nom = models.CharField(max_length=45)
     type = models.CharField(max_length=45, choices=[('Ville', 'Ville'), ('Territoire', 'Territoire')], default='Ville', verbose_name="Type")
 
     def __str__(self):
@@ -65,14 +65,14 @@ class Villes(models.Model):
 
 class Communes(models.Model):
     ville = models.ForeignKey(Villes, on_delete=models.CASCADE)
-    nom = models.CharField(max_length=45, unique=True)
+    nom = models.CharField(max_length=45)
 
     def __str__(self):
         return self.nom
 
 class Quartiers(models.Model):
     commune = models.ForeignKey(Communes, on_delete=models.CASCADE)
-    nom = models.CharField(max_length=45, unique=True)
+    nom = models.CharField(max_length=45)
 
     def __str__(self):
         return self.nom
@@ -82,7 +82,7 @@ class Quartiers(models.Model):
 
 class Avenues(models.Model):
     quartier = models.ForeignKey(Quartiers, on_delete=models.CASCADE)
-    nom = models.CharField(max_length=45, unique=True)
+    nom = models.CharField(max_length=45)
 
     def __str__(self):
         return self.nom

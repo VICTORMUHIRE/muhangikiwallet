@@ -51,31 +51,31 @@
                                 <select class="form-select {% if field.errors %}is-invalid{% endif %}" id="id_province_residence" name="{{ field.name }}">
                                     <option value="" disabled selected>-- Selectionnez une province --</option>
                                     {% for option in field.field.choices %}
-                                        {% if option.0 %}<option value="{{ option.0 }}" {% if field.value == option.0|lower %}selected{% endif %}>{{ option.1 }}</option>{% endif %}
+                                        {% if option.0 %}<option value="{{ option.0 }}" {% if field.value|lower == option.0|lower %}selected{% endif %}>{{ option.1 }}</option>{% endif %}
                                     {% endfor %}
                                 </select>
                             {% elif field.name == 'ville_residence' %}
                             <select class="form-select" id="id_ville_residence" name="ville_residence" disabled>
                                 {% for option in field.field.choices %}
-                                    {% if option.0 and field.value == option.0|lower %}<option value="{{ option.0 }}">{{ option.1 }}</option> {% endif %}
+                                    {% if option.0 and field.value|lower == option.0|lower %}<option value="{{ option.0 }}">{{ option.1 }}</option> {% endif %}
                                 {% endfor %}
                             </select>
                             {% elif field.name == 'commune_residence' %}
                             <select class="form-select" id="id_commune_residence" name="commune_residence" disabled>
                                 {% for option in field.field.choices %}
-                                    {% if option.0 and field.value == option.0|lower %}<option value="{{ option.0 }}">{{ option.1 }}</option> {% endif %}
+                                    {% if option.0 and field.value|lower == option.0|lower %}<option value="{{ option.0 }}">{{ option.1 }}</option> {% endif %}
                                 {% endfor %}
                             </select>
                             {% elif field.name == 'quartier_residence' %}
                             <select class="form-select" id="id_quartier_residence" name="quartier_residence" disabled>
                                 {% for option in field.field.choices %}
-                                    {% if option.0 and field.value == option.0|lower %}<option value="{{ option.0 }}">{{ option.1 }}</option> {% endif %}
+                                    {% if option.0 and field.value|lower == option.0|lower %}<option value="{{ option.0 }}">{{ option.1 }}</option> {% endif %}
                                 {% endfor %}
                             </select>
                             {% elif field.name == 'avenue_residence' %}
                             <select class="form-select" id="id_avenue_residence" name="avenue_residence" disabled>
                                 {% for option in field.field.choices %}
-                                    {% if option.0 and field.value == option.0|lower %}<option value="{{ option.0 }}">{{ option.1 }}</option> {% endif %}
+                                    {% if option.0 and field.value|lower == option.0|lower %}<option value="{{ option.0 }}">{{ option.1 }}</option> {% endif %}
                                 {% endfor %}
                             </select>
                             {% else %}
@@ -91,7 +91,7 @@
                                     <select class="form-select {% if field.errors %}is-invalid{% endif %}" id="{{ field.id_for_label }}" name="{{ field.name }}">
                                         <option value="" disabled selected>-- Selectionnez une option --</option>
                                         {% for option in field.field.choices %}
-                                            {% if option.0 %}<option value="{{ option.0 }}" {% if field.value == option.0|lower %}selected{% endif %}>{{ option.1 }}</option>{% endif %}
+                                            {% if option.0 %}<option value="{{ option.0 }}" {% if field.value|lower == option.0|lower %}selected{% endif %}>{{ option.1 }}</option>{% endif %}
                                         {% endfor %}
                                     </select>
                                 {% elif field.field.widget.input_type == 'checkbox' %}

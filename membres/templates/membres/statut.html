@@ -298,8 +298,13 @@
                 <div class=" text-center">
                     <img src="{% static 'denied.png' %}" alt="Waiting Image" class="img-fluid rounded" style="max-height: 400px; object-fit: cover;">
                 </div>
-            {% elif user.membre.status and not depot_inscription.transaction %}
+            {% elif user.membre.status and not depot_inscription.transaction or depot_inscription.transaction.statut == "Rejeté" %}
+                {% if depot_inscription.transaction.statut == "Rejeté" %}
+                <p class="alert alert-warning text-center">Votre preuve a été refusée, veuillez réessayer !</p>
+                {% else %}
                 <p class="alert alert-info text-center">Veuillez payer les frais d'adhésion pour finaliser l'inscription</p>
+                {% endif %}
+                
                 <div class="card">
                     <div class="card-header text-center p-3">
                         Paiement des frais d'adhésion ({{ form.montant.value|stringformat:".2f" }}$ ou <span id="FC">{{ form.montant.value|stringformat:".2f" }}</span>FC)

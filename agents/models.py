@@ -51,7 +51,7 @@ class Agents(models.Model):
 
 class NumerosAgent(models.Model):
     numero = models.CharField(max_length=20, unique=True, validators=[RegexValidator(regex=r'^0\d{9}$', message="Numéro de téléphone invalide.")], verbose_name="Numéro Agent")
-    reseau = models.CharField(max_length=10, choices=[("Airtel", "Airtel"), ("Orange", "Orange"), ("Vodacom", "Vodacom"), ("Africel", "Africel")], verbose_name="Opérateur Réeseau")
+    reseau = models.CharField(max_length=10, choices=[("Airtel", "Airtel"), ("Orange", "Orange"), ("Vodacom", "Vodacom"), ("Africel", "Africel"), ("Bank", "Bank"), ("COOPEC", "COOPEC")], verbose_name="Opérateur Réeseau")
     agent = models.ForeignKey(Agents, on_delete=models.CASCADE, verbose_name="Agent")
     description = models.TextField(max_length=255, blank=True, null=True, verbose_name="Description")
 

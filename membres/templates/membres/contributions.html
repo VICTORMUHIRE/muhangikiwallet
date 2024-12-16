@@ -68,7 +68,7 @@
                         </thead>
                         <tbody>
                             {% for contribution in contributions %}
-                            <tr style="cursor: pointer;" onclick="location.href='{% url 'membres:transaction' contribution.pk %}'">
+                            <tr style="cursor: pointer;" onclick="location.href='{% url 'membres:transaction' contribution.transaction.pk %}'">
                                 <td>{{ contribution.montant }}</td>
                                 <td>{{ contribution.devise }}</td>
                                 <td>{{ contribution.mois|date:"E" }}</td>

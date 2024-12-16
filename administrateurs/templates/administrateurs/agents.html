@@ -43,13 +43,13 @@
                     <tr>
                         <td>{{ agent.nom }} {{ agent.prenom }}</td>
                         <td>{{ agent.numero_telephone }}</td>
-                        <td>{{ agent.total_depot_inscription_usd|stringformat:".2f" }}</td>
-                        <td>{{ agent.total_contributions_usd|stringformat:".2f" }}</td>
-                        <td>{{ agent.total_prets_usd|stringformat:".2f" }}</td>
-                        <td>{{ agent.total_remboursements_prets_usd|stringformat:".2f" }}</td>
-                        <td>{{ agent.total_retraits_usd|stringformat:".2f" }}</td>
-                        <td>{{ agent.total_objectifs_usd|stringformat:".2f" }}</td>
-                        <td>{{ agent.total_transactions_usd|stringformat:".2f" }}</td>
+                        <td>{{ agent.total_depot_inscription_usd|stringformat:".2f" }} $</td>
+                        <td>{{ agent.total_contributions_usd|stringformat:".2f" }} $</td>
+                        <td>{{ agent.total_prets_usd|stringformat:".2f" }} $</td>
+                        <td>{{ agent.total_remboursements_prets_usd|stringformat:".2f" }} $</td>
+                        <td>{{ agent.total_retraits_usd|stringformat:".2f" }} $</td>
+                        <td>{{ agent.total_objectifs_usd|stringformat:".2f" }} $</td>
+                        <td>{{ agent.total_transactions_usd|stringformat:".2f" }} $</td>
                         <td class="d-flex justify-content-center">
                             <a href="{% url 'administrateurs:modifier_agent' agent.pk %}" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></a>
                             <!-- <a href="{% url 'administrateurs:supprimer_agent' agent.pk %}" class="btn btn-sm btn-danger" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet agent ?')"><i class="fas fa-trash-alt"></i></a> -->

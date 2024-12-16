@@ -52,11 +52,11 @@
                             </td>
                             <td>{{ membre.numero_telephone }}</td>
                             <td>{{ membre.sexe }}</td>
-                            <td>{{ membre.mois_contribution|date:'E' }}</td>
+                            <td>{{ membre.mois_contribution|date:'E Y' }}</td>
                             <td>{{ membre.solde_objecticfs|stringformat:".2f" }} $</td>
                             <td>{{ membre.solde_contributions|stringformat:".2f" }} {{ membre.devise }}</td>
                             <td>{{ membre.benefice_membre|stringformat:".2f" }} {% if membre.contribution_mensuelle.devise == "CDF" %} FC {% else %} $ {% endif %}</td>
-                            <td>{{ membre.dette.montant_remboursé|stringformat:".2f" }} {{ membre.dette.devise|default:"$" }}</td>
+                            <td>{{ membre.dette.montant_remboursé|default:0|stringformat:".2f" }} {{ membre.dette.devise|default:"$" }}</td>
                             <td>{{ membre.pourcentage|stringformat:".2f" }}%</td>
                             <td>{{ membre.status|yesno:"Actif, Inactif" }}</td>
                             <td class="d-flex justify-content-center">
