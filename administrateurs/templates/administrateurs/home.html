@@ -24,7 +24,7 @@
                 <h6 class="card-subtitle mb-2 text-muted">CDF : {{ solde_total_entreprise_cdf|stringformat:".2f" }}</h6>
                 <h6 class="card-subtitle text-muted">USD : {{ solde_total_entreprise_usd|stringformat:".2f" }}</h6>
             </div>
-            {% comment %} <a href="{% url 'membres:contributions' %}" class="card-footer text-center text-white bg-success btn btn-success rounded-4 rounded-top-0 btn-sm">Voir</a> {% endcomment %}
+            <a href="{% url 'administrateurs:transactions' %}" class="card-footer text-center text-white bg-success btn btn-success rounded-4 rounded-top-0 btn-sm">Historique</a>
         </div>
     </div>
 
@@ -36,7 +36,7 @@
                 <h6 class="card-subtitle mb-2 text-muted">CDF : {{ total_dettes_cdf|stringformat:".2f" }}</h6>
                 <h6 class="card-subtitle text-muted">USD : {{ total_dettes_usd|stringformat:".2f" }}</h6>
             </div>
-            {% comment %} <a href="{% url 'membres:demande_pret' %}" class="card-footer text-center text-white bg-danger btn btn-danger rounded-4 rounded-top-0 btn-sm">Voir</a> {% endcomment %}
+            <a href="{% url 'administrateurs:prets' %}" class="card-footer text-center text-white bg-danger btn btn-danger rounded-4 rounded-top-0 btn-sm">Prêts</a>
         </div>
     </div>
 
@@ -48,7 +48,7 @@
                 <h6 class="card-subtitle mb-2 text-muted">CDF : {{ total_benefices_cdf|stringformat:".2f" }}</h6>
                 <h6 class="card-subtitle text-muted">USD : {{ total_benefices_usd|stringformat:".2f" }}</h6>
             </div>
-            {% comment %} <a href="{% url 'membres:retrait' %}" class="card-footer text-center text-white bg-mw btn btn-mw rounded-4 rounded-top-0 btn-sm">Voir</a> {% endcomment %}
+            <a href="{% url 'administrateurs:retrait' %}" class="card-footer text-center text-white bg-mw btn btn-mw rounded-4 rounded-top-0 btn-sm">Retrait</a>
         </div>
     </div>
 
@@ -60,7 +60,7 @@
                 <h6 class="card-subtitle mb-2 text-muted">CDF : {{ total_depots_objectifs_cdf|stringformat:".2f" }}</h6>
                 <h6 class="card-subtitle text-muted">USD : {{ total_depots_objectifs_usd|stringformat:".2f" }}</h6>
             </div>
-            {% comment %} <a href="{% url 'membres:objectifs' %}" class="card-footer text-center text-white bg-secondary btn btn-primary rounded-4 rounded-top-0 btn-sm">Voir</a> {% endcomment %}
+            <a href="{% url 'administrateurs:objectifs' %}" class="card-footer text-center text-white bg-secondary btn btn-primary rounded-4 rounded-top-0 btn-sm">Voir</a>
         </div>
     </div>
 
@@ -182,6 +182,7 @@
                                     {% elif transaction.type == 'pret' %}Prêt d'argent
                                     {% elif transaction.type == 'remboursement_pret' %}Remboursement
                                     {% elif transaction.type == 'retrait_objectif' %}Retrait d'objectif
+                                    {% elif transaction.type == 'retrait_admin' %}Retrait Admin
                                     {% elif transaction.type == 'retrait_tout' %}Retrait total
                                     {% elif transaction.type == 'annulation_objectif' %}Annulation Objectif
                                     {% endif %}

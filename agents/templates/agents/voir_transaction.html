@@ -16,6 +16,7 @@
                 {% elif transaction.type == 'pret' %}Prêt d'argent
                 {% elif transaction.type == 'remboursement_pret' %}Remboursement de pret
                 {% elif transaction.type == 'retrait_objectif' %}Retrait d'objectif
+                {% elif transaction.type == 'retrait_admin' %}Retrait Admin
                 {% elif transaction.type == 'retrait_tout' %}Retrait total
                 {% elif transaction.type == 'annulation_objectif' %}Annulation Objectif
                 {% else %}{{ transaction.type }}

@@ -84,9 +84,9 @@
                                         {% elif tache.type == 'pret' %}Prêt d'argent
                                         {% elif tache.type == 'remboursement_pret' %}Remboursement de pret
                                         {% elif tache.type == 'retrait_objectif' %}Retrait d'objectif
-                                        {% elif tache.type == 'demande_retrait_tout' %}Retrait total
-                                        {% elif transaction.type == 'retrait_tout' %}Retrait total
-                                        {% elif transaction.type == 'annulation_objectif' %}Annulation Objectif
+                                        {% elif tache.type == 'retrait_admin' %}Retrait Admin
+                                        {% elif tache.type == 'retrait_tout' %}Retrait total
+                                        {% elif tache.type == 'annulation_objectif' %}Annulation Objectif
                                         {% endif %}</span>
                                     <div>
                                         <strong class="text-center">{{ tache.membre }}</strong>
@@ -127,6 +127,7 @@
                                     {% elif transaction.type == 'pret' %}Prêt d'argent
                                     {% elif transaction.type == 'remboursement_pret' %}Remboursement
                                     {% elif transaction.type == 'retrait_objectif' %}Retrait d'objectif
+                                    {% elif transaction.type == 'retrait_admin' %}Retrait Admin
                                     {% elif transaction.type == 'retrait_tout' %}Retrait total
                                     {% elif transaction.type == 'annulation_objectif' %}Annulation Objectif
                                     {% endif %}

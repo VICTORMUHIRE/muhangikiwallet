@@ -51,7 +51,7 @@
                     
 
                     <div class="text-center mt-2"> <!-- Centered Deposit button -->
-                        <a href="{% url 'membres:objectif' objectif.id %}" class="btn btn-secondary btn-sm">Détails</a>
+                        <!-- <a href="{% url 'membres:objectif' objectif.id %}" class="btn btn-secondary btn-sm">Détails</a> -->
                         {% if objectif.statut not in 'Atteint Retiré Annulé' %}
                             <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#AnnulereObjectifModalLabel{{ objectif.id }}">
                                 Annuler

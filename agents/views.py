@@ -8,7 +8,7 @@ from .models import Agents
 from .forms import AgentsForm
 from objectifs.models import Objectifs
 from objectifs.forms import ObjectifsForm
-from transactions.models import Transactions, Prets, TypesPret, Contributions, DepotsObjectif, Retraits, Transferts, DepotsInscription, RetraitsObjectif, Benefices, RemboursementsPret, AnnulationObjectif
+from transactions.models import Transactions, Prets, TypesPret, Contributions, DepotsObjectif, Retraits, Transferts, DepotsInscription, RetraitsObjectif, Benefices, RemboursementsPret, AnnulationObjectif, BalanceAdmin, RetraitsAdmin
 from transactions.forms import TypesPretForm, ContributionsForm, PretsForm, TransfertsForm, RetraitsForm, DepotsInscriptionForm, TransactionsForm
 from django.db.models import Sum
 from django.utils import timezone
@@ -33,8 +33,8 @@ def home(request):
     solde_CDF = Transactions.objects.filter(agent=agent, devise="CDF", statut="Approuvé", type="contribution").aggregate(total=Sum('montant'))['total'] or 0
     solde_USD = Transactions.objects.filter(agent=agent, devise="USD", statut="Approuvé", type="contribution").aggregate(total=Sum('montant'))['total'] or 0
 
-    total_prets_CDF = Transactions.objects.filter(agent=agent, devise="CDF", statut__in=["Approuvé", "Remboursé"], type="pret").aggregate(total=Sum('montant'))['total'] or 0
-    total_prets_USD = Transactions.objects.filter(agent=agent, devise="USD", statut__in=["Approuvé", "Remboursé"], type="pret").aggregate(total=Sum('montant'))['total'] or 0
+    total_prets_CDF = Transactions.objects.filter(agent=agent, devise="CDF", statut__in=["Approuvé", "Remboursé", "Depassé"], type="pret").aggregate(total=Sum('montant'))['total'] or 0
+    total_prets_USD = Transactions.objects.filter(agent=agent, devise="USD", statut__in=["Approuvé", "Remboursé", "Depassé"], type="pret").aggregate(total=Sum('montant'))['total'] or 0
 
     total_prets_rembourses_CDF = Transactions.objects.filter(agent=agent, devise="CDF", statut="Approuvé", type="remboursement_pret").aggregate(total=Sum('montant'))['total'] or 0
     total_prets_rembourses_USD = Transactions.objects.filter(agent=agent, devise="USD", statut="Approuvé", type="remboursement_pret").aggregate(total=Sum('montant'))['total'] or 0
@@ -54,6 +54,9 @@ def home(request):
     total_retraits_CDF = Transactions.objects.filter(agent=agent, devise="CDF", statut="Approuvé", type="retrait").aggregate(total=Sum('montant'))['total'] or 0
     total_retraits_USD = Transactions.objects.filter(agent=agent, devise="USD", statut="Approuvé", type="retrait").aggregate(total=Sum('montant'))['total'] or 0
 
+    total_retraits_admin_CDF = Transactions.objects.filter(devise="CDF", type="retrait_admin", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
+    total_retraits_admin_USD = Transactions.objects.filter(devise="USD", type="retrait_admin", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
+    
     transactions = Transactions.objects.filter(agent=agent).order_by("-date")
     taches = Transactions.objects.filter(agent=agent, statut="En attente").order_by("-date")
     
@@ -65,8 +68,8 @@ def home(request):
         "total_depot_objectif_USD": float(total_depot_objectif_USD) - float(total_retrait_objectif_USD) - float(total_annulation_objectif_USD),
         "total_retraits_CDF": total_retraits_CDF,
         "total_retraits_USD": total_retraits_USD,
-        "solde_CDF": float(solde_CDF) + float(total_prets_rembourses_CDF) + float(total_depot_inscription_CDF) - float(total_prets_CDF) - float(total_retraits_CDF),
-        "solde_USD": float(solde_USD) + float(total_prets_rembourses_USD) + float(total_depot_inscription_USD) - float(total_prets_USD) - float(total_retraits_USD),
+        "solde_CDF": float(solde_CDF) + float(total_prets_rembourses_CDF) + float(total_depot_inscription_CDF) - float(total_prets_CDF) - float(total_retraits_CDF) - float(total_retraits_admin_CDF),
+        "solde_USD": float(solde_USD) + float(total_prets_rembourses_USD) + float(total_depot_inscription_USD) - float(total_prets_USD) - float(total_retraits_USD) - float(total_retraits_admin_USD),
         "transactions": transactions,
         "taches": taches
     }
@@ -128,28 +131,32 @@ def voir_transaction(request, transaction_id):
                         # Convert USD contributions to CDF for a common currency
                         total_contributions_CDF += total_contributions_USD * 2800
                         
-                        membres_actifs = Membres.objects.filter(status=True)
-                        
-                        for membre in membres_actifs:
-                            # Get member's total contributions in their respective currency
-                            contributions_membre_CDF = Transactions.objects.filter(membre=membre, devise="CDF", statut="Approuvé", type="contribution").aggregate(total=Sum('montant'))['total'] or 0
-                            contributions_membre_USD = Transactions.objects.filter(membre=membre, devise="USD", statut="Approuvé", type="contribution").aggregate(total=Sum('montant'))['total'] or 0
+                        if total_contributions_CDF > 0:  # Avoid ZeroDivisionError
+                            membres_actifs = Membres.objects.filter(status=True)
+                            
+                            for membre in membres_actifs:
+                                # Get member's total contributions in their respective currency
+                                contributions_membre_CDF = Transactions.objects.filter(membre=membre, devise="CDF", statut="Approuvé", type="contribution").aggregate(total=Sum('montant'))['total'] or 0
+                                contributions_membre_USD = Transactions.objects.filter(membre=membre, devise="USD", statut="Approuvé", type="contribution").aggregate(total=Sum('montant'))['total'] or 0
 
-                            # Convert member's USD contributions to CDF
-                            contributions_membre_CDF += contributions_membre_USD * 2800
-                        
-                            if total_contributions_CDF > 0:  # Avoid ZeroDivisionError
+                                # Convert member's USD contributions to CDF
+                                contributions_membre_CDF += contributions_membre_USD * 2800
+                            
                                 proportion = float(contributions_membre_CDF / total_contributions_CDF)
                                 benefice_membre = montant_benefice * proportion
-                        
-                                # Determine the benefit currency based on loan currency
-                                benefice_membre_usd = benefice_membre / 2800
+
                                 Benefices.objects.create(
                                     pret=pret,
                                     membre=membre,
-                                    montant=benefice_membre_usd if membre.contribution_mensuelle.devise == "USD" else benefice_membre,
+                                    montant=benefice_membre / (2800 if membre.contribution_mensuelle.devise == "USD" else 1),
                                     devise=membre.contribution_mensuelle.devise  # Use loan currency
                                 )
+
+                        BalanceAdmin.objects.create(
+                            montant=montant_benefice / (2800 if pret.devise == "USD" else 1),
+                            devise=pret.devise,
+                            type="pret"
+                        )
 
                     case "remboursement_pret" :
                         remboursement_pret = RemboursementsPret.objects.get(transaction=transaction)
@@ -163,6 +170,13 @@ def voir_transaction(request, transaction_id):
                             pret.statut = "Remboursé"
                             pret.date_remboursement = timezone.now()
                             pret.transaction.save()
+
+                            if pret.statut == "Depassé":
+                                BalanceAdmin.objects.create(
+                                    montant=5 * (2800 if pret.devise == "CDF" else 1),
+                                    devise=pret.devise,
+                                    type="remboursement_pret"
+                                )
                             
                         pret.save()
 
@@ -185,11 +199,29 @@ def voir_transaction(request, transaction_id):
                         depot_inscription.date_approbation = timezone.now()
                         depot_inscription.save()
 
+                        BalanceAdmin.objects.create(
+                            montant=transaction.montant,
+                            devise=transaction.devise,
+                            type="depot_inscription"
+                        )
+
                     case"retrait":
                         retrait = Retraits.objects.filter(transaction=transaction).first()
                         retrait.statut = "Approuvé"
                         retrait.date_approbation = timezone.now()
                         retrait.save()
+
+                        BalanceAdmin.objects.create(
+                            montant=float(transaction.montant) * retrait.frais,
+                            devise=transaction.devise,
+                            type="retrait"
+                        )
+
+                    case"retrait_admin":
+                        retrait_admin = RetraitsAdmin.objects.filter(transaction=transaction).first()
+                        retrait_admin.statut = "Approuvé"
+                        retrait_admin.date_approbation = timezone.now()
+                        retrait_admin.save()
 
                     case "retrait_tout":
                         membre = transaction.membre
@@ -200,6 +232,11 @@ def voir_transaction(request, transaction_id):
                             # pret.statut = "Annulé"
                             pret.save()
 
+                        for remboursement_pret in RemboursementsPret.objects.filter(pret__membre=membre, transaction__statut="Approuvé"):
+                            remboursement_pret.transaction = None
+                            # remboursement_pret.statut = "Annulé"
+                            remboursement_pret.save()
+
                         Transactions.objects.filter(membre=membre).delete()
 
                         for benefice in Benefices.objects.filter(membre=membre): benefice.delete()
@@ -207,6 +244,12 @@ def voir_transaction(request, transaction_id):
 
                         membre.status = True
                         membre.save()
+
+                        BalanceAdmin.objects.create(
+                            montant=float(transaction.montant) * 0.1,
+                            devise=transaction.devise,
+                            type="retrait_tout"
+                        )
 
                     case "retrait_objectif":
                         retrait_objectif = RetraitsObjectif.objects.filter(transaction=transaction).first()
@@ -227,6 +270,12 @@ def voir_transaction(request, transaction_id):
                         objectif = annulation_objectif.objectif
                         objectif.statut = "Annulé"
                         objectif.save()
+
+                        BalanceAdmin.objects.create(
+                            montant=transaction.montant * annulation_objectif.frais,
+                            devise=transaction.devise,
+                            type="annulation_objectif"
+                        )
 
                     case _: pass
 
@@ -290,6 +339,11 @@ def rejetter_transaction(request, transaction_id):
             retrait = Retraits.objects.get(transaction=transaction)
             retrait.statut = "Rejeté"
             retrait.save()
+
+        case "retrait_admin":
+            retrait_admin = RetraitsAdmin.objects.get(transaction=transaction)
+            retrait_admin.statut = "Rejeté"
+            retrait_admin.save()
 
         case "retrait_objectif":
             retrait_objectif = RetraitsObjectif.objects.get(transaction=transaction)

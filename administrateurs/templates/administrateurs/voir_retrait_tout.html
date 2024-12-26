@@ -30,13 +30,14 @@
                 <li><strong>Contributions:</strong> {{ montant_contributions|stringformat:".2f" }} {{ membre.contribution_mensuelle.devise }}</li>
                 <li><strong>Bénéfices:</strong> {{ montant_benefices|stringformat:".2f" }} {{ membre.contribution_mensuelle.devise }}</li>
                 
-                <li class="my-2"><strong>Objectifs:</strong> {{ montant_objectifs|stringformat:".2f" }} {{ membre.contribution_mensuelle.devise }}
+                {% comment %} <li class="my-2"><strong>Objectifs:</strong> {{ montant_objectifs|stringformat:".2f" }} {{ membre.contribution_mensuelle.devise }}
                     <ul>
                         {% for objectif in objectifs %}
                             <li><strong>{{ forloop.counter }}. {{ objectif.nom }} : </strong> {% if objectif.statut != 'Retiré' %}{{ objectif.montant|stringformat:".2f" }}{% else %} 0 {% endif %} {{ objectif.devise }}, <strong class="text-muted">{{ objectif.statut }}</strong></li>
                         {% endfor %}
                     </ul>
-                </li>
+                </li> {% endcomment %}
+
                 <li><strong>Total:</strong> {{ montant_total|stringformat:".2f" }} {{ membre.contribution_mensuelle.devise }}</li>
                 <li><strong>Pourcentage retrait:</strong> {{ pourcentage_retrait|stringformat:".2f" }} %</li>
                 <li><strong>Frais retrait:</strong> {{ frais_retrait|stringformat:".2f" }} {{ membre.contribution_mensuelle.devise }}</li>

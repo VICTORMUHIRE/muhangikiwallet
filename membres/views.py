@@ -279,7 +279,8 @@ def contributions(request):
         "montant_restant": float(membre.contribution_mensuelle.montant) - contribution_actuelle,
         "contributions": contributions,
         "solde_contribution_CDF": solde_contribution_CDF,
-        "solde_contribution_USD": solde_contribution_USD
+        "solde_contribution_USD": solde_contribution_USD,
+        "objectifs": Objectifs.objects.filter(membre=membre, statut__in=["En cours", "Atteint", "Epuisé"])
     }
     return render(request, "membres/contributions.html", context)
 
@@ -354,7 +355,13 @@ def contribuer(request):
 @verifier_membre
 def demande_pret(request):
     types_pret = TypesPret.objects.all() # Récupérer tous les types de pret
-    demandes_pret = Prets.objects.filter(membre=request.user.membre)
+    demandes_pret = Prets.objects.filter(membre=request.user.membre).order_by("-date_demande")
+
+    for pret in demandes_pret:
+        if pret.statut == "Approuvé" and timezone.now() > pret.date_remboursement:
+            pret.montant_remboursé += 5 * (2800 if pret.devise == "CDF" else 1)
+            pret.statut = "Depassé"
+            pret.save()
 
     # Solde contribution
     solde_contribution_CDF = Transactions.objects.filter(membre=request.user.membre, devise="CDF", statut="Approuvé", type="contribution").aggregate(total=Sum('montant'))['total'] or 0
@@ -365,12 +372,12 @@ def demande_pret(request):
     solde_total_contribution = (solde_contribution_CDF + (solde_contribution_USD * taux_de_change)) * 3
     solde_max = (float(Transactions.objects.filter(devise="CDF", statut="Approuvé", type="contribution").aggregate(total=Sum('montant'))['total'] or 0) +
                 float(Transactions.objects.filter(devise="USD", statut="Approuvé", type="contribution").aggregate(total=Sum('montant'))['total'] or 0) * taux_de_change +
-                float(Transactions.objects.filter(devise="CDF", statut="Approuvé", type="depot_inscription").aggregate(total=Sum('montant'))['total'] or 0) +
-                float(Transactions.objects.filter(devise="USD", statut="Approuvé", type="depot_inscription").aggregate(total=Sum('montant'))['total'] or 0) * taux_de_change -
+                # float(Transactions.objects.filter(devise="CDF", statut="Approuvé", type="depot_inscription").aggregate(total=Sum('montant'))['total'] or 0) +
+                # float(Transactions.objects.filter(devise="USD", statut="Approuvé", type="depot_inscription").aggregate(total=Sum('montant'))['total'] or 0) * taux_de_change -
                 (float(Transactions.objects.filter(devise="CDF", statut="Approuvé", type="pret").aggregate(total=Sum('montant'))['total'] or 0) +
                 float(Transactions.objects.filter(devise="USD", statut="Approuvé", type="pret").aggregate(total=Sum('montant'))['total'] or 0) * taux_de_change +
                 float(Transactions.objects.filter(devise="CDF", statut="Approuvé", type="retrait").aggregate(total=Sum('montant'))['total'] or 0) +
-                float(Transactions.objects.filter(devise="USD", statut="Approuvé", type="retrait").aggregate(total=Sum('montant'))['total'] or 0) * taux_de_change)) * 2/3
+                float(Transactions.objects.filter(devise="USD", statut="Approuvé", type="retrait").aggregate(total=Sum('montant'))['total'] or 0) * taux_de_change)) * 4/5
 
     solde_total_contribution = solde_total_contribution * 3 if solde_total_contribution < solde_max else solde_max
 
@@ -392,7 +399,7 @@ def demande_pret(request):
                 
                 if not Transactions.objects.filter(membre=request.user.membre, type="retrait_tout", statut__in=["En attente", "Demande"]).exists():
                     if not Prets.objects.filter(membre=request.user.membre, statut="En attente").exists():
-                        if not Prets.objects.filter(membre=request.user.membre, transaction__statut__in=["Demande", "En attente"], statut__in=["En attente", "Approuvé"]).exists():
+                        if not Prets.objects.filter(membre=request.user.membre, statut__in=["Approuvé", "Depassé"]).exists():
                             if pret.montant_remboursé > 0 and pret.montant_remboursé * (2800 if pret.devise == "USD" else 1) <= solde_total_contribution:
                                 
                                 pret.transaction = Transactions.objects.create(
@@ -404,12 +411,12 @@ def demande_pret(request):
 
                                 pret.save()  # Enregistrer l'objet pret
                                 messages.success(request, 'Votre demande de pret a été soumise avec succès !')
-                                return redirect('membres:demande_pret')
+                                return redirect('membres:home')
                             else:
                                 # Solde insuffisant ou prets en cours, afficher un message d'erreur
                                 messages.error(request, f'Montant max dépassé')
                         else:
-                            messages.error(request, 'Vous avez déjà un pret approuvé, veuillez le rembourser')
+                            messages.error(request, 'Vous avez déjà un pret, veuillez le rembourser')
                     else:
                         messages.error(request, 'Vous avez déjà une demande de pret en cours, veuillez patienter qu\'elle soit traitée')
 
@@ -539,6 +546,9 @@ def objectifs(request):
 
     for objectif in objectifs:
         objectif.pourcentage = float(objectif.montant / objectif.montant_cible ) * 100
+        if timezone.now() > objectif.date_fin:
+            objectif.statut = "Epuisé"
+            objectif.save()
 
     context = {
         "objectifs": objectifs,
@@ -687,6 +697,8 @@ def annulation_objectif(request, objectif_id):
                     elif montant_total_USD > 20 and montant_total_USD <= 50: frais = 0.0295
                     elif montant_total_USD > 50 and montant_total_USD <= 400: frais = 0.0175
                     elif montant_total_USD > 400: frais = 0.01
+
+                    frais = 0.1
 
                     AnnulationObjectif.objects.create(
                         membre=membre,
@@ -931,7 +943,7 @@ def retirer_tout(request):
                     if montant_total > 0:
                         Transactions.objects.create(
                             membre=membre,
-                            montant=montant_total,
+                            montant=montant_total * 0.9,
                             devise=membre.contribution_mensuelle.devise,
                             description=f"Retrait total du solde",
                             type="retrait_tout"

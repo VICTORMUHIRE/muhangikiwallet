@@ -57,7 +57,7 @@
                             <td>{{ membre.solde_contributions|stringformat:".2f" }} {{ membre.devise }}</td>
                             <td>{{ membre.benefice_membre|stringformat:".2f" }} {% if membre.contribution_mensuelle.devise == "CDF" %} FC {% else %} $ {% endif %}</td>
                             <td>{{ membre.dette.montant_remboursé|default:0|stringformat:".2f" }} {{ membre.dette.devise|default:"$" }}</td>
-                            <td>{{ membre.pourcentage|stringformat:".2f" }}%</td>
+                            <td>{{ membre.pourcentage|default:0|stringformat:".2f" }}%</td>
                             <td>{{ membre.status|yesno:"Actif, Inactif" }}</td>
                             <td class="d-flex justify-content-center">
                                 {% comment %} <a href="{% url 'administrateurs:voir_membre' membre.pk %}" class="btn btn-sm btn-info"><i class="fas fa-eye"></i></a> {% endcomment %}

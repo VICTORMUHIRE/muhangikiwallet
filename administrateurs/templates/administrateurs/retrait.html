@@ -17,9 +17,9 @@
 
             <div class="card border-0 px-2">
                 <div class="card-header bg-white text-center fs-4">  <!-- Consistent styling with other forms -->
-                    Demande de Prêt
+                    Retrait Admin
                     <div class="fs-6">
-                        Montant max : <span class="roboto-regular">{{ solde_total_contribution_cdf|stringformat:".2f" }} FC ou {{ solde_total_contribution_usd|stringformat:".2f" }} $</span>
+                        Montant max : <span class="roboto-regular">{{ max_CDF|stringformat:".2f" }} FC ou {{ max_USD|stringformat:".2f" }} $</span>
                     </div>
                 </div>
                 <div class="card-body px-1">
@@ -40,43 +40,22 @@
                             </div>
                         </div>
     
-                        {% comment %} <div class="mb-3">
-                            <label class="form-label" for="{{ form.type_pret.id_for_label }}">Type de crédit</label>
-                            <select class="form-select" id="{{ form.type_pret.id_for_label }}" name="{{ form.type_pret.html_name }}">
-                                <option value="">-- Choisissez un type de crédit --</option>
-                                {% for type_pret in types_pret %}
-                                    <option value="{{ type_pret.id }}"
-                                        data-taux="{{ type_pret.taux_interet|stringformat:".2f" }}"
-                                        data-delai="{{ type_pret.delai_remboursement }}"
-                                        {% if type_pret.id == form.type_pret.value %}selected{% endif %}>
-                                        {{ type_pret.nom }}
-                                    </option>
+                        <div class="mb-3">
+                            <label for="{{ form.numero_agent.id_for_label }}" class="form-label">Numéro de l'agent</label>
+                            <select class="form-control form-select" id="{{ form.numero_agent.id_for_label }}" name="{{ form.numero_agent.html_name }}">
+                                {% for reseau, numeros in numeros_categories.items %}
+                                    <optgroup label="{{ reseau }}">
+                                        {% for numero, id in numeros %}
+                                            <option value="{{ id }}">{{ numero }}</option>
+                                        {% endfor %}
+                                    </optgroup>
                                 {% endfor %}
                             </select>
-                        </div> {% endcomment %}
-
-                        <!-- <h4 class="text-center">Details du pret</h4> -->
-    
-                        <div class="mb-3">
-                            <label for="taux_interet">Taux d'intérêt : </label>
-                            <strong id="taux_interet" class="font-weight-bold mb-color">15%</strong>
-                        </div>
-                        <div class="mb-3">
-                            <label for="delai_remboursement">Délai de remboursement : </label>
-                            <strong id="delai_remboursement" class="font-weight-bold mb-color">-</strong>
-                        </div>
-                        <div class="mb-3">
-                            <label for="montant_rembourser">Montant à recevoir : </label>
-                            <strong id="montant" class="font-weight-bold mb-color">-</strong>
-                        </div>
-                        <div class="mb-3">
-                            <label for="montant_rembourser">Montant à rembourser : </label>
-                            <strong id="montant_rembourser" class="font-weight-bold mb-color">-</strong>
                         </div>
 
                         <div class="form-group text-center">
                             <button type="button" class="btn btn-mw text-white" id="submitLoanBtn" data-bs-toggle="modal" data-bs-target="#passwordConfirmModal">
-                                Confirmer la Demande
+                                Confirmer
                             </button>
                         </div>
     
@@ -88,43 +67,27 @@
             <div class="my-4">
                 <div class="card shadow px-2">
                     <div class="card-header bg-white text-center p-3 fs-4">
-                        <h2>Historique des demandes</h2>
+                        <h2>Historique</h2>
                     </div>
-                    <div class="card-body">
-                        {% for demande in demandes_pret %}
-                            <div onclick="location.href='{% url 'membres:transaction' demande.transaction.pk %}'" class="btn btn-light card mb-3 {% if demande.statut == 'Depassé' %}border-danger{% endif %}">
-                                <div class="card-title d-flex align-items-center justify-content-between">
-                                    <span class="badge bg-{% if demande.transaction.statut == 'Approuvé' %}success{% elif demande.statut in 'Rejeté Depassé' %}danger{% elif demande.statut == 'Remboursé' %}info{% else %}warning{% endif %}">
-                                        {% if demande.statut == 'Approuvé' and demande.transaction.statut == 'En attente' %}En attente{% else %}{{ demande.statut }}{% endif %}
-                                    </span>
-                                    {% if demande.statut == 'Approuvé' %}
-                                    <span class="card-text "><strong class="fw-bold"> limite : </strong>
-                                        <small class="d-none d-md-inline">{{ demande.date_remboursement|date:"d E Y" }}</small>
-                                        <small class="d-md-none">{{ demande.date_remboursement|date:"d M Y" }}</small>
-                                        <small class="d-md-none">{{ demande.date_remboursement|date:"H:i" }}</small>
-                                        <small class="d-none d-md-inline">{{ demande.date_remboursement|date:"H:i:s" }}</small>
-                                    </span>
-                                    {% endif %}
-                                </div>
+                    {% for transaction in transactions %}
+                    <a href="{% url 'administrateurs:transaction' transaction.pk %}" class="btn btn-light bg-white">
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <h5 class="mb-1">Retrait d'argent</h5>
+                            <span class="ms-1 badge {% if transaction.statut == 'Approuvé' %}bg-success{% elif transaction.statut == 'Rejeté' %}bg-danger{% else %}bg-warning{% endif %}">
+                                {% if transaction.statut == 'Demande' %}En attente{% else %}{{ transaction.statut }}{% endif %}
+                            </span>
+                        </div>
 
-                                <div class="card-title d-flex align-items-center justify-content-between">
-                                    <span class="card-text fs-6"><strong>Montant:</strong> {% if demande.statut == 'Depassé' %}{% if demande.devise == "USD" %}{{ demande.montant_remboursé|add:"-5"|stringformat:".2f" }}{% else %}{{ demande.montant_remboursé|add:"-14000"|stringformat:".2f" }}{% endif %}{% else %}{{ demande.montant_remboursé|stringformat:".2f" }}{% endif %} {{ demande.devise }} {% if demande.statut == 'Depassé' %}<span class="badge bg-danger me-2">+{% if demande.devise == "USD" %}5{% else %}14 000{% endif %} {{ demande.devise }}</span>{% endif %}</span>
-                                    {% if demande.statut == 'Approuvé' %}
-                                        <a class="btn btn-sm btn-primary text-white" href="{% url 'membres:rembourser_pret' demande.transaction.pk %}">Rembourser</a>
-                                    {% else %}
-                                    <span class="card-text ">
-                                        <small class="d-none d-md-inline">{{ demande.date_demande|date:"d E Y" }}</small>
-                                        <small class="d-md-none">{{ demande.date_demande|date:"d M Y" }}</small>
-                                        <small class="d-md-none">{{ demande.date_demande|date:"H:i" }}</small>
-                                        <small class="d-none d-md-inline">{{ demande.date_demande|date:"H:i:s" }}</small>
-                                    </span>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        {% empty %}
-                            <p>Aucune demande de pret effectuée.</p>
-                        {% endfor %}
-                    </div>
+                        <div class="text-muted small d-flex justify-content-between">
+                            <span class="fw-bolder">{{ transaction.montant }} {{ transaction.devise }}</span>
+                            
+                            <small class="d-none d-md-inline">{{ transaction.date|date:"d E Y  H:i" }}</small>
+                            <small class="d-md-none">{{ transaction.date|date:"d/m/Y" }}</small>
+                        </div>
+                    </a>
+                    {% empty %}
+                    <div class="list-group-item text-center py-4">Aucun retrait récent</div>
+                    {% endfor %}
                 </div>
             </div>
         </div>

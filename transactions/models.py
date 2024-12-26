@@ -29,6 +29,7 @@ OPERATEURS = [
 TRANSACTION_CHOICES = [
     ('retrait', 'Retrait'),
     ('retrait_tout', 'Retrait tout'),
+    ('retrait_admin', 'Retrait admin'),
     ('retrait_objectif', 'Retrait objectif'),
     ('annulation_objectif', 'Annulation objectif'),
     ('transfert', 'Transfert'),
@@ -69,6 +70,40 @@ class Transactions(models.Model):
         verbose_name = "Transaction"
         verbose_name_plural = "Transactions"
 
+class BalanceAdmin(models.Model):
+    montant = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Montant du bénéfice")
+    devise = models.CharField(max_length=3, choices=DEVISE_CHOICES, verbose_name="Devise")
+
+    date = models.DateTimeField(auto_now_add=True, verbose_name="Date")
+    type = models.CharField(max_length=20, choices=[('pret', 'Pret'), ('depot_inscription', 'Dépôt inscription'), ('retrait', 'Retrait'), ('retrait_tout', 'Retrait tout'), ('annulation_objectif', 'Annulation objectif'), ('remboursement_pret', 'Remboursement pret')], verbose_name="Type de balance")
+    statut = models.BooleanField(default=True, verbose_name="Statut")
+    
+    def __str__(self):
+        return f"Balance Admin de {self.montant} - {self.date}"
+
+    class Meta:
+        verbose_name = "Balance Admin"
+        verbose_name_plural = "Balance Admin"
+
+class RetraitsAdmin(models.Model):
+    montant = models.FloatField(verbose_name="Montant")
+    devise = models.CharField(max_length=3, choices=DEVISE_CHOICES, verbose_name="Devise")
+
+    date = models.DateTimeField(auto_now_add=True, verbose_name="Date")
+    date_approbation = models.DateTimeField(blank=True, null=True, verbose_name="Date d'approbation")
+
+    transaction = models.ForeignKey(Transactions, on_delete=models.CASCADE, blank=True, related_name="retrait_admin", verbose_name="Transaction")
+
+    description = models.TextField(blank=True, null=True, verbose_name="Description")
+    statut = models.CharField(max_length=20, choices=(("En attente", "En attente"), ("Approuvé", "Approuvé"), ("Rejeté", "Rejeté"),  ("Annulé", "Annulé")), default="En attente", verbose_name="Statut")
+
+    def __str__(self):
+        return f"Retrait Admin de {self.montant} - {self.date}"
+
+    class Meta:
+        verbose_name = "Retraits Admin"
+        verbose_name_plural = "Retraits Admin"
+
 # Modèle pour les types de pret
 class TypesPret(models.Model):
     nom = models.CharField(max_length=45, verbose_name="Nom du type de pret")
@@ -100,7 +135,7 @@ class Prets(models.Model):
     date_approbation = models.DateTimeField(blank=True, null=True, verbose_name="Date d'approbation")
     date_remboursement = models.DateTimeField(verbose_name="Date de remboursement")
 
-    statut = models.CharField(max_length=20, choices=(("En attente", "En attente"), ("Approuvé", "Approuvé"), ("Remboursé", "Remboursé"), ("Annulé", "Annulé")), default="En attente", verbose_name="Statut")
+    statut = models.CharField(max_length=20, choices=(("En attente", "En attente"), ("Approuvé", "Approuvé"), ("Remboursé", "Remboursé"), ("Depassé", "Depassé"), ("Annulé", "Annulé")), default="En attente", verbose_name="Statut")
 
     def __str__(self):
         return f"Prêt de {self.montant} {self.devise} - {self.statut}"

@@ -21,6 +21,9 @@ urlpatterns = [
     path("agents/<int:agent_id>/modifier/", views.modifier_agent, name="modifier_agent"),
     path("agents/<int:agent_id>/supprimer/", views.supprimer_agent, name="supprimer_agent"),
 
+    path("objectifs/", views.objectifs, name="objectifs"),
+    path("retrait/", views.retrait, name="retrait"),
+    
     path("transactions/", views.transactions, name="transactions"),
     path("transaction/<int:transaction_id>", views.transaction, name="transaction"),
     

@@ -1,0 +1,60 @@
+{% extends 'membres/base.html' %}
+
+{% block title %}Objectifs{% endblock %}
+
+{% block content %}
+
+    <div class="row justify-content-center mt-5 mt-sm-0 mb-5">
+        {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{message.tags}}{% endif %} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+
+        <div class="col-md-8 text-center">
+            <div class="mb-4">
+                <div class="card-header bg-white">
+                    <h3 class="">Objectifs</h3>
+                </div>
+                <div class="card-body text-enter">
+                    <p class="fs-5 mb-0">Solde total</p>
+                    <h4 class="mb-3 fw-bolder fs-5">{{ solde_objectifs_CDF|stringformat:".2f" }} FC - {{ solde_objectifs_USD|stringformat:".2f" }} $</h4>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="col-md-8">
+            {% for objectif in objectifs %}
+            <div class="card shadow-sm mb-3 {% if objectif.statut == 'Epuisé' %}border-danger{% endif %}">  <!-- Card for each goal -->
+                <div class="card-header bg-white text-center">
+                    <h5 class="card-title mb-0">{{ objectif.nom }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="progress position-relative mb-3" style="height: 25px;">  <!-- Enhanced progress bar -->
+                        <div class="progress-bar progress-bar-animated bg-{% if  objectif.statut == 'Annulé' %}danger{% elif  objectif.pourcentage < 85 and objectif.pourcentage >= 70 %}info{% elif  objectif.pourcentage < 70 and objectif.pourcentage >= 50 %}mw btn-mw{% elif  objectif.pourcentage < 50 and objectif.pourcentage >= 30 %}warning{% elif  objectif.pourcentage < 30 %}danger{% else %}success{% endif %}"
+                            role="progressbar" style="width: {{ objectif.pourcentage|stringformat:'.2f' }}%" aria-valuenow="{{ objectif.montant }}" aria-valuemin="0" aria-valuemax="{{ objectif.montant_cible }}"></div>
+                        <span class="position-absolute top-50 start-50 translate-middle fw-bold text-white">{{ objectif.pourcentage|stringformat:".2f" }}%</span>
+                    </div>
+
+                    <!-- Clearer display of amounts and date -->
+                    <p class="card-text">Membre : <a class="fw-bold btn btn-outline-info">{{ objectif.membre }}</span></p>
+                    <p class="card-text">Montant cible : <span class="fw-bold">{{ objectif.montant_cible|stringformat:".2f" }} {{ objectif.devise }}</span></p>
+                    <p class="card-text">Montant déposé : <span class="fw-bold">{{ objectif.montant|stringformat:".2f" }} {{ objectif.devise }}</span></p>
+                    <p class="card-text">Date de création : <span class="fw-bold">{{ objectif.date_creation|date:"d/m/Y" }}</span></p>
+                    <p class="card-text">Date d'échéance : <span class="fw-bold">{{ objectif.date_fin|date:"d/m/Y" }}</span></p>
+                    <p class="card-text">Statut : <span class="badge {% if objectif.statut == 'Atteint' %}bg-success{% elif objectif.statut == 'En cours' %}bg-warning{% else %}bg-danger{% endif %}">{{ objectif.statut }}</span></p>
+                    
+                </div>
+            </div>
+            {% empty %}
+                <div class="card shadow-sm">
+                    <div class="card-body text-center">Aucun objectif pour le moment</div>
+                </div>
+            {% endfor %}
+
+        </div> <!-- End of goals display column -->
+    </div> <!-- End of outer row -->
+
+{% endblock %}

@@ -3,7 +3,7 @@ from django.conf import settings
 from administrateurs.models import Provinces, Villes, Communes, Quartiers, Avenues, EtatsCivil, TypesCarteIdentite, CodesReference, TYPES_CARTE_IDENTITE
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import RegexValidator
-    
+
 # Définition du modèle d'agent
 class Agents(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, related_name="agent", on_delete=models.CASCADE, primary_key=True)

@@ -29,7 +29,7 @@
             </div>
         </div>
         
-        <!-- Modal pour confirmation de retraity -->
+        <!-- Modal pour confirmation de retrait -->
         <div class="modal fade" id="confirmWithdrawModal" tabindex="-1" aria-labelledby="confirmWithdrawModalLabel" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -38,8 +38,14 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
+                        {% if objectifs.count %}
+                        Retirer d'abord tous vos objectifs
+                        <div class="text-center">
+                            <a href="{% url 'membres:objectifs' %}" class="btn btn-sm btn-mw text-white">Confirmer</a>
+                            <button type="button" class="btn btn-sm btn-secondary text-white" data-bs-dismiss="modal">Annuler</button>
+                        </div>
+                        {% else %}
                         Êtes-vous sûr de vouloir retirer tout votre solde ? Votre compte sera reinitialisé !
-                    
                         <form method="post" action="{% url 'membres:retirer_tout' %}">
                             {% csrf_token %}
                             <input type="password" name="mot_de_passe" class="form-control my-2" placeholder="Entrez votre mot de passe" required>
@@ -48,6 +54,7 @@
                                 <button type="submit" class="btn btn-sm btn-danger text-white">Confirmer</button>
                             </div>
                         </form>
+                        {% endif %}
                     </div>
                 </div>
             </div>

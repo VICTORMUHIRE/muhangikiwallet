@@ -20,7 +20,7 @@ urlpatterns = [
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
-if __name__ != "__main__":
+if __name__ == "__main__":
     from administrateurs.models import Administrateurs, Users, Provinces, Villes, Communes, Quartiers, Avenues, EtatsCivil, NumerosCompte, CodesReference, ContributionsMensuelles
     from transactions.models import Transactions, Prets, TypesPret, Contributions, DepotsObjectif, Retraits, Transferts, DepotsInscription, Benefices
     
@@ -124,7 +124,7 @@ if __name__ != "__main__":
         ContributionsMensuelles.objects.create(montant=10)
         ContributionsMensuelles.objects.create(montant=100)
 
-        Agents.objects.create(
+        agent = Agents.objects.create(
             nom="Kakule", postnom="Sikahimbula", prenom="Rock",
             sexe="M", lieu_naissance="Goma", date_naissance="1999-1-1",
             etat_civil="Marié", type_carte_identite="CNI", num_carte_identite="AD1234567890",
@@ -145,3 +145,34 @@ if __name__ != "__main__":
                 is_staff=True
             )
         )
+
+        NumerosAgent.objects.create(
+            agent=agent,
+            numero=agent.numero_telephone,
+            reseau="Airtel"
+        )
+
+        membre = Membres.objects.create(
+            nom="Kakule", postnom="Sikahimbula", prenom="Rock",
+            sexe="M", lieu_naissance="Goma", date_naissance="1999-1-1",
+            etat_civil="Marié", type_carte_identite="CNI", num_carte_identite="AD1234567890",
+            province_residence=Provinces.objects.get(nom="Nord-Kivu"),
+            commune_residence=Communes.objects.get(nom="Goma"),
+            ville_residence=Villes.objects.get(nom="Goma"),
+            quartier_residence=Quartiers.objects.get(nom="Kyeshero"),
+            avenue_residence=Avenues.objects.get(nom="Douglas"), numero_residence="123",
+            numero_telephone="0999999998", photo_profile="images/default.jpg",
+            carte_identite_copy="images/default.jpg", compte_CDF=NumerosCompte.objects.create(numero="MW-0000-0000-01", devise="CDF"),
+            compte_USD=NumerosCompte.objects.create(numero="MW-0000-0000-02", devise="USD"),
+            contribution_mensuelle=ContributionsMensuelles.objects.first(),
+            user=Users.objects.create_user(
+                username="0999999998",
+                email="kakule2@gmail.com",
+                password="1234",
+                first_name="Kakule",
+                last_name="Rock",
+                type="membre"
+            )
+        )
+
+        DepotsInscription.objects.create(membre=membre)
