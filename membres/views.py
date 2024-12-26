@@ -598,7 +598,7 @@ def depot_objectif(request, objectif_id):
                             depot_objectif.save()
 
                             messages.success(request, "Votre dépôt sur objectif a été soumis avec succès !")
-                            return redirect('membres:depot_objectif', objectif_id=objectif_id, permanent=True)
+                            return redirect('membres:objectifs')
                         else:
                             messages.error(request, "Le montant doit être supérieur à zéro et inférieur ou égal au montant cible de l'objectif")
                     

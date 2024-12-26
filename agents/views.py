@@ -272,7 +272,7 @@ def voir_transaction(request, transaction_id):
                         objectif.save()
 
                         BalanceAdmin.objects.create(
-                            montant=transaction.montant * annulation_objectif.frais,
+                            montant=float(transaction.montant) * annulation_objectif.frais,
                             devise=transaction.devise,
                             type="annulation_objectif"
                         )
