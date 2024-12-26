@@ -28,7 +28,7 @@ class Objectifs(models.Model):
     date_fin = models.DateField(verbose_name="Date de fin", blank=True, null=True)
     date_creation = models.DateField(auto_now_add=True, verbose_name="Date de création")
 
-    nom = models.CharField(max_length=255, verbose_name="Nom de l'objectif")
+    nom = models.CharField(max_length=255, verbose_name="Nom de l'objectif", blank=True, null=True)
     type = models.ForeignKey(TypesObjectif, on_delete=models.CASCADE, verbose_name="Type d'objectif", blank=True, null=True)
 
     description = models.TextField(verbose_name="Description", blank=True, null=True)

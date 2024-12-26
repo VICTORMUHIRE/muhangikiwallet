@@ -519,7 +519,7 @@ def objectifs(request):
         if form.is_valid():
             objectif = form.save(commit=False)
 
-            if not Objectifs.objects.filter(membre=request.user.membre, nom=objectif.nom).exists():
+            if True or not Objectifs.objects.filter(membre=request.user.membre, type=objectif.type, statut__in=["En cours", "Atteint", "Epuisé"]).exists():
                 if objectif.montant_cible > 0:
                     if objectif.date_debut < objectif.date_fin:
                         objectif.membre = request.user.membre

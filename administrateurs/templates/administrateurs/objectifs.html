@@ -29,7 +29,7 @@
             {% for objectif in objectifs %}
             <div class="card shadow-sm mb-3 {% if objectif.statut == 'Epuisé' %}border-danger{% endif %}">  <!-- Card for each goal -->
                 <div class="card-header bg-white text-center">
-                    <h5 class="card-title mb-0">{{ objectif.nom }}</h5>
+                    <h5 class="card-title mb-0">{{ objectif.type }}</h5>
                 </div>
                 <div class="card-body">
                     <div class="progress position-relative mb-3" style="height: 25px;">  <!-- Enhanced progress bar -->
