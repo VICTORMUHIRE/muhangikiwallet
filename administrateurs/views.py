@@ -85,7 +85,7 @@ def home(request):
     nombre_agents = Agents.objects.count()
 
     transactions = Transactions.objects.all().order_by("-date")
-    objectifs = Objectifs.objects.filter()
+    objectifs = Objectifs.objects.filter(statut__in=["En cours", "Atteint", "Epuisé"])
 
     demandes_pret = Prets.objects.filter(statut="En attente")
     demandes_inscription = DepotsInscription.objects.filter(statut="En attente")
@@ -465,7 +465,7 @@ def objectifs(request):
 
     for objectif in objectifs:
         objectif.pourcentage = float(objectif.montant / objectif.montant_cible ) * 100
-        if timezone.now() > objectif.date_fin:
+        if timezone.now().date() > objectif.date_fin:
             objectif.statut = "Epuisé"
             objectif.save()
 

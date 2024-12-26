@@ -1,4 +1,4 @@
-{% extends 'membres/base.html' %}
+{% extends 'administrateurs/base.html' %}
 
 {% block title %}Objectifs{% endblock %}
 
@@ -39,13 +39,12 @@
                     </div>
 
                     <!-- Clearer display of amounts and date -->
-                    <p class="card-text">Membre : <a class="fw-bold btn btn-outline-info">{{ objectif.membre }}</span></p>
+                    <p class="card-text">Membre : <a href="{% url 'administrateurs:voir_membre' objectif.membre.pk %}" class="fw-bold btn mw-color">{{ objectif.membre }}</a></p>
                     <p class="card-text">Montant cible : <span class="fw-bold">{{ objectif.montant_cible|stringformat:".2f" }} {{ objectif.devise }}</span></p>
                     <p class="card-text">Montant déposé : <span class="fw-bold">{{ objectif.montant|stringformat:".2f" }} {{ objectif.devise }}</span></p>
                     <p class="card-text">Date de création : <span class="fw-bold">{{ objectif.date_creation|date:"d/m/Y" }}</span></p>
                     <p class="card-text">Date d'échéance : <span class="fw-bold">{{ objectif.date_fin|date:"d/m/Y" }}</span></p>
                     <p class="card-text">Statut : <span class="badge {% if objectif.statut == 'Atteint' %}bg-success{% elif objectif.statut == 'En cours' %}bg-warning{% else %}bg-danger{% endif %}">{{ objectif.statut }}</span></p>
-                    
                 </div>
             </div>
             {% empty %}

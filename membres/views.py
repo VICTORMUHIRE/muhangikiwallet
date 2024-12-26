@@ -546,7 +546,7 @@ def objectifs(request):
 
     for objectif in objectifs:
         objectif.pourcentage = float(objectif.montant / objectif.montant_cible ) * 100
-        if timezone.now() > objectif.date_fin:
+        if timezone.now().date() > objectif.date_fin:
             objectif.statut = "Epuisé"
             objectif.save()
 

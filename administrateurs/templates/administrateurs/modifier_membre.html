@@ -24,7 +24,7 @@
                         {% if field.field.widget.input_type == 'file' %}
                         <div class="col-md-4 mb-3 d-flex flex-column align-items-center">
                             <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                            <input type="file" class="form-control d-none {% if field.errors %}is-invalid{% endif %}" id="{{ field.id_for_label }}" name="{{ field.name }}" value="{{ field.value|default:'' }}" accept="image/*" onchange="previewImage(this);" required>
+                            <input type="file" class="form-control d-none {% if field.errors %}is-invalid{% endif %}" id="{{ field.id_for_label }}" name="{{ field.name }}" value="{{ field.value|default:'' }}" accept="image/*" onchange="previewImage(this);">
 
                             <div id="imagePreview" class="image-preview text-center" onclick="document.getElementById('{{ field.id_for_label}}').click();">
                                 {% if field.value %}
