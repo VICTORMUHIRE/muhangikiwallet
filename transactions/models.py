@@ -104,6 +104,17 @@ class Prêts(models.Model):
     class Meta:
         verbose_name = "Prêt"
         verbose_name_plural = "Prêts"
+
+class Benefices(models.Model):
+    prêt = models.ForeignKey(Prêts, on_delete=models.CASCADE, verbose_name="Prêt")
+    membre = models.ForeignKey(Membres, blank=True, null=True, on_delete=models.CASCADE, verbose_name="Membre")
+    
+    montant = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Montant du bénéfice")
+    devise = models.CharField(max_length=3, choices=DEVISE_CHOICES, verbose_name="Devise")
+
+    date = models.DateTimeField(auto_now_add=True, verbose_name="Date du bénéfice")
+    statut = models.BooleanField(default=True, verbose_name="Statut")
+
     
 # Définition du modèle de contribution
 class Contributions(models.Model):
@@ -119,7 +130,7 @@ class Contributions(models.Model):
     statut = models.CharField(max_length=20, choices=(("En attente", "En attente"), ("Approuvé", "Approuvé"), ("Rejeté", "Rejeté")), default="En attente", verbose_name="Statut")
 
     def __str__(self):
-        return f"Contribution de {self.montant} - {self.date} par {self.membre}"
+        return f"Contribution de {self.montant} - {self.date}"
     
     class Meta:
         verbose_name = "Contribution"

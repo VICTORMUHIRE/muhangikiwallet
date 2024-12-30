@@ -8,8 +8,16 @@
             <div class="card border-0">
                 <div class="card-header bg-white text-center p-3 fs-4">  <!-- Consistent styling with contribuer.html -->
                     Effectuer un Retrait
+                    <div class="fs-6">
+                        <label for="total_benefices" class="form-label">Total des bénéfices:</label> <span id="total_benefices" class="font-weight-bold mb-color">{{ montant_benefices|floatformat:2 }} {{ membre.contribution_mensuelle.devise }}</span>
+                    </div>
                 </div>
                 <div class="card-body px-1">
+                    {% if date.month != 12 %}
+                    <div class="alert alert-warning fade show text-center fw-bold" role="alert">
+                        Les retraits ne sont disponibles qu'en Décembre
+                    </div>
+                    {% endif %}
                     {% if messages %}  <!-- Moved messages inside card body -->
                         {% for message in messages %}
                             <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}warning{% endif %} alert-dismissible fade show" role="alert">
@@ -21,10 +29,6 @@
                     <form method="post" enctype="multipart/form-data" id="withdraw-form">
                         {% csrf_token %}
 
-                        <div class="mb-3">
-                            <label for="total_benefices" class="form-label">Total des bénéfices:</label> <span id="total_benefices" class="font-weight-bold mb-color">{{ total_benefices_CDF|floatformat:2 }} CDF / {{ total_benefices_USD|floatformat:2 }} USD</span>
-                        </div>
-
                         <div class="row mb-3">
                             <div class="form-group col-md-8">
                                 <label class="form-label" for="{{ form.montant.id_for_label }}">Montant à retirer</label>
@@ -32,10 +36,12 @@
                             </div>
                             <div class="form-group col-md-4">
                                 <label class="form-label" for="{{ form.devise.id_for_label }}">Devise</label>
-                                <select class="form-control form-select" id="{{ form.devise.id_for_label }}" name="{{ form.devise.html_name }}">
+                                <input type="text" class="form-control" id="{{ form.devise.id_for_label }}" name="{{ form.devise.html_name }}" value="{{ membre.contribution_mensuelle.devise |default:'CDF'}}" readonly>
+
+                                <!-- <select class="form-control form-select" id="{{ form.devise.id_for_label }}" name="{{ form.devise.html_name }}">
                                     <option value="CDF" {% if form.devise.value == 'CDF' %}selected{% endif %}>CDF</option>
                                     <option value="USD" {% if form.devise.value == 'USD' %}selected{% endif %}>USD</option>
-                                </select>
+                                </select> -->
                             </div>
                         </div>
 
@@ -53,7 +59,7 @@
                         </div>
 
                         <div class="form-group text-center">
-                            <button type="button" class="btn btn-mw" data-bs-toggle="modal" data-bs-target="#confirmationModal">  <!-- Button triggers modal -->
+                            <button type="button" class="btn btn-mw" data-bs-toggle="modal" data-bs-target="#confirmationModal" {% if date.month != 12 %}disabled{% endif %}>  <!-- Button triggers modal -->
                                 Confirmer
                             </button>
                         </div>

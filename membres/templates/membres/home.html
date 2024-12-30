@@ -42,8 +42,8 @@
             <div class="card-body d-flex flex-column align-items-center justify-content-center">
                 <i class="fas fa-chart-line fa-3x mw-color"></i>
                 <h5 class="card-title my-3 font-weight-bold text-center">Bénéfices</h5>
-                <h6 class="card-subtitle mb-2 text-muted">CDF : {{ benefices_credits_cdf|stringformat:".2f" }}</h6>
-                <h6 class="card-subtitle text-muted">USD : {{ benefices_credits_usd|stringformat:".2f" }}</h6>
+                <h6 class="card-subtitle mb-2 text-muted">CDF : {{ benefices_CDF|stringformat:".2f" }}</h6>
+                <h6 class="card-subtitle text-muted">USD : {{ benefices_USD|stringformat:".2f" }}</h6>
             </div>
             <a href="{% url 'membres:retrait' %}" class="card-footer text-center text-white bg-mw btn btn-mw rounded-4 rounded-top-0 btn-sm">Retrait</a>
         </div>
@@ -54,8 +54,8 @@
             <div class="card-body d-flex flex-column align-items-center justify-content-center">
                 <i class="fas fa-bullseye fa-3x text-primary"></i>
                 <h5 class="card-title my-3 font-weight-bold text-center">{{ objectifs.count }} {{objectifs.count|pluralize:"Objectif, Objectifs"}}</h5>
-                <h6 class="card-subtitle mb-2 text-muted">CDF : {{ benefices_credits_cdf|stringformat:".2f" }}</h6>
-                <h6 class="card-subtitle text-muted">USD : {{ benefices_credits_usd|stringformat:".2f" }}</h6>
+                <h6 class="card-subtitle mb-2 text-muted">CDF : {{ total_depot_objectif_CDF|stringformat:".2f" }}</h6>
+                <h6 class="card-subtitle text-muted">USD : {{ total_depot_objectif_USD|stringformat:".2f" }}</h6>
             </div>
             <a href="{% url 'membres:objectifs' %}" class="card-footer text-center text-white bg-secondary btn btn-primary rounded-4 rounded-top-0 btn-sm">Gérer</a>
         </div>

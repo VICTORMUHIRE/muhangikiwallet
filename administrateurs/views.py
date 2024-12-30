@@ -13,24 +13,37 @@ from agents.models import Agents, NumerosAgent
 from agents.forms import AgentsForm
 from organisations.models import Organisations
 from organisations.forms import OrganisationsForm
-from transactions.models import Transactions, Prêts, TypesPrêt, Contributions, DepotsObjectif, Retraits, Transferts, DepotsInscription
+from transactions.models import Transactions, Prêts, TypesPrêt, Contributions, DepotsObjectif, Retraits, Transferts, DepotsInscription, Benefices
 
 from .forms import AdministrateurForm
 from membres.forms import MembresForm
 from organisations.forms import OrganisationsForm
 from transactions.forms import TransactionsForm, TypesPrêtForm, ContributionsForm, PrêtsForm, TransfertsForm, RetraitsForm, DepotsInscriptionForm
+from objectifs.models import Objectifs
 from django.utils import timezone
 
 # Vue pour la page d'accueil des administrateurs
 @login_required
 def home(request):
     # Solde total de l'entreprise
-    solde_total_entreprise_cdf = Transactions.objects.filter(devise="CDF").aggregate(Sum('montant'))['montant__sum'] or 0
-    solde_total_entreprise_usd = Transactions.objects.filter(devise="USD").aggregate(Sum('montant'))['montant__sum'] or 0
+    solde_total_entreprise_cdf = Transactions.objects.filter(devise="CDF", type="contribution").aggregate(Sum('montant'))['montant__sum'] or 0
+    solde_total_entreprise_usd = Transactions.objects.filter(devise="USD", type="contribution").aggregate(Sum('montant'))['montant__sum'] or 0
 
     # Solde de toutes les dettes
     total_dettes_cdf = Prêts.objects.filter(devise="CDF", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
     total_dettes_usd = Prêts.objects.filter(devise="USD", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
+
+    # Calcul du solde total des dépôts sur les objectifs
+    total_depots_objectifs_cdf = DepotsObjectif.objects.filter(devise="CDF", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
+    total_depots_objectifs_usd = DepotsObjectif.objects.filter(devise="USD", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
+
+    # Calcul du solde total des benefices
+    total_benefices_cdf = Benefices.objects.filter(devise="CDF", statut=True).aggregate(Sum('montant'))['montant__sum'] or 0
+    total_benefices_usd = Benefices.objects.filter(devise="USD", statut=True).aggregate(Sum('montant'))['montant__sum'] or 0
+
+    # Calcul du solde total des retraits
+    total_retraits_cdf = Retraits.objects.filter(devise="CDF", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
+    total_retraits_usd = Retraits.objects.filter(devise="USD", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
 
     # Nombre total de membres, organisations et agents
     nombre_membres = Membres.objects.count()
@@ -39,8 +52,9 @@ def home(request):
 
     transactions = Transactions.objects.all().order_by("-date")
     prets = Prêts.objects.filter(statut="En attente")
+    objectifs = Objectifs.objects.filter()
 
-    demandes_prêt = Transactions.objects.filter(type="prêt", statut="En attente"),
+    demandes_prêt = Prêts.objects.filter(statut="En attente"),
     demandes_inscription = Transactions.objects.filter(type="depot_inscription", statut="Initialisation")
     
     context = {
@@ -48,6 +62,10 @@ def home(request):
         'solde_total_entreprise_usd': solde_total_entreprise_usd,
         'total_dettes_cdf': total_dettes_cdf,
         'total_dettes_usd': total_dettes_usd,
+        'total_depots_objectifs_cdf': total_depots_objectifs_cdf,
+        'total_depots_objectifs_usd': total_depots_objectifs_usd,
+        'total_benefices_cdf': total_benefices_cdf - total_retraits_cdf,
+        'total_benefices_usd': total_benefices_usd - total_retraits_usd,
         'nombre_membres': nombre_membres,
         'nombre_organisations': nombre_organisations,
         'nombre_agents': nombre_agents,
@@ -455,7 +473,6 @@ def prêts(request):
 @login_required
 def voir_prêt(request, transaction_id):
     prêt = Prêts.objects.filter(transaction=get_object_or_404(Transactions, pk=transaction_id)).first()
-    prêt = Prêts.objects.all().first()
     
     if request.method == "POST":
         if "id" in request.POST:
@@ -466,10 +483,46 @@ def voir_prêt(request, transaction_id):
             if prêt.statut == "Approuvé":
                 prêt.date_approbation = prêt.transaction.date_approbation = timezone.now()
                 prêt.administrateur = request.user.admin
+                prêt.save()
+            
+                # Calculate benefit amount
+                montant_benefice = (float(prêt.montant_remboursé) - float(prêt.montant)) * 0.9 * (2800 if prêt.devise == "USD" else 1)
+                devise_pret = prêt.devise
+                
+                total_contributions_CDF = Transactions.objects.filter(devise="CDF", statut="Approuvé", type="contribution").aggregate(total=Sum('montant'))['total'] or 0
+                total_contributions_USD = Transactions.objects.filter(devise="USD", statut="Approuvé", type="contribution").aggregate(total=Sum('montant'))['total'] or 0
+                
+                # Convert USD contributions to CDF for a common currency
+                total_contributions_CDF += total_contributions_USD * 2800
+                
+                membres_actifs = Membres.objects.filter(status=True)
+                
+                for membre in membres_actifs:
+                    # Get member's total contributions in their respective currency
+                    contributions_membre_CDF = Transactions.objects.filter(membre=membre, devise="CDF", statut="Approuvé", type="contribution").aggregate(total=Sum('montant'))['total'] or 0
+                    contributions_membre_USD = Transactions.objects.filter(membre=membre, devise="USD", statut="Approuvé", type="contribution").aggregate(total=Sum('montant'))['total'] or 0
 
-            prêt.save()
-            messages.success(request, "Le prêt a été approuvé avec succès.")
-            return redirect("administrateurs:voir_prêt", transaction_id=prêt.transaction.pk)
+                    # Convert member's USD contributions to CDF
+                    contributions_membre_CDF += contributions_membre_USD * 2800
+                
+                    if total_contributions_CDF > 0:  # Avoid ZeroDivisionError
+                        proportion = float(contributions_membre_CDF / total_contributions_CDF)
+                        benefice_membre = montant_benefice * proportion
+                
+                        # Determine the benefit currency based on loan currency
+                        benefice_membre_usd = benefice_membre / 2800
+                        Benefices.objects.create(
+                            prêt=prêt,
+                            membre=membre,
+                            montant=benefice_membre_usd if membre.contribution_mensuelle.devise == "USD" else benefice_membre,
+                            devise=membre.contribution_mensuelle.devise  # Use loan currency
+                        )
+                    
+                        print(f"{total_contributions_USD = } {total_contributions_CDF = } {contributions_membre_CDF = } {contributions_membre_USD = } {contributions_membre_CDF = } {montant_benefice = } {proportion =  } {benefice_membre = }")
+                
+                messages.success(request, "Le prêt a été approuvé et les bénéfices distribués avec succès.")
+                return redirect("administrateurs:voir_prêt", transaction_id=prêt.transaction.pk)
+            
     else:
         form = PrêtsForm(instance=prêt)
     print(form.errors)

@@ -6,7 +6,7 @@
 {% block content %}
 <div class="row mt-5 mt-sm-0 mb-5 mb-sm-3">
     <h1 class="text-center mb-4">
-        Tableau de Bord
+        Tableau de Bord Administrateur
     </h1>
 
     <div class="col-6 col-md-3 my-3 my-md-0 h-100">
@@ -14,8 +14,8 @@
             <div class="card-body d-flex flex-column align-items-center justify-content-center">
                 <i class="fas fa-wallet fa-3x text-success"></i>
                 <h5 class="card-title my-3 font-weight-bold text-center">Capital total</h5>
-                <h6 class="card-subtitle mb-2 text-muted">CDF : {{ solde_CDF|stringformat:".2f" }}</h6>
-                <h6 class="card-subtitle text-muted">USD : {{ solde_USD|stringformat:".2f" }}</h6>
+                <h6 class="card-subtitle mb-2 text-muted">CDF : {{ solde_total_entreprise_cdf|stringformat:".2f" }}</h6>
+                <h6 class="card-subtitle text-muted">USD : {{ solde_total_entreprise_usd|stringformat:".2f" }}</h6>
             </div>
             <a href="{% url 'membres:contributions' %}" class="card-footer text-center text-white bg-success btn btn-success rounded-4 rounded-top-0 btn-sm">Contributions</a>
         </div>
@@ -26,8 +26,8 @@
             <div class="card-body d-flex flex-column align-items-center justify-content-center">
                 <i class="fas fa-hand-holding-usd fa-3x text-danger"></i>
                 <h5 class="card-title my-3 font-weight-bold text-center">Crédits</h5>
-                <h6 class="card-subtitle mb-2 text-muted">CDF : {{ total_prêts_CDF|stringformat:".2f" }}</h6>
-                <h6 class="card-subtitle text-muted">USD : {{ total_prêts_USD|stringformat:".2f" }}</h6>
+                <h6 class="card-subtitle mb-2 text-muted">CDF : {{ total_dettes_cdf|stringformat:".2f" }}</h6>
+                <h6 class="card-subtitle text-muted">USD : {{ total_dettes_usd|stringformat:".2f" }}</h6>
             </div>
             <a href="{% url 'membres:demande_prêt' %}" class="card-footer text-center text-white bg-danger btn btn-danger rounded-4 rounded-top-0 btn-sm">Emprunt</a>
         </div>
@@ -38,8 +38,8 @@
             <div class="card-body d-flex flex-column align-items-center justify-content-center">
                 <i class="fas fa-chart-line fa-3x mw-color"></i>
                 <h5 class="card-title my-3 font-weight-bold text-center">Bénéfices</h5>
-                <h6 class="card-subtitle mb-2 text-muted">CDF : {{ benefices_credits_cdf|stringformat:".2f" }}</h6>
-                <h6 class="card-subtitle text-muted">USD : {{ benefices_credits_usd|stringformat:".2f" }}</h6>
+                <h6 class="card-subtitle mb-2 text-muted">CDF : {{ total_benefices_cdf|stringformat:".2f" }}</h6>
+                <h6 class="card-subtitle text-muted">USD : {{ total_benefices_usd|stringformat:".2f" }}</h6>
             </div>
             <a href="{% url 'membres:retrait' %}" class="card-footer text-center text-white bg-mw btn btn-mw rounded-4 rounded-top-0 btn-sm">Retrait</a>
         </div>
@@ -49,27 +49,27 @@
         <div class="card h-100 shadow-sm rounded-4 border-0 bg-light"  style="background-color: color(srgb 0 0 1 / 0.05) !important;">
             <div class="card-body d-flex flex-column align-items-center justify-content-center">
                 <i class="fas fa-bullseye fa-3x text-primary"></i>
-                <h5 class="card-title my-3 font-weight-bold text-center">{{ objectifs.count }} {{objectifs.count|pluralize:"Objectif, Objectifs"}}</h5>
-                <h6 class="card-subtitle mb-2 text-muted">CDF : {{ benefices_credits_cdf|stringformat:".2f" }}</h6>
-                <h6 class="card-subtitle text-muted">USD : {{ benefices_credits_usd|stringformat:".2f" }}</h6>
+                <h5 class="card-title my-3 font-weight-bold text-center">{{ objectifs.count }} Objectif{{objectifs.count|pluralize:"s"}}</h5>
+                <h6 class="card-subtitle mb-2 text-muted">CDF : {{ total_depots_objectifs_cdf|stringformat:".2f" }}</h6>
+                <h6 class="card-subtitle text-muted">USD : {{ total_depots_objectifs_usd|stringformat:".2f" }}</h6>
             </div>
             <a href="{% url 'membres:objectifs' %}" class="card-footer text-center text-white bg-secondary btn btn-primary rounded-4 rounded-top-0 btn-sm">Gérer</a>
         </div>
     </div>
 
     <div class="my-4">
-        <div class="bg-light d-flex justify-content-around rounded-4 p-3 shadow-sm">
-            <a class="text-center btn btn-sm btn-light" href="{% url 'administrateurs:agents'}">
-                <i class="fas fa-user-tie fa-3x text-secondary mb-2"></i>
-                <h5 class="card-title font-weight-bold">{{ total_agents }} Agent{{ total_agents|pluralize:"s" }}</h5>
+        <div class="bg-light d-flex rounded-4 shadow-sm">
+            <a class="text-center btn btn-sm btn-light flex-grow-1 p-2" href="{% url 'administrateurs:agents'}">
+                <i class="fas fa-user-tie fa-3x text-warning mb-2"></i>
+                <h5 class="card-title font-weight-bold">{{ nombre_agents }} Agent{{ nombre_agents|pluralize:"s" }}</h5>
             </a>
-            <a class="text-center btn btn-sm btn-light" href="{% url 'administrateurs:membres' %}">
+            <a class="text-center btn btn-sm btn-light flex-grow-1 p-2" href="{% url 'administrateurs:membres' %}">
                 <i class="fas fa-users fa-3x text-primary mb-2"></i>
-                <h5 class="card-title font-weight-bold">{{ total_membres }} Membre{{ total_membres|pluralize:"s" }}</h5>
+                <h5 class="card-title font-weight-bold">{{ nombre_membres }} Membre{{ nombre_membres|pluralize:"s" }}</h5>
             </a>
-            <!-- <a class="text-center btn btn-sm btn-light" href="{% url 'administrateurs:organisations' %}">
+            <!-- <a class="text-center btn btn-sm btn-light flex-grow-1 p-2" href="{% url 'administrateurs:organisations' %}">
                 <i class="fas fa-building fa-3x text-success mb-2"></i>
-                <h5 class="card-title font-weight-bold">{{ total_organisations }} Organisation{{ total_organisations|pluralize:"s" }}</h5>
+                <h5 class="card-title font-weight-bold">{{ nombre_organisations }} Organisation{{ nombre_organisations|pluralize:"s" }}</h5>
             </a> -->
         </div>
     </div>
@@ -86,12 +86,12 @@
                     <ul class="list-group list-group-flush">
                         {% for demande_prêt in demandes_prêt|first %}
                         <li class="list-group-item p-2 rounded-4">
-                            <a class="btn d-block text-start btn-light d-flex justify-content-between" href="{% url 'administrateurs:voir_prêt' demande_prêt.pk %}">
+                            <a class="btn d-block text-start btn-light d-flex justify-content-between" href="{% url 'administrateurs:voir_prêt' demande_prêt.transaction.pk %}">
                                 <div>
                                     <div class="badge bg-danger">Demande de prêt</div>
-                                    <h6 class="text-center">{{ demande_prêt.membre }}</h6>
+                                    <h6 class="text-center">{{ demande_prêt.transaction.membre }}</h6>
                                 </div>
-                                <span>{{ demande_prêt.date }}</span>
+                                <span>{{ demande_prêt.transaction.date }}</span>
                             </a>
                         </li>
                         {% endfor %}
@@ -106,7 +106,7 @@
                             </a>
                         </li>
                         {% endfor %}
-                        {% if not demandes_prêt.cout and not demandes_inscription.cout %}
+                        {% if not demandes_prêt and not demandes_inscription %}
                         <li class="list-group-item"> Aucune tâches pour le moment</li>
                         {% endif %}
                     </ul>

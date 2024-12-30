@@ -62,16 +62,20 @@ def voir_depot_inscription(request, transaction_id):
     return render(request, "agents/voir_depot_inscription.html", context)
 
 def approuver_depot_inscription(request, transaction_id):
-    depot = DepotsInscription.objects.filter(transaction=get_object_or_404(Transactions, pk=transaction_id)).first()
+    # depot = DepotsInscription.objects.filter(transaction=get_object_or_404(Transactions, pk=transaction_id)).first()
+    transaction=get_object_or_404(Transactions, pk=transaction_id)
     
-    depot.statut = depot.transaction.statut = "Approuvé"
-    depot.date_approbation = depot.transaction.date_approbation = timezone.now()
+    # depot.statut = depot.transaction.statut = "Approuvé"
+    # depot.date_approbation = depot.transaction.date_approbation = timezone.now()
 
-    depot.save()
-    depot.transaction.save()
+    transaction.statut = "Approuvé"
+    transaction.date_approbation = timezone.now()
+
+    # depot.save()
+    # depot.transaction.save()
+    transaction.save()
     messages.success(request, "Le dépôt d'inscription a été approuvé avec succès.")
     return redirect("agents:depot_inscription")
-
 
 def rejetter_depot_inscription(request, transaction_id):
     depot = DepotsInscription.objects.filter(transaction=get_object_or_404(Transactions, pk=transaction_id)).first()

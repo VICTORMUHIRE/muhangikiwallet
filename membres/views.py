@@ -14,7 +14,7 @@ from objectifs.models import Objectifs
 from objectifs.forms import ObjectifsForm
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import login, update_session_auth_hash
-from transactions.models import Transactions, Prêts, TypesPrêt, Contributions, DepotsObjectif, Retraits, Transferts, DepotsInscription
+from transactions.models import Transactions, Prêts, TypesPrêt, Contributions, DepotsObjectif, Retraits, Transferts, DepotsInscription, Benefices
 from transactions.forms import ContributionsForm, PrêtsForm, TransfertsForm, RetraitsForm, DepotsInscriptionForm, TypesPrêtForm, TransactionsForm, DepotsObjectifForm
 from datetime import datetime, timedelta
 from django.utils import timezone
@@ -164,6 +164,9 @@ def home(request):
     total_retraits_CDF = Transactions.objects.filter(membre=membre, devise="CDF", statut="Approuvé", type="retrait").aggregate(total=Sum('montant'))['total'] or 0
     total_retraits_USD = Transactions.objects.filter(membre=membre, devise="USD", statut="Approuvé", type="retrait").aggregate(total=Sum('montant'))['total'] or 0
 
+    benefices_CDF = Benefices.objects.filter(membre=membre, devise="CDF", statut=True).aggregate(total=Sum('montant'))['total'] or 0
+    benefices_USD = Benefices.objects.filter(membre=membre, devise="USD", statut=True).aggregate(total=Sum('montant'))['total'] or 0
+
     transactions = Transactions.objects.filter(membre=membre).order_by("-date")
 
     context = {
@@ -173,13 +176,12 @@ def home(request):
         "total_prêts_USD": total_prêts_USD,
         "total_depot_objectif_CDF": total_depot_objectif_CDF,
         "total_depot_objectif_USD": total_depot_objectif_USD,
-        "total_retraits_CDF": total_retraits_CDF,
-        "total_retraits_USD": total_retraits_USD,
         "solde_CDF": solde_CDF,
         "solde_USD": solde_USD,
         "transactions": transactions,
+        "benefices_CDF": benefices_CDF - total_retraits_CDF,
+        "benefices_USD": benefices_USD - total_retraits_USD,
     }
-
 
     return render(request, "membres/home.html", context)
 
@@ -302,22 +304,18 @@ def demande_prêt(request):
             if check_password(mot_de_passe, request.user.password):
                 prêt = form.save(commit=False)  # Créer l'objet prêt sans l'enregistrer
                 transaction = transaction_form.save(commit=False)
+                transaction.membre=request.user.membre
+                transaction.agent=transaction.numero_agent.agent
+                transaction.type="prêt"
+                transaction.statut="En attente"
 
                 prêt.montant_remboursé = prêt.montant
-                prêt.montant = prêt.montant_remboursé - (prêt.montant * (prêt.type_prêt.taux_interet / 100))
+                transaction.montant = prêt.montant = prêt.montant_remboursé - (prêt.montant * (prêt.type_prêt.taux_interet / 100))
 
-                prêt.date_remboursement = datetime.now() + timedelta(days=prêt.type_prêt.delai_remboursement)  # Définir la date de remboursement
-                
-                prêt.transaction = Transactions.objects.create(
-                    membre=request.user.membre,
-                    numero_agent=transaction.numero_agent,
-                    agent=transaction.numero_agent.agent,
-                    montant=prêt.montant,
-                    devise=prêt.devise,
-                    type="prêt",
-                    statut="En attente"
-                )
+                prêt.date_remboursement = datetime.now() + timedelta(days=prêt.type_prêt.delai_remboursement)  # Définir la date de remboursement                    
 
+                transaction.save()
+                prêt.transaction = transaction
                 prêt.save()  # Enregistrer l'objet prêt
                 messages.success(request, 'Votre demande de prêt a été soumise avec succès!')
                 return redirect('membres:demande_prêt')  # Redirigez vers
@@ -438,6 +436,10 @@ def objectif(request, objectif_id):
 def retrait(request):
     membre = get_object_or_404(Membres, user=request.user)
     reseaux = NumerosAgent.objects.values_list('reseau', flat=True).distinct()
+
+    montant_retraits = Transactions.objects.filter(membre=membre, devise="CDF" if membre.contribution_mensuelle.devise == "CDF" else "USD", statut="Approuvé", type="contribution").aggregate(total=Sum('montant'))['total'] or 0
+    montant_benefices = Benefices.objects.filter(membre=membre, devise="CDF" if membre.contribution_mensuelle.devise == "CDF" else "USD", statut=True).aggregate(total=Sum('montant'))['total'] or 0 - montant_retraits
+
     numeros_categories = {reseau: [] for reseau in reseaux}
     for reseau in reseaux:
         for numero_agent in NumerosAgent.objects.filter(reseau=reseau):
@@ -445,26 +447,34 @@ def retrait(request):
 
     if request.method == "POST":
         form = TransactionsForm(request.POST)
+        if timezone.now().month == 12:
 
-        if form.is_valid():
-            transaction = form.save(commit=False)
-            transaction.membre = membre
-            transaction.agent = transaction.numero_agent.agent
-            transaction.type = "retrait"
-            transaction.statut = "En attente"
-            transaction.save()
+            if form.is_valid():
+                transaction = form.save(commit=False)
 
-            retrait = Retraits.objects.create(
-                transaction=transaction,
-                montant=transaction.montant,
-                devise=transaction.devise
-            )
+                if transaction.montant <= montant_benefices:
+                    transaction.membre = membre
+                    transaction.agent = transaction.numero_agent.agent
+                    transaction.type = "retrait"
+                    transaction.statut = "En attente"
+                    transaction.save()
 
-            messages.success(request, "Votre demande de retrait a été soumise avec succès !")
-            return redirect('membres:home')
+                    retrait = Retraits.objects.create(
+                        transaction=transaction,
+                        montant=transaction.montant,
+                        devise=transaction.devise
+                    )
 
+                    messages.success(request, "Votre demande de retrait a été soumise avec succès !")
+                    return redirect('membres:home')
+                
+                else:
+                    messages.error(request, "Montant insuffisant")
+
+            else:
+                messages.error(request, "Veuillez corriger les erreurs dans le formulaire.")
         else:
-            messages.error(request, "Veuillez corriger les erreurs dans le formulaire.")
+            messages.error(request, "Les retraits ne sont possibles qu'en Décembre")
     else:
         form = TransactionsForm()
 
@@ -472,6 +482,8 @@ def retrait(request):
         "form": form,
         "membre": membre,
         "numeros_categories": numeros_categories,
+        "montant_benefices": montant_benefices,
+        "date": timezone.now()
     }
 
     return render(request, "membres/retrait.html", context)
