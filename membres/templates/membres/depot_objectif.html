@@ -1,6 +1,6 @@
 {% extends 'membres/base.html' %}
 
-{% block title %}Dépôt sur Objectif{% endblock %}
+{% block title %}Depot sur Objectif{% endblock %}
 
 {% block content %}
 {% if messages %}
@@ -15,7 +15,7 @@
         <div class="col-md-8">
             <div class="card border-0">
                 <div class="card-header bg-white text-center p-3 fs-4">
-                    Dépôt sur Objectif : {{ objectif.nom }}
+                    Depot sur Objectif : {{ objectif.type }}
                     <div class="text-center text-muted">
                         <span id="solde_objectif" class="font-weight-bold mb-color">{{ objectif.montant|stringformat:".2f" }} / {{ objectif.montant_cible|stringformat:".2f" }} {{ objectif.devise }}</span>
                     </div>
@@ -31,7 +31,7 @@
                         <input type="hidden" id="{{ depot_objectif_form.objectif.id_for_label }}" name="{{ depot_objectif_form.objectif.html_name }}" value="{{ depot_objectif_form.objectif.value }}">
                         <div class="row mb-3">
                             <div class="form-group col-md-8">
-                                <label class="form-label" for="{{ form.montant.id_for_label }}">form.montant.label</label>
+                                <label class="form-label" for="{{ form.montant.id_for_label }}">{{ form.montant.label }}</label>
                                 <input type="number" class="form-control" id="{{ form.montant.id_for_label }}" name="{{ form.montant.html_name }}" value="{% if form.montant.value %}{{ form.montant.value|stringformat:'.2f' }}{% else %}{{ montant_restant|stringformat:'.2f' }}{% endif %}" placeholder="Entrez le montant">
                             </div>
                             <div class="form-group col-md-4">
@@ -125,7 +125,10 @@
             withdrawForm.appendChild(passwordInput);
 
             if (withdrawForm.checkValidity()) withdrawForm.submit()
-            else withdrawForm.reportValidity();
+            else {
+                withdrawForm.reportValidity();
+                alert("Veuilllez inserer la preuve");
+            }
         });
     </script>
 

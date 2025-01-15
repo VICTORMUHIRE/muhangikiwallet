@@ -193,7 +193,7 @@ class Contributions(models.Model):
         verbose_name_plural = "Contributions"
 
 class DepotsObjectif(models.Model):
-    objectif = models.ForeignKey(Objectifs, on_delete=models.CASCADE, verbose_name="Objectifs")
+    objectif = models.ForeignKey(Objectifs, on_delete=models.SET_NULL, blank=True, null=True, verbose_name="Objectifs")
     
     montant = models.FloatField(verbose_name="Montant")
     devise = models.CharField(max_length=3, choices=DEVISE_CHOICES, verbose_name="Devise")
@@ -215,8 +215,8 @@ class DepotsObjectif(models.Model):
         verbose_name_plural = "Dépôts objectifs"
 
 class RetraitsObjectif(models.Model):
-    membre = models.ForeignKey(Membres, on_delete=models.CASCADE, verbose_name="Membres")
-    objectif = models.ForeignKey(Objectifs, on_delete=models.CASCADE, verbose_name="Objectifs")
+    membre = models.ForeignKey(Membres, on_delete=models.SET_NULL, blank=True, null=True, verbose_name="Membres")
+    objectif = models.ForeignKey(Objectifs, on_delete=models.SET_NULL, blank=True, null=True, verbose_name="Objectifs")
     
     montant = models.FloatField(verbose_name="Montant")
     devise = models.CharField(max_length=3, choices=DEVISE_CHOICES, verbose_name="Devise")
@@ -239,8 +239,8 @@ class RetraitsObjectif(models.Model):
         verbose_name_plural = "Retraits objectifs"
 
 class AnnulationObjectif(models.Model):
-    membre = models.ForeignKey(Membres, on_delete=models.CASCADE, verbose_name="Membres")
-    objectif = models.ForeignKey(Objectifs, on_delete=models.CASCADE, verbose_name="Objectifs")
+    membre = models.ForeignKey(Membres, on_delete=models.SET_NULL, blank=True, null=True, verbose_name="Membres")
+    objectif = models.ForeignKey(Objectifs, on_delete=models.SET_NULL, blank=True, null=True, verbose_name="Objectifs")
     
     montant = models.FloatField(verbose_name="Montant")
     devise = models.CharField(max_length=3, choices=DEVISE_CHOICES, verbose_name="Devise")
@@ -289,6 +289,7 @@ class DepotsInscription(models.Model):
 
     montant = models.FloatField(verbose_name="Montant", default=10)
     devise = models.CharField(max_length=3, choices=DEVISE_CHOICES, default="USD", verbose_name="Devise")
+    preuve= models.ImageField(upload_to="preuves/depots_inscriptions/", blank=True, verbose_name="Preuve de depot")
 
     date = models.DateTimeField(auto_now_add=True, verbose_name="Date")
     date_approbation = models.DateTimeField(blank=True, null=True, verbose_name="Date d'approbation")

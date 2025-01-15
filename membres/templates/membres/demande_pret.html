@@ -109,7 +109,7 @@
 
                                 <div class="card-title d-flex align-items-center justify-content-between">
                                     <span class="card-text fs-6"><strong>Montant:</strong> {% if demande.statut == 'Depassé' %}{% if demande.devise == "USD" %}{{ demande.montant_remboursé|add:"-5"|stringformat:".2f" }}{% else %}{{ demande.montant_remboursé|add:"-14000"|stringformat:".2f" }}{% endif %}{% else %}{{ demande.montant_remboursé|stringformat:".2f" }}{% endif %} {{ demande.devise }} {% if demande.statut == 'Depassé' %}<span class="badge bg-danger me-2">+{% if demande.devise == "USD" %}5{% else %}14 000{% endif %} {{ demande.devise }}</span>{% endif %}</span>
-                                    {% if demande.statut == 'Approuvé' %}
+                                    {% if demande.transaction.statut == 'Approuvé' %}
                                         <a class="btn btn-sm btn-primary text-white" href="{% url 'membres:rembourser_pret' demande.transaction.pk %}">Rembourser</a>
                                     {% else %}
                                     <span class="card-text ">

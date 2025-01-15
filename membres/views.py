@@ -68,7 +68,7 @@ def statut(request):
 
     if request.method == 'POST':
         form = TransactionsForm(request.POST, request.FILES)
-        membre_form = ModifierMembresForm(request.POST, request.FILES, instance=request.user.membre)
+        membre_form = ModifierMembresForm(request.POST, request.FILES, instance=request.user.membre)       
         
         mot_de_passe = request.POST.get('mot_de_passe')
 
@@ -150,6 +150,9 @@ def inscription(request):
             membre.compte_CDF = NumerosCompte.objects.create(numero=generate_unique_numero(), devise="CDF")
             membre.compte_USD = NumerosCompte.objects.create(numero=generate_unique_numero(), devise="USD")
             
+            membre.save()
+            
+            membre.mois_contribution = timezone.now().replace(day=15)
             membre.save()
 
             DepotsInscription.objects.create(membre=membre)
@@ -447,7 +450,7 @@ def demande_pret(request):
 @login_required
 @verifier_membre
 def rembourser_pret(request, transaction_id):
-    pret = get_object_or_404(Prets, transaction=get_object_or_404(Transactions, pk=transaction_id, membre=request.user.membre, type="pret", statut="Approuvé"), statut="Approuvé")
+    pret = get_object_or_404(Prets, transaction=get_object_or_404(Transactions, pk=transaction_id, membre=request.user.membre, type="pret", statut="Approuvé"), statut__in=["Approuvé", "Depassé"])
 
     reseaux = NumerosAgent.objects.values_list('reseau', flat=True).distinct()
     numeros_categories = {reseau: [] for reseau in reseaux}
@@ -631,7 +634,7 @@ def depot_objectif(request, objectif_id):
 @login_required
 @verifier_membre
 def retrait_objectif(request, objectif_id):
-    objectif = get_object_or_404(Objectifs, membre=request.user.membre, pk=objectif_id, statut='Atteint')
+    objectif = get_object_or_404(Objectifs, membre=request.user.membre, pk=objectif_id, statut="Atteint")
     membre = request.user.membre
 
     if request.method == 'POST':

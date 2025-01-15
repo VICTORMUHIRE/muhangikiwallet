@@ -214,17 +214,16 @@
                                 Accueil
                             </a>
                         </li>
-                        
+                        <li class="nav-item">
+                            <a class="nav-link {% if '/prets/' in request.path %}active{% endif %}" href="{% url 'agents:home' %}">
+                                <i class="fa fa-hand-holding-usd"></i>
+                                Prets
+                            </a>
+                        </li>
                         <li class="nav-item">
                             <a class="nav-link {% if '/transactions_cdf/' in request.path or '/transactions_usd/' in request.path %}active{% endif %}" href="{% url 'agents:transactions' %}">
                                 <i class="fa fa-exchange-alt"></i>
                                 Transactions
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if '/paramètres/' in request.path %}active{% endif %}" href="{% url 'membres:parametres' %}">
-                                <i class="fa fa-cog"></i>
-                                Paramètres
                             </a>
                         </li>
                     </ul>
@@ -290,13 +289,13 @@
                 <i class="fa fa-home"></i> 
                 <span>Accueil</span>
             </a>
+            <a href="{% url 'agents:prets' %}" class="nav-link {% if '/prets/' in request.path %}active{% endif %}">
+                <i class="fa fa-hand-holding-usd"></i>
+                <span>Prets</span>
+            </a>
             <a href="{% url 'agents:transactions' %}" class="nav-link {% if '/transactions/' in request.path %}active{% endif %}">
                 <i class="fa fa-exchange-alt"></i>
                 <span>Transactions</span>
-            </a>
-            <a href="{% url 'membres:parametres' %}" class="nav-link {% if '/paramètres/' in request.path %}active{% endif %}">
-                <i class="fa fa-cog"></i>
-                <span>Paramètres</span>
             </a>
         </div>
     {% endif %}

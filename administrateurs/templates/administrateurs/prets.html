@@ -9,7 +9,7 @@
         </div>
         <div class="list-group p-0 col-md-6">
             {% for pret in prets %}
-            <div onclick="location.href='{% url 'administrateurs:transaction' pret.transaction.pk %}'" class="btn btn-light card mb-3 {% if pret.statut == 'Depassé' %}border-danger{% endif %}">
+            <div onclick="location.href='{%if pret.transaction%}{% url 'administrateurs:transaction' pret.transaction.pk %}{%endif%}'" class="btn btn-light card mb-3 {% if pret.statut == 'Depassé' %}border-danger{% endif %}">
                 <div class="card-title d-flex align-items-center justify-content-between">
                     <h5 class="mb-1">Prêt {{pret.pk}}</h5>
                     <span class="badge bg-{% if pret.transaction.statut == 'Approuvé' %}success{% elif pret.statut in 'Rejeté Depassé' %}danger{% elif pret.statut == 'Remboursé' %}info{% else %}warning{% endif %}">
@@ -18,8 +18,8 @@
                 </div>
 
                 <div class="card-title d-flex align-items-center justify-content-between">
-                    <span class="card-text fs-6"><strong>Montant:</strong> {{ pret.montant_remboursé }} {{ pret.devise }}</span>
-                    <span class="card-text "><strong class="fw-bold"> limite : </strong>
+                    <span class="card-text fs-6"><strong></strong> {{ pret.montant_remboursé }} {{ pret.devise }}</span>
+                    <span class="card-text "><strong class="fw-bold"> limite: </strong>
                         <small class="d-none d-md-inline">{{ pret.date_remboursement|date:"d E Y" }}</small>
                         <small class="d-md-none">{{ pret.date_remboursement|date:"d M Y" }}</small>
                         <small class="d-md-none">{{ pret.date_remboursement|date:"H:i" }}</small>

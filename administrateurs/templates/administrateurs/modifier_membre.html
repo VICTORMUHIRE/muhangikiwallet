@@ -53,25 +53,25 @@
                                     {% endfor %}
                                 </select>
                             {% elif field.name == 'ville_residence' %}
-                            <select class="form-select" id="id_ville_residence" name="ville_residence" disabled>
+                            <select class="form-select" id="id_ville_residence" name="ville_residence">
                                 {% for option in field.field.choices %}
                                     {% if option.0 and field.value|lower == option.0|lower %}<option value="{{ option.0 }}">{{ option.1 }}</option> {% endif %}
                                 {% endfor %}
                             </select>
                             {% elif field.name == 'commune_residence' %}
-                            <select class="form-select" id="id_commune_residence" name="commune_residence" disabled>
+                            <select class="form-select" id="id_commune_residence" name="commune_residence">
                                 {% for option in field.field.choices %}
                                     {% if option.0 and field.value|lower == option.0|lower %}<option value="{{ option.0 }}">{{ option.1 }}</option> {% endif %}
                                 {% endfor %}
                             </select>
                             {% elif field.name == 'quartier_residence' %}
-                            <select class="form-select" id="id_quartier_residence" name="quartier_residence" disabled>
+                            <select class="form-select" id="id_quartier_residence" name="quartier_residence">
                                 {% for option in field.field.choices %}
                                     {% if option.0 and field.value|lower == option.0|lower %}<option value="{{ option.0 }}">{{ option.1 }}</option> {% endif %}
                                 {% endfor %}
                             </select>
                             {% elif field.name == 'avenue_residence' %}
-                            <select class="form-select" id="id_avenue_residence" name="avenue_residence" disabled>
+                            <select class="form-select" id="id_avenue_residence" name="avenue_residence">
                                 {% for option in field.field.choices %}
                                     {% if option.0 and field.value|lower == option.0|lower %}<option value="{{ option.0 }}">{{ option.1 }}</option> {% endif %}
                                 {% endfor %}

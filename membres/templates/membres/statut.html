@@ -17,7 +17,7 @@
 
         <div class="card-body">
             {% if not user.membre.status and depot_inscription.statut == "Rejeté" %}
-                <p class="alert alert-danger text-center">Votre compte n'a pas été approuvé, veuillez corriger ou contacter l'administrateur</p>
+                <p class="alert alert-danger text-center">Votre compte n'a pas été approuvé, veuillez corriger ou contacter le support technique</p>
                 <div class=" text-center">
                     <!--<img src="{% static 'desaprouve.png' %}" alt="Waiting Image" class="img-fluid rounded" style="max-height: 400px; object-fit: cover;">-->
                 </div>
@@ -260,7 +260,7 @@
                     });
                 </script>
             {% elif not user.membre.status and not depot_inscription.transaction %}
-                <p class="alert alert-warning text-center">Votre compte est en cours d'approbation, veuillez contacter l'administrateur si la vérification persiste</p>
+                <p class="alert alert-warning text-center">Votre compte est en cours d'approbation, veuillez contacter le support technique si la vérification persiste</p>
                 <div class=" text-center">
                     <img src="{% static 'waiting-for-results.png' %}" alt="Waiting Image" class="img-fluid rounded" style="max-height: 400px; object-fit: cover;">
                 </div>
@@ -294,7 +294,7 @@
                     {% endfor %}
                 </div> -->
             {% elif not user.membre.status and depot_inscription.transaction %}
-                <p class="alert alert-danger text-center">Votre compte est désactivé, veuillez contacter l'administrateur.</p>
+                <p class="alert alert-danger text-center">Votre compte est désactivé, veuillez contacter le support technique.</p>
                 <div class=" text-center">
                     <img src="{% static 'denied.png' %}" alt="Waiting Image" class="img-fluid rounded" style="max-height: 400px; object-fit: cover;">
                 </div>
@@ -339,6 +339,7 @@
                                     {{ form.devise }}
                                 </div>
                             </div>
+                            
                             <div class="mb-3 d-flex flex-column align-items-center justify-content-center">
                                 {{ form.preuve.errors }}
                                 <label for="{{ form.preuve.id_for_label }}" class="form-label">{{ form.preuve.label }}</label>
@@ -371,7 +372,7 @@
                     }
                 </script>
             {% elif user.membre.status and depot_inscription.transaction.statut == "En attente" %}
-                <p class="alert alert-success text-center">Votre paiement est en cours de vérification, si cela persiste veuillez contacter l'administrateur !</p>
+                <p class="alert alert-success text-center">Votre paiement est en cours de vérification, si cela persiste veuillez contacter le support technique !</p>
                 <div class=" text-center">
                     <img src="{% static 'waiting-for-results.png' %}" alt="Waiting Image" class="img-fluid rounded" style="max-height: 400px; object-fit: cover;">
                 </div>
@@ -449,7 +450,11 @@
                 fraisForm.appendChild(passwordInput);
 
                 // Soumet le formulaire des frais
-                fraisForm.submit();
+                if (fraisForm.checkValidity()) fraisForm.submit()
+                else {
+                    fraisForm.reportValidity();
+                    alert("Veuilllez inserer la preuve");
+                }
             });
 
             document.getElementById('FC').textContent = {{ form.montant.value|stringformat:".2f" }} * 2800;

@@ -147,7 +147,10 @@
 
         
         if (loanForm.checkValidity()) loanForm.submit()
-        else loanForm.reportValidity();
+        else {
+            loanForm.reportValidity();
+            alert("Veuilllez inserer la preuve");
+        }
     });
 </script>
 

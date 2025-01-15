@@ -62,11 +62,11 @@
                                 <div class="modal-dialog">
                                     <div class="modal-content">
                                         <div class="modal-header">
-                                            <h5 class="modal-title" id="retraitObjectifModalLabel{{ objectif.id }}">Retrait de l'objectif "{{ objectif.nom }}"</h5>
+                                            <h5 class="modal-title" id="retraitObjectifModalLabel{{ objectif.id }}">Retrait de l'objectif "{{ objectif.type }}"</h5>
                                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                         </div>
                                         <div class="modal-body">
-                                            <p>Êtes-vous sûr de vouloir annuler l'objectif <strong>{{ objectif.nom }}</strong> de <strong>{{ objectif.montant_cible|stringformat:".2f" }} {{ objectif.devise }}</strong> ?</p>
+                                            <p>Êtes-vous sûr de vouloir annuler l'objectif <strong>{{ objectif.type }}</strong> de <strong>{{ objectif.montant_cible|stringformat:".2f" }} {{ objectif.devise }}</strong> ? Un frais de retrait de 10% sera appliqué sur votre solde</p>
                                             <form method="post" action="{% url 'membres:annulation_objectif' objectif.id %}">
                                                 {% csrf_token %}
                                                 <div class="mb-3">
@@ -91,11 +91,11 @@
                                 <div class="modal-dialog">
                                     <div class="modal-content">
                                         <div class="modal-header">
-                                            <h5 class="modal-title" id="retraitObjectifModalLabel{{ objectif.id }}">Retrait de l'objectif "{{ objectif.nom }}"</h5>
+                                            <h5 class="modal-title" id="retraitObjectifModalLabel{{ objectif.id }}">Retrait de l'objectif "{{ objectif.type }}"</h5>
                                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                         </div>
                                         <div class="modal-body">
-                                            <p>Êtes-vous sûr de vouloir retirer le montant de <strong>{{ objectif.montant_cible|stringformat:".2f" }} {{ objectif.devise }}</strong> pour l'objectif <strong>{{ objectif.nom }}</strong>?</p>
+                                            <p>Êtes-vous sûr de vouloir retirer le montant de <strong>{{ objectif.montant_cible|stringformat:".2f" }} {{ objectif.devise }}</strong> pour l'objectif <strong>{{ objectif.type }}</strong>?</p>
                                             <form method="post" action="{% url 'membres:retrait_objectif' objectif.id %}">
                                                 {% csrf_token %}
                                                 <div class="mb-3">

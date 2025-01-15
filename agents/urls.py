@@ -10,6 +10,7 @@ urlpatterns = [
 
     path("voir_transaction/<int:transaction_id>/", views.voir_transaction, name="voir_transaction"),
     path("rejetter_transaction/<int:transaction_id>/", views.rejetter_transaction, name="rejetter_transaction"),
+    path("prets/", views.prets, name="prets"),
 
     path("contributions/", views.contributions, name="contributions"),
     path("transactions/", views.transactions, name="transactions"),

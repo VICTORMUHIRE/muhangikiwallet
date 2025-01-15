@@ -45,8 +45,8 @@ def home(request):
     total_retrait_objectif_CDF = RetraitsObjectif.objects.filter(transaction__agent=agent, devise="CDF", transaction__statut="Approuvé").aggregate(total=Sum('montant'))['total'] or 0
     total_retrait_objectif_USD = RetraitsObjectif.objects.filter(transaction__agent=agent, devise="USD", transaction__statut="Approuvé").aggregate(total=Sum('montant'))['total'] or 0
 
-    total_annulation_objectif_CDF = Transactions.objects.filter(agent=agent, devise="CDF", statut="Approuvé", type="annulation_objectif").aggregate(total=Sum('montant'))['total'] or 0
-    total_annulation_objectif_USD = Transactions.objects.filter(agent=agent, devise="USD", statut="Approuvé", type="annulation_objectif").aggregate(total=Sum('montant'))['total'] or 0
+    total_annulation_objectif_CDF = AnnulationObjectif.objects.filter(transaction__agent=agent, devise="CDF", statut="Approuvé").aggregate(total=Sum('montant'))['total'] or 0
+    total_annulation_objectif_USD = AnnulationObjectif.objects.filter(transaction__agent=agent, devise="USD", statut="Approuvé").aggregate(total=Sum('montant'))['total'] or 0
 
     total_depot_inscription_CDF = Transactions.objects.filter(agent=agent, devise="CDF", statut="Approuvé", type="depot_inscription").aggregate(total=Sum('montant'))['total'] or 0
     total_depot_inscription_USD = Transactions.objects.filter(agent=agent, devise="USD", statut="Approuvé", type="depot_inscription").aggregate(total=Sum('montant'))['total'] or 0
@@ -54,9 +54,12 @@ def home(request):
     total_retraits_CDF = Transactions.objects.filter(agent=agent, devise="CDF", statut="Approuvé", type="retrait").aggregate(total=Sum('montant'))['total'] or 0
     total_retraits_USD = Transactions.objects.filter(agent=agent, devise="USD", statut="Approuvé", type="retrait").aggregate(total=Sum('montant'))['total'] or 0
 
-    total_retraits_admin_CDF = Transactions.objects.filter(devise="CDF", type="retrait_admin", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
-    total_retraits_admin_USD = Transactions.objects.filter(devise="USD", type="retrait_admin", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
+    total_retraits_admin_CDF = Transactions.objects.filter(agent=agent, devise="CDF", type="retrait_admin", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
+    total_retraits_admin_USD = Transactions.objects.filter(agent=agent, devise="USD", type="retrait_admin", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
     
+    total_retraits_tout_CDF = Transactions.objects.filter(agent=agent, devise="CDF", type="retrait_tout", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
+    total_retraits_tout_USD = Transactions.objects.filter(agent=agent, devise="USD", type="retrait_tout", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
+
     transactions = Transactions.objects.filter(agent=agent).order_by("-date")
     taches = Transactions.objects.filter(agent=agent, statut="En attente").order_by("-date")
     
@@ -68,13 +71,28 @@ def home(request):
         "total_depot_objectif_USD": float(total_depot_objectif_USD) - float(total_retrait_objectif_USD) - float(total_annulation_objectif_USD),
         "total_retraits_CDF": total_retraits_CDF,
         "total_retraits_USD": total_retraits_USD,
-        "solde_CDF": float(solde_CDF) + float(total_prets_rembourses_CDF) + float(total_depot_inscription_CDF) - float(total_prets_CDF) - float(total_retraits_CDF) - float(total_retraits_admin_CDF),
-        "solde_USD": float(solde_USD) + float(total_prets_rembourses_USD) + float(total_depot_inscription_USD) - float(total_prets_USD) - float(total_retraits_USD) - float(total_retraits_admin_USD),
+        "solde_CDF": float(solde_CDF) + float(total_prets_rembourses_CDF) + float(total_depot_inscription_CDF) + float(total_annulation_objectif_CDF)/10 - float(total_prets_CDF) - float(total_retraits_CDF) - float(total_retraits_tout_CDF) - float(total_retraits_admin_CDF),
+        "solde_USD": float(solde_USD) + float(total_prets_rembourses_USD) + float(total_depot_inscription_USD) + float(total_annulation_objectif_USD)/10 - float(total_prets_USD) - float(total_retraits_USD) - float(total_retraits_tout_USD) - float(total_retraits_admin_USD),
         "transactions": transactions,
         "taches": taches
     }
 
     return render(request, "agents/home.html", context)
+
+@login_required
+@verifier_agent
+def prets(request):
+    prets = Prets.objects.filter(transaction__agent=request.user.agent, statut__in=["Approuvé", "Depassé"]).order_by("-date_remboursement")
+
+    for pret in prets:
+        if pret.statut == "Approuvé" and timezone.now() > pret.date_remboursement:
+            pret.montant_remboursé += 5 * (2800 if pret.devise == "CDF" else 1)
+            pret.statut = "Depassé"
+            pret.save()
+            
+    context = {"prets": prets}
+    return render(request, "agents/prets.html", context)
+
 
 @login_required
 @verifier_agent
@@ -112,10 +130,10 @@ def voir_transaction(request, transaction_id):
                         contribution_actuelle = Contributions.objects.filter(transaction__membre=membre, mois=membre.mois_contribution, statut="Approuvé").aggregate(total=Sum('montant'))['total'] or 0
 
                         if contribution_actuelle >= float(membre.contribution_mensuelle.montant):
-                            membre.mois_contribution = membre.mois_contribution + timedelta(days=30)
+                            membre.mois_contribution = membre.mois_contribution.replace(day=15) + timedelta(days=31)
                             membre.save()
 
-                    case "pret" :
+                    case "pret":
                         pret = Prets.objects.filter(transaction=transaction).first()
                         pret.statut = "Approuvé"
                         pret.date_approbation = timezone.now()
@@ -167,20 +185,20 @@ def voir_transaction(request, transaction_id):
                         pret.solde_remboursé += transaction.montant
                         
                         if pret.solde_remboursé >= pret.montant_remboursé:
-                            pret.statut = "Remboursé"
-                            pret.date_remboursement = timezone.now()
-                            pret.transaction.save()
-
                             if pret.statut == "Depassé":
                                 BalanceAdmin.objects.create(
                                     montant=5 * (2800 if pret.devise == "CDF" else 1),
                                     devise=pret.devise,
                                     type="remboursement_pret"
                                 )
+
+                            pret.statut = "Remboursé"
+                            pret.date_remboursement = timezone.now()
+                            pret.transaction.save()
                             
                         pret.save()
 
-                    case"depot_objectif":
+                    case "depot_objectif":
                         depot_objectif = DepotsObjectif.objects.filter(transaction=transaction).first()
                         objectif = depot_objectif.objectif
 
@@ -205,7 +223,7 @@ def voir_transaction(request, transaction_id):
                             type="depot_inscription"
                         )
 
-                    case"retrait":
+                    case "retrait":
                         retrait = Retraits.objects.filter(transaction=transaction).first()
                         retrait.statut = "Approuvé"
                         retrait.date_approbation = timezone.now()
@@ -217,7 +235,7 @@ def voir_transaction(request, transaction_id):
                             type="retrait"
                         )
 
-                    case"retrait_admin":
+                    case "retrait_admin":
                         retrait_admin = RetraitsAdmin.objects.filter(transaction=transaction).first()
                         retrait_admin.statut = "Approuvé"
                         retrait_admin.date_approbation = timezone.now()
@@ -226,27 +244,43 @@ def voir_transaction(request, transaction_id):
                     case "retrait_tout":
                         membre = transaction.membre
 
+                        depot_inscription = DepotsInscription.objects.filter(membre=membre).first()
+                        depot_inscription.transaction = None
+                        depot_inscription.save()
+
                         for pret in Prets.objects.filter(membre=membre, transaction__statut="Approuvé"):
                             pret.membre = None
-                            pret.transaction = None
-                            # pret.statut = "Annulé"
                             pret.save()
 
-                        for remboursement_pret in RemboursementsPret.objects.filter(pret__membre=membre, transaction__statut="Approuvé"):
-                            remboursement_pret.transaction = None
-                            # remboursement_pret.statut = "Annulé"
-                            remboursement_pret.save()
+                        for trans in Transactions.objects.filter(membre=membre):
+                            if trans.type != "retrait_tout":
+                                trans.membre = None
+                                trans.save()
 
-                        Transactions.objects.filter(membre=membre).delete()
+                        for depot_objectif in DepotsObjectif.objects.filter(objectif__membre=membre):
+                            depot_objectif.objectif = None
+                            depot_objectif.save()
 
-                        for benefice in Benefices.objects.filter(membre=membre): benefice.delete()
+                        for retrait_objectif in RetraitsObjectif.objects.filter(membre=membre):
+                            retrait_objectif.objectif = None
+                            retrait_objectif.membre = None
+                            retrait_objectif.save()
+
+                        for annulation_objectif in AnnulationObjectif.objects.filter(membre=membre):
+                            annulation_objectif.objectif = None
+                            annulation_objectif.membre = None
+                            annulation_objectif.save()
+
+                        for benefice in Benefices.objects.filter(membre=membre):
+                            benefice.membre = None
+                            benefice.save()
+
                         for objectif in Objectifs.objects.filter(membre=membre): objectif.delete()
 
-                        membre.status = True
-                        membre.save()
+                        # membre.save()
 
                         BalanceAdmin.objects.create(
-                            montant=float(transaction.montant) * 0.1,
+                            montant=float(transaction.montant) / 9,
                             devise=transaction.devise,
                             type="retrait_tout"
                         )
@@ -272,13 +306,13 @@ def voir_transaction(request, transaction_id):
                         objectif.save()
 
                         BalanceAdmin.objects.create(
-                            montant=float(transaction.montant) * annulation_objectif.frais,
+                            montant=float(annulation_objectif.montant) * annulation_objectif.frais,
                             devise=transaction.devise,
                             type="annulation_objectif"
                         )
 
                     case _: pass
-
+                
                 transaction.save()
                 messages.success(request, "La transaction a été approuvée avec succès")
                 
@@ -300,11 +334,7 @@ def voir_transaction(request, transaction_id):
 @login_required
 @verifier_agent
 def rejetter_transaction(request, transaction_id):
-    # depot = DepotsInscription.objects.filter(transaction=get_object_or_404(Transactions, pk=transaction_id)).first()
-    transaction=get_object_or_404(Transactions, pk=transaction_id)
-
-    # depot.statut = depot.transaction.statut = "Rejeté"
-    # depot.date_approbation = depot.transaction.date_approbation = timezone.now()
+    transaction = get_object_or_404(Transactions, pk=transaction_id)
 
     transaction.statut = "Rejeté"
     transaction.date = timezone.now()
@@ -325,10 +355,10 @@ def rejetter_transaction(request, transaction_id):
             remboursement_pret.statut = "Rejeté"
             remboursement_pret.save()
 
-        # case "depot_objectif":
-        #     depot_objectif = DepotsObjectif.objects.get(transaction=transaction)
-        #     depot_objectif.statut = "Rejeté"
-        #     depot_objectif.save()
+        case "depot_objectif":
+            depot_objectif = DepotsObjectif.objects.get(transaction=transaction)
+            depot_objectif.statut = "Rejeté"
+            depot_objectif.save()
 
         case "depot_inscription":
             depot_inscription = DepotsInscription.objects.get(transaction=transaction)

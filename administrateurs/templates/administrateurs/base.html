@@ -144,6 +144,35 @@
     </style>
 </head>
 <body>
+    <div id="loader" style="display: none;">
+
+        <img src="{% static 'loader.gif' %}" alt="Loading...">
+    </div>
+    <style>
+
+    #loader {
+        position: fixed;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 1000; /* Assurez-vous qu'il est au-dessus des autres éléments */
+
+       
+    }
+    /* le loader sur la vue du mobile */
+    @media (max-width: 768px) {
+        #loader {
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000; /* Assurez-vous qu'il est au-dessus des autres éléments */
+           
+        }
+
+    }
+
+</style>
 
     <!-- Top App Bar (pour mobile) -->
     <div class="top-app-bar bg-white p-2 d-flex align-items-center justify-content-between">
@@ -337,8 +366,18 @@
             </div>
         </div>
     </div>
+    
 
     <script src="{% static 'js/bootstrap/bootstrap.bundle.min.js' %}"></script>
     <script src="{% static 'js/script.js' %}"></script>
+    <script>
+        window.onload = function() {
+            document.getElementById("loader").style.display = "none"; // Cacher le loader une fois la page chargée
+        };
+        
+        window.onbeforeunload = function() {
+            document.getElementById("loader").style.display = "block"; // Afficher le loader avant le chargement de la page
+        };
+    </script>
 </body>
 </html>

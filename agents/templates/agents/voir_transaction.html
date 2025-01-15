@@ -117,7 +117,10 @@
             Form.appendChild(passwordInput);
             
             if (Form.checkValidity()) Form.submit()
-            else Form.reportValidity();
+            else {
+                Form.reportValidity();
+                alert("Veuilllez inserer la preuve");
+            }
         });
     </script>
 

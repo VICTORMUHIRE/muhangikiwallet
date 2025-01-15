@@ -54,8 +54,8 @@ def home(request):
     total_montant_dettes_cdf = Prets.objects.filter(devise="CDF", statut__in=["Approuvé", "Remboursé", "Depassé"]).aggregate(total=Sum('montant_remboursé'))['total'] or 0
     total_montant_dettes_usd = Prets.objects.filter(devise="USD", statut__in=["Approuvé", "Remboursé", "Depassé"]).aggregate(total=Sum('montant_remboursé'))['total'] or 0
     
-    total_prets_CDF = Transactions.objects.filter(devise="CDF", statut__in=["Approuvé", "Remboursé", "Depassé"], type="pret").aggregate(total=Sum('montant'))['total'] or 0
-    total_prets_USD = Transactions.objects.filter(devise="USD", statut__in=["Approuvé", "Remboursé", "Depassé"], type="pret").aggregate(total=Sum('montant'))['total'] or 0
+    total_prets_CDF = Prets.objects.filter(devise="CDF", statut__in=["Approuvé", "Remboursé", "Depassé"]).aggregate(total=Sum('montant'))['total'] or 0
+    total_prets_USD = Prets.objects.filter(devise="USD", statut__in=["Approuvé", "Remboursé", "Depassé"]).aggregate(total=Sum('montant'))['total'] or 0
 
     total_montant_dettes_remboursees_CDF = RemboursementsPret.objects.filter(devise="CDF", statut="Approuvé").aggregate(total=Sum('montant'))['total'] or 0
     total_montant_dettes_remboursees_USD = RemboursementsPret.objects.filter(devise="USD", statut="Approuvé").aggregate(total=Sum('montant'))['total'] or 0
@@ -72,12 +72,20 @@ def home(request):
     total_montant_admin_cdf = BalanceAdmin.objects.filter(devise="CDF").aggregate(Sum('montant'))['montant__sum'] or 0
     total_montant_admin_usd = BalanceAdmin.objects.filter(devise="USD").aggregate(Sum('montant'))['montant__sum'] or 0
 
-    total_depot_inscription_CDF = DepotsInscription.objects.filter(devise="CDF", statut="Approuvé").aggregate(total=Sum('montant'))['total'] or 0
-    total_depot_inscription_USD = DepotsInscription.objects.filter(devise="USD", statut="Approuvé").aggregate(total=Sum('montant'))['total'] or 0
+    total_depot_inscription_CDF = Transactions.objects.filter(devise="CDF", statut="Approuvé", type="depot_inscription").aggregate(total=Sum('montant'))['total'] or 0
+    total_depot_inscription_USD = Transactions.objects.filter(devise="USD", statut="Approuvé", type="depot_inscription").aggregate(total=Sum('montant'))['total'] or 0
     
     # Calcul du solde total des retraits Admin
     total_retraits_admin_cdf = Transactions.objects.filter(devise="CDF", type="retrait_admin", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
     total_retraits_admin_usd = Transactions.objects.filter(devise="USD", type="retrait_admin", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
+
+    # Calcul du solde total des retraits_tout
+    total_retraits_tout_cdf = Transactions.objects.filter(devise="CDF", type="retrait_tout", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
+    total_retraits_tout_usd = Transactions.objects.filter(devise="USD", type="retrait_tout", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
+
+    # Calcul du solde total des qnnulations_objectif
+    total_annulation_objectif_cdf = AnnulationObjectif.objects.filter(devise="CDF", statut="Approuvé").aggregate(total=Sum('montant'))['total'] or 0
+    total_annulation_objectif_usd = AnnulationObjectif.objects.filter(devise="USD", statut="Approuvé").aggregate(total=Sum('montant'))['total'] or 0
 
     # Nombre total de membres, organisations et agents
     nombre_membres = Membres.objects.count()
@@ -95,8 +103,8 @@ def home(request):
     demandes_retrait_objectif = RetraitsObjectif.objects.filter(statut="En attente")
     
     context = {
-        'solde_total_entreprise_cdf': float(solde_total_entreprise_cdf) + float(total_depot_inscription_CDF) + float(total_montant_dettes_remboursees_CDF) - (float(total_prets_CDF) + float(total_retraits_cdf) + float(total_retraits_admin_cdf)),
-        'solde_total_entreprise_usd': float(solde_total_entreprise_usd) + float(total_depot_inscription_USD) + float(total_montant_dettes_remboursees_USD) - (float(total_prets_USD) + float(total_retraits_usd) + float(total_retraits_admin_usd)),
+        'solde_total_entreprise_cdf': float(solde_total_entreprise_cdf) + float(total_depot_inscription_CDF) + float(total_montant_dettes_remboursees_CDF) + float(total_annulation_objectif_cdf)/10 - (float(total_prets_CDF) + float(total_retraits_cdf) + float(total_retraits_tout_cdf) + float(total_retraits_admin_cdf)),
+        'solde_total_entreprise_usd': float(solde_total_entreprise_usd) + float(total_depot_inscription_USD) + float(total_montant_dettes_remboursees_USD) + float(total_annulation_objectif_usd)/10 - (float(total_prets_USD) + float(total_retraits_usd) + float(total_retraits_tout_usd) + float(total_retraits_admin_usd)),
         'total_dettes_cdf': float(total_montant_dettes_cdf) - float(total_montant_dettes_remboursees_CDF),
         'total_dettes_usd': float(total_montant_dettes_usd) - float(total_montant_dettes_remboursees_USD),
         'total_depots_objectifs_cdf': total_depots_objectifs_cdf,
@@ -255,9 +263,13 @@ def modifier_membre(request, membre_id):
             form.save()
             messages.success(request, "Le membre a été modifié avec succès")
             return redirect("administrateurs:membres")
-            
+        
+        else:
+            messages.error(request, "Veuillez corriger les erreurs dans le formulaire")
+    
     else:
         form = ModifierMembresForm(instance=membre)
+    
     context = {
         "form": form,
         "membre": membre
@@ -354,6 +366,9 @@ def agents(request):
         agent.total_remboursements_prets_usd = 0
         agent.total_retraits_usd = 0
         agent.total_objectifs_usd = 0
+        agent.total_annulation_objectif_usd = 0
+        agent.total_retrait_tout = 0
+
 
         for devise, rate in {"CDF": 2800, "USD": 1}.items():  # Replace with your dynamic rate fetching
             agent.total_depot_inscription_usd += float(Transactions.objects.filter(agent=agent, devise=devise, type="depot_inscription", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0) / rate
@@ -362,13 +377,17 @@ def agents(request):
             agent.total_remboursements_prets_usd += float(Transactions.objects.filter(agent=agent, devise=devise, type="remboursement_pret", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0) / rate
             agent.total_retraits_usd += float(Transactions.objects.filter(agent=agent, devise=devise, type="retrait", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0) / rate
             agent.total_objectifs_usd += float(Transactions.objects.filter(agent=agent, devise=devise, statut="Approuvé", type="depot_objectif").aggregate(Sum('montant'))['montant__sum'] or 0) / rate # Correct this line
+            agent.total_annulation_objectif_usd += float(AnnulationObjectif.objects.filter(transaction__agent=agent, devise=devise, statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0) / rate
+            agent.total_retrait_tout += float(Transactions.objects.filter(agent=agent, devise=devise, type="retrait_tout", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0) / rate
 
         agent.total_transactions_usd = (
             agent.total_contributions_usd -
             agent.total_prets_usd +
             agent.total_remboursements_prets_usd -
             agent.total_retraits_usd +
-            agent.total_depot_inscription_usd
+            agent.total_depot_inscription_usd +
+            agent.total_annulation_objectif_usd / 10 -
+            agent.total_retrait_tout
         )
 
 

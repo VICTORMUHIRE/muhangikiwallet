@@ -1,42 +1,36 @@
 {% extends 'agents/base.html' %}
 
-{% block title %}Prêts{% endblock %}
+{% block title %}Historique des prêts{% endblock %}
 
 {% block content %}
-<h1>Prêts</h1>
+    <div class="row mt-5 mt-sm-0 mb-5 mx-1 justify-content-center">
+        <div class="col-md-12">
+            <h2 class="text-center mb-4">Historique des prêts</h2>
+        </div>
+        <div class="list-group p-0 col-md-6">
+            {% for pret in prets %}
+            <div onclick="location.href='{%if pret.transaction%}{% url 'agents:transaction' pret.transaction.pk %}{%endif%}'" class="btn btn-light card mb-3 {% if pret.statut == 'Depassé' %}border-danger{% endif %}">
+                <div class="card-title d-flex align-items-center justify-content-between">
+                    <h5 class="mb-1">Prêt {{pret.pk}}</h5>
+                    <span class="badge bg-{% if pret.transaction.statut == 'Approuvé' %}success{% elif pret.statut in 'Rejeté Depassé' %}danger{% elif pret.statut == 'Remboursé' %}info{% else %}warning{% endif %}">
+                        {% if pret.statut == 'Approuvé' and pret.transaction.statut == 'En attente' %}En attente{% else %}{{ pret.statut }}{% endif %}
+                    </span>
+                </div>
 
-<div class="row mt-4">
-    <div class="col-md-12">
-        <div class="card shadow-sm">
-            <div class="card-header">
-                <h5 class="card-title">Liste des Prêts</h5>
+                <div class="card-title d-flex align-items-center justify-content-between">
+                    <span class="card-text fs-6"><strong></strong> {{ pret.montant_remboursé }} {{ pret.devise }}</span>
+                    <span class="card-text "><strong class="fw-bold"> limite: </strong>
+                        <small class="d-none d-md-inline">{{ pret.date_remboursement|date:"d E Y" }}</small>
+                        <small class="d-md-none">{{ pret.date_remboursement|date:"d M Y" }}</small>
+                        <small class="d-md-none">{{ pret.date_remboursement|date:"H:i" }}</small>
+                        <small class="d-none d-md-inline">{{ pret.date_remboursement|date:"H:i:s" }}</small>
+                    </span>
+                </div>
             </div>
-            <div class="card-body">
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>Date de demande</th>
-                            <th>Membre</th>
-                            <th>Type de pret</th>
-                            <th>Montant</th>
-                            <th>Statut</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for pret in prets %}
-                        <tr>
-                            <td>{{ pret.date_demande }}</td>
-                            <td>{{ pret.membre.prenom }} {{ pret.membre.nom }}</td>
-                            <td>{{ pret.type_pret.name }}</td>
-                            <td>{{ pret.montant|floatformat:2 }} CDF</td>
-                            <td>{{ pret.status }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+            {% empty %}
+            <p class="text-center">Aucun pret effectué</p>
+            {% endfor %}
         </div>
     </div>
-</div>
 
 {% endblock %}

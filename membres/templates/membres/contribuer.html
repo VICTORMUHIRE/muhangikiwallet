@@ -124,7 +124,10 @@
             contributionForm.appendChild(passwordInput);
 
             if (contributionForm.checkValidity()) contributionForm.submit()
-            else contributionForm.reportValidity();
+            else {
+                contributionForm.reportValidity();
+                alert("Veuilllez inserer la preuve");
+            }
         });
 
     </script>

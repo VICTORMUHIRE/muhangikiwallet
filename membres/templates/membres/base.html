@@ -1,8 +1,15 @@
+
 {% load static %}
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <!-- iphone -->    
+     <!-- <link rel="apple-touch-icon" href="{% static 'LOGO_MUHANGIKI_WALLET_PRINCIPALE.png' %}">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="Muhangiki Wallet"> -->
+
     <link rel="icon" href="{% static 'LOGO_MUHANGIKI_WALLET_PRINCIPALE.png' %}" type="image/png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
@@ -21,7 +28,7 @@
     <meta name="twitter:image" content="{% static 'LOGO_MUHANGIKI_WALLET_PRINCIPALE.png' %}">
     <meta name="msapplication-TileColor" content="#000000">
     <meta name="msapplication-TileImage" content="{% static 'LOGO_MUHANGIKI_WALLET_PRINCIPALE.png' %}">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <meta name="apple-mobile-web-app-title" content="Muhangiki Wallet">
     <link rel="apple-touch-icon" href="{% static 'LOGO_MUHANGIKI_WALLET_PRINCIPALE.png' %}">
@@ -131,6 +138,15 @@
 
         /* Affichage sur mobile */
         @media (max-width: 768px) {
+
+            #loader {
+                position: fixed;
+                left: 50%;
+                top: 50%;
+                transform: translate(-50%, -50%);
+                z-index: 1000; /* Assurez-vous qu'il est au-dessus des autres éléments */
+            
+            }
             .bottom-app-bar {
                 display: flex;
             }
@@ -147,6 +163,7 @@
     </style>
 </head>
 <body class="roboto-light">
+    
 
     <!-- Top App Bar (pour mobile) -->
     <div class="top-app-bar bg-white p-2 d-flex align-items-center justify-content-between">
@@ -290,6 +307,23 @@
             </div>
         </nav>
     </header>
+    <!-- le loader doit se stopper apres chargement -->
+    <div id="loader" style="display: none;">
+
+        <img src="{% static 'loader.gif' %}?v=1" alt="Loading...">
+    </div>
+    <style>
+
+    #loader {
+        display:block;
+        position: fixed;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 1000; /* Assurez-vous qu'il est au-dessus des autres éléments */
+       
+    }
+</style>
 
     <main class="container-fluid container-md py-4 d-flex flex-column">
         {% block content %}
@@ -357,5 +391,31 @@
 
     <script src="{% static 'js/bootstrap/bootstrap.bundle.min.js' %}"></script>
     <script src="{% static 'js/script.js' %}"></script>
+    <script>
+        const loader = document.getElementById("loader");
+    
+        function hideLoader() {
+            loader.style.display = "none";
+        }
+    
+        // Force the loader to show initially and force repaint
+        loader.offsetHeight;  
+    
+        if (document.readyState === "complete") {
+            hideLoader();
+        } else {
+            window.addEventListener("load", () => {
+                setTimeout(hideLoader, 300); 
+            });
+    
+            window.onbeforeunload = function() {
+                loader.style.display = "block";
+                loader.offsetHeight; // Force repaint on navigation
+            };
+        }
+    </script>
+    
+    
+
 </body>
 </html>
