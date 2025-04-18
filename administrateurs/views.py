@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.hashers import check_password
@@ -856,7 +857,7 @@ def voir_retrait(request, retrait_id):
                 
                 #Enregistrement du retrait du benefice dans le compte du client
                 compteMembre = retrait.membre.compte_USD if retrait.devise == "USD" else retrait.membre.compte_CDF
-                compteMembre.solde += retrait.montant               
+                compteMembre.solde += Decimal(str(retrait.montant))        
 
 
                 transaction.save()
@@ -870,7 +871,6 @@ def voir_retrait(request, retrait_id):
     
     context = {
         "form": TransactionsForm(instance=retrait.transaction),
-        "numeros_categories": numeros_categories,
         "retrait": retrait,
         "pourcentage_retrait": retrait.frais * 100,
         "frais_retrait": retrait.montant * retrait.frais,

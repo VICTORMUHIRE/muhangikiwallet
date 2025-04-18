@@ -11,7 +11,7 @@ from django.db.models import Sum
 from .models import Membres
 from .forms import MembresForm, ModifierMembresForm
 from agents.models import Agents, NumerosAgent
-from administrateurs.models import Users, NumerosCompte,git Villes, Communes, Quartiers, Avenues
+from administrateurs.models import Users, NumerosCompte,Villes, Communes, Quartiers, Avenues
 from organisations.models import Organisations
 from objectifs.models import Objectifs
 from objectifs.forms import ObjectifsForm
@@ -783,14 +783,15 @@ def retrait(request):
 
     if request.method == "POST":
         form = TransactionsForm(request.POST)
-        if timezone.now().month >= 3:
+        if timezone.now().month >= 1:
 
             if form.is_valid():
                 transaction = form.save(commit=False)
 
-                montant_retraits = float(Transactions.objects.filter(membre=membre, devise="CDF" if transaction.devise == "CDF" else "USD", statut="Approuvé", type="retrait").aggregate(total=Sum('montant'))['total'] or 0)
-                montant_benefices = float(Benefices.objects.filter(membre=membre, devise="USD" if transaction.devise == "CDF" else "USD", statut=True).aggregate(total=Sum('montant'))['total'] or 0) - montant_retraits
+                montant_retraits = float(Transactions.objects.filter(membre=membre, devise = transaction.devise, statut="Approuvé", type="retrait").aggregate(total=Sum('montant'))['total'] or 0)
+                montant_benefices = float(Benefices.objects.filter(membre=membre, devise = transaction.devise, statut=True).aggregate(total=Sum('montant'))['total'] or 0) - montant_retraits
 
+                print(transaction.montant, montant_benefices)
 
                 if not Transactions.objects.filter(membre=membre, type="retrait_tout", statut__in=["En attente", "Demande"]).exists():
                     if not Retraits.objects.filter(membre=membre, transaction__statut__in=["Demande", "En attente"], statut__in=["En attente", "Approuvé"]).exists():

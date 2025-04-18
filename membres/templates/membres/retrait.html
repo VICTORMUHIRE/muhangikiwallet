@@ -22,11 +22,13 @@
                     </div>
                 </div>
                 <div class="card-body px-1">
+                    {% comment "" %}
                     {% if date.month != 12 %}
                     <div class="alert alert-warning fade show text-center fw-bold" role="alert">
                         Les retraits ne sont disponibles qu'en Décembre
                     </div>
                     {% endif %}
+                    {% endcomment %}
                     <form method="post" enctype="multipart/form-data" id="withdraw-form">
                         {% csrf_token %}
 
@@ -37,7 +39,10 @@
                             </div>
                             <div class="form-group col-md-4">
                                 <label class="form-label" for="{{ form.devise.id_for_label }}">Devise</label>
-                                <input type="text" class="form-control" id="{{ form.devise.id_for_label }}" name="{{ form.devise.html_name }}" value="{{ membre.contribution_mensuelle.devise|default:'CDF'}}" readonly>
+                                <select class="form-select" id="{{ form.devise.id_for_label }}" name="{{ form.devise.html_name }}">
+                                    <option value="CDF" {% if form.devise.value == 'CDF' %}selected{% endif %}>CDF</option>
+                                    <option value="USD" {% if form.devise.value == 'USD' %}selected{% endif %}>USD</option>
+                                </select>
                             </div>
                         </div>
                         
@@ -55,7 +60,7 @@
                         </div>
 
                         <div class="form-group text-center">
-                            <button type="button" class="btn btn-mw" data-bs-toggle="modal" data-bs-target="#confirmationModal" {% if date.month != 12 %}disabled{% endif %}>
+                            <button type="button" class="btn btn-mw" data-bs-toggle="modal" data-bs-target="#confirmationModal" {% comment "" %}{% if date.month != 12 %}disabled{% endif %}{% endcomment %}>
                                 Confirmer
                             </button>
                         </div>
@@ -91,13 +96,14 @@
 
 <script>
     const montantInput = document.getElementById('{{ form.montant.id_for_label }}');
+    const deviseInput = document.getElementById('{{ form.devise.id_for_label }}');
     const pourcentageRetraitInput = document.getElementById('pourcentage_retrait');
     const fraisRetraitInput = document.getElementById('frais_retrait');
     const montantARecevoirInput = document.getElementById('montant_a_recevoir');
-    const devise = '{{ membre.contribution_mensuelle.devise }}';
-
+    
     function calculate(event) {
-        const montant = parseFloat(montantInput.value);
+        const montant = parseFloat(montantInput.value) || 0;
+        const devise = deviseInput.value;
         let frais = 0;
 
         if (devise === 'CDF') montant_USD = montant / 2800;

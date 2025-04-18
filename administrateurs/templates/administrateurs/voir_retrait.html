@@ -25,7 +25,8 @@
             {% csrf_token %}
             <input type="hidden" name="montant" value="{{ montant_à_retirer|stringformat:'.2f' }}">
             <input type="hidden" name="devise" value="{{ retrait.devise }}">
-    
+            
+            {% comment "" %}
             <div class="mb-3">
                 <label for="{{ form.numero_agent.id_for_label }}" class="form-label">Numéro de l'agent</label>
                 <select class="form-control form-select" id="{{ form.numero_agent.id_for_label }}" name="{{ form.numero_agent.html_name }}">
@@ -38,7 +39,8 @@
                     {% endfor %}
                 </select>
             </div>
-    
+            {% endcomment %}
+
             <div class="d-flex justify-content-center">
                 <input type="button" value="Approuver" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#passwordConfirmModal">
                 <a href="{% url 'administrateurs:rejeter_retrait' retrait.pk %}" class="btn btn-danger" onclick="return confirm('Êtes-vous sûr de vouloir rejeter cette demande ?')">Rejeter</a>
