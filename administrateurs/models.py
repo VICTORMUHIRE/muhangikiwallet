@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.db import models
 from django.contrib.auth.models import AbstractUser, PermissionsMixin
 from django.conf import settings
@@ -113,6 +114,7 @@ class TypesCarteIdentite(models.Model):
 class NumerosCompte(models.Model):
     numero = models.CharField(max_length=15, unique=True, validators=[RegexValidator(regex=r'^MW-\d{4}-\d{4}-\d{2}$', message="Numéro de compte invalide.")], verbose_name="Numéro de compte")
     devise = models.CharField(max_length=3, choices=[('CDF', 'CDF'), ('USD', 'USD')], verbose_name="Devise")
+    solde = models.DecimalField(max_digits=10, decimal_places=2,blank=True,null=True, verbose_name="solde", default=Decimal("0.00"))
     type = models.CharField(max_length=20, choices=[(tag.value, tag.name) for tag in TypesUtilisateur], default='membre', verbose_name="Type d'utilisateur")
 
     description = models.TextField(blank=True, null=True, verbose_name="Description")

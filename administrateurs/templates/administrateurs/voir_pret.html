@@ -48,6 +48,7 @@
                 <input type="hidden" class="form-control" id="{{ form.montant.id_for_label }}" name="{{ form.montant.html_name }}" value="{{ form.montant.value|stringformat:'.2f' }}" placeholder="Entrez le montant">
                 <input type="hidden" class="form-select" id="{{ form.devise.id_for_label }}" name="{{ form.devise.html_name }}" value="{{ form.devise.value }}">
 
+                {% comment "" %}
                 <div class="mb-3">
                     <label for="{{ transaction_form.numero_agent.id_for_label }}" class="form-label">Numéro de l'agent</label>
                     <select class="form-control form-select" id="{{ transaction_form.numero_agent.id_for_label }}" name="{{ transaction_form.numero_agent.html_name }}">
@@ -60,12 +61,14 @@
                         {% endfor %}
                     </select>
                 </div>
-
+                                {% endcomment %}
                 <div class="d-flex justify-content-center">
                     <input type="button" value="Approuver" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#passwordConfirmModal">
                     <!-- <input type="button" value="Rejeter" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#passwordConfirmModal" onclick="this.name = 'action';"> -->
                     <a href="{% url 'administrateurs:rejeter_pret' pret.pk %}" class="btn btn-danger" onclick="return confirm('Êtes-vous sûr de vouloir rejeter ce pret ?')">Rejeter</a>
                 </div>
+
+
             </form>
         </div>
 

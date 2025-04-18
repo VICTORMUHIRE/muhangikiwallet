@@ -55,6 +55,7 @@
                             </select>
                         </div> -->
 
+                        {% comment "" %}
                         <div class="mb-3">
                             <label for="{{ form.numero_agent.id_for_label }}" class="form-label">Numéro de l'agent</label>
                             <select class="form-control form-select" id="{{ form.numero_agent.id_for_label }}" name="{{ form.numero_agent.html_name }}">
@@ -75,10 +76,11 @@
                                 <span class="upload-icon"><i class="fas fa-image"></i></span>
                             </div>
                         </div>
-    
+                        {% endcomment %}
+
                         <div class="form-group text-center">
                             <button type="button" class="btn btn-mw text-white" id="submitLoanBtn" data-bs-toggle="modal" data-bs-target="#passwordConfirmModal">
-                                Confirmer la Demande
+                                Confirmer le Remboursement
                             </button>
                         </div>
     

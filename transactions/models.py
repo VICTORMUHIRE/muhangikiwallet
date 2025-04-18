@@ -53,7 +53,7 @@ class Transactions(models.Model):
     montant = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Montant")
     devise = models.CharField(max_length=3, choices=DEVISE_CHOICES, verbose_name="Devise")
 
-    preuve = models.ImageField(upload_to="preuves/transactions/", blank=True, verbose_name="Preuve de transaction")
+    preuve = models.ImageField(upload_to="preuves/transactions/", blank=True, null=True, verbose_name="Preuve de transaction")
     
     date = models.DateTimeField(auto_now_add=True, verbose_name="Date")
     date_approbation = models.DateTimeField(blank=True, null=True, verbose_name="Date d'approbation")
@@ -178,7 +178,7 @@ class Contributions(models.Model):
 
     date = models.DateTimeField(auto_now_add=True, verbose_name="Date")
     date_approbation = models.DateTimeField(blank=True, null=True, verbose_name="Date d'approbation")
-    mois = models.DateField(verbose_name="Mois")
+    mois = models.DateField(blank=True,null=True,verbose_name="Mois")
     
     transaction = models.ForeignKey(Transactions, on_delete=models.CASCADE, blank=True, related_name="contribution", verbose_name="Transaction")
 

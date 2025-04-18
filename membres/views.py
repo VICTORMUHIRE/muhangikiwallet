@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.contrib import messages
 from django.core.files.storage import FileSystemStorage
 from django.conf import settings
@@ -10,19 +11,20 @@ from django.db.models import Sum
 from .models import Membres
 from .forms import MembresForm, ModifierMembresForm
 from agents.models import Agents, NumerosAgent
-from administrateurs.models import Users, NumerosCompte, Villes, Communes, Quartiers, Avenues
+from administrateurs.models import Users, NumerosCompte,git Villes, Communes, Quartiers, Avenues
 from organisations.models import Organisations
 from objectifs.models import Objectifs
 from objectifs.forms import ObjectifsForm
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import login, update_session_auth_hash
-from transactions.models import Transactions, Prets, RemboursementsPret, TypesPret, Contributions, DepotsObjectif, Retraits, Transferts, DepotsInscription, Benefices, RetraitsObjectif, AnnulationObjectif
+from transactions.models import BalanceAdmin, Transactions, Prets, RemboursementsPret, TypesPret, Contributions, DepotsObjectif, Retraits, Transferts, DepotsInscription, Benefices, RetraitsObjectif, AnnulationObjectif
 from transactions.forms import ContributionsForm, PretsForm, TransfertsForm, RetraitsForm, DepotsInscriptionForm, TypesPretForm, TransactionsForm, DepotsObjectifForm
 from datetime import datetime, timedelta
 from django.utils import timezone
 from functools import wraps
 from random import randint
 from django.http import JsonResponse
+from django.db import transaction as db_transaction
 
 def verifier_membre(func):
     def verify(request, *args, **kwargs):
@@ -194,6 +196,10 @@ def termes_et_conditions(request):
 @verifier_membre
 def home(request):
     membre = request.user.membre
+
+    compte_usd = membre.compte_USD
+    compte_cdf = membre.compte_CDF
+
     objectifs = Objectifs.objects.filter(membre=membre)
 
     solde_CDF = Transactions.objects.filter(membre=membre, devise="CDF", statut="Approuvé", type="contribution").aggregate(total=Sum('montant'))['total'] or 0
@@ -218,6 +224,8 @@ def home(request):
 
     context = {
         "membre": membre,
+        "compte_usd":compte_usd.solde,
+        "compte_cdf":compte_cdf.solde,
         "objectifs": objectifs,
         "total_prets_CDF": float(total_prets_CDF) - float(total_prets_rembourses_CDF),
         "total_prets_USD": float(total_prets_USD) - float(total_prets_rembourses_USD),
@@ -291,67 +299,57 @@ def contributions(request):
 @verifier_membre
 def contribuer(request):
     membre = request.user.membre
-    contribution_actuelle = Contributions.objects.filter(transaction__membre=membre, mois=membre.mois_contribution, statut="Approuvé").aggregate(total=Sum('montant'))['total'] or 0
-
-    reseaux = NumerosAgent.objects.values_list('reseau', flat=True).distinct()
-    numeros_categories = {reseau: [] for reseau in reseaux}
-    for reseau in reseaux:
-        for numero_agent in NumerosAgent.objects.filter(reseau=reseau):
-            numeros_categories[reseau].append((numero_agent.numero, numero_agent.pk))
 
     if request.method == 'POST':
-        form = TransactionsForm(request.POST, request.FILES)
+        form = TransactionsForm(request.POST)
         mot_de_passe = request.POST.get('mot_de_passe')
 
         if check_password(mot_de_passe, request.user.password):
             if form.is_valid():
-                contribution_mensuelle = membre.contribution_mensuelle
-                transaction = form.save(commit=False)
+                montant = form.cleaned_data['montant']
+                devise = form.cleaned_data['devise']
 
-                transaction.devise = contribution_mensuelle.devise
-                transaction.agent = transaction.numero_agent.agent
-                transaction.type = "contribution"
-                transaction.statut = "En attente"
-                transaction.membre = membre
+                # Vérifier le solde selon la devise
+                compte = membre.compte_USD if devise == "USD" else membre.compte_CDF
 
-                if not Transactions.objects.filter(membre=membre, type="contribution", statut="En attente").exists():
-                    if transaction.montant > 0 and transaction.montant <= float(contribution_mensuelle.montant) - contribution_actuelle:
+                if montant <= compte.solde and montant > 0:
+                    with db_transaction.atomic(): 
+                        # Débit du compte
+                        compte.solde -= montant
+                        compte.save()
+
+                        # Création de la transaction
+                        transaction = form.save(commit=False)
+                        transaction.devise = devise
+                        transaction.type = "contribution"
+                        transaction.statut = "Approuvé"  # ou "En attente"
+                        transaction.membre = membre
                         transaction.save()
 
+                        # Création de la contribution liée
                         Contributions.objects.create(
-                                transaction=transaction,
-                                montant=transaction.montant,
-                                devise=transaction.devise,
-                                mois=membre.mois_contribution
-                            )
+                            transaction=transaction,
+                            montant=montant,
+                            devise=devise,
+                            mois=membre.mois_contribution,
+                            statut="Approuvé"  # ou "En attente"
+                        )
 
-                        messages.success(request, "Votre contribution a été enregistrée avec succès !")
-                        return redirect('membres:contributions')
-                    
-                    else:
-                        messages.error(request, "Le montant doit être supérieur à zéro et inférieur ou égal au montant de votre contribution mensuelle")
+                        messages.success(request, "Contribution enregistrée avec succès.")
+                        return redirect("membres:contributions")
                 else:
-                    messages.error(request, "Vous avez déjà une contribution en attente")
-
+                    messages.error(request, "Solde insuffisant ou montant invalide.")
             else:
-                messages.error(request, "Veuillez corriger les erreurs du formulaire")
-
+                messages.error(request, "Formulaire invalide.")
         else:
-            messages.error(request, "Mot de passe incorrect")
-
+            messages.error(request, "Mot de passe incorrect.")
     else:
         form = TransactionsForm()
 
-    context = {
+    return render(request, "membres/contribuer.html", {
         "form": form,
         "membre": membre,
-        "numeros_categories": numeros_categories,
-        "contribution_mensuelle": membre.contribution_mensuelle,
-        "contribution_actuelle": contribution_actuelle,
-        "montant_restant": float(membre.contribution_mensuelle.montant) - contribution_actuelle
-    }
-
-    return render(request, "membres/contribuer.html", context)
+    })
 
 # Vue pour la page de demande de pret du membre
 @login_required
@@ -450,65 +448,98 @@ def demande_pret(request):
 @login_required
 @verifier_membre
 def rembourser_pret(request, transaction_id):
-    pret = get_object_or_404(Prets, transaction=get_object_or_404(Transactions, pk=transaction_id, membre=request.user.membre, type="pret", statut="Approuvé"), statut__in=["Approuvé", "Depassé"])
+    pret = get_object_or_404(
+        Prets,
+        transaction=get_object_or_404(
+            Transactions,
+            pk=transaction_id,
+            membre=request.user.membre,
+            type="pret",
+            statut="Approuvé"
+        ),
+        statut__in=["Approuvé", "Depassé","Remboursé"]
+    )
 
-    reseaux = NumerosAgent.objects.values_list('reseau', flat=True).distinct()
-    numeros_categories = {reseau: [] for reseau in reseaux}
+    if pret.statut == "Remboursé":
+        messages.warning(request, "Ce prêt est déjà totalement remboursé.")
+        return redirect("membres:demande_pret")
 
-    for reseau in reseaux:
-        for numero_agent in NumerosAgent.objects.filter(reseau=reseau):
-            numeros_categories[reseau].append((numero_agent.numero, numero_agent.pk))
+    compte_membre = pret.membre.compte_USD if pret.devise == "USD" else pret.membre.compte_CDF
+    montant_restant = pret.montant_remboursé - pret.solde_remboursé
 
     if request.method == "POST":
         form = TransactionsForm(request.POST, request.FILES)
-    
+        mot_de_passe = request.POST.get('password')
+
         if form.is_valid():
-            # Vérification du mot de passe
-            mot_de_passe = request.POST.get('password')
+            if not check_password(mot_de_passe, request.user.password):
+                messages.error(request, "Mot de passe incorrect. Veuillez réessayer.")
+                return redirect(request.path)
 
-            if check_password(mot_de_passe, request.user.password):
-                transaction = form.save(commit=False)
-                transaction.membre=request.user.membre
-                transaction.agent=transaction.numero_agent.agent
-                transaction.type= "remboursement_pret"
-                transaction.statut="En attente"
-                transaction.description = f"Remboursement de pret N°{pret.pk}"
+            montant = form.cleaned_data['montant']
 
-                if not Transactions.objects.filter(membre=request.user.membre, statut="En attente", type="remboursement_pret").exists():
-                    if transaction.montant > 0 and transaction.montant <= (pret.montant_remboursé - pret.solde_remboursé):
-                        transaction.save()
+            # Validation du montant
+            if montant <= 0 or montant > montant_restant or montant > compte_membre.solde:
+                messages.error(request, "Montant invalide ou solde insuffisant.")
+                return redirect(request.path)
 
-                        RemboursementsPret.objects.create(
-                            pret=pret,
-                            montant=transaction.montant,
-                            devise=transaction.devise,
-                            transaction=transaction
-                        )
+            # Vérifier s'il n'existe pas déjà une transaction en attente (facultatif maintenant)
+            if Transactions.objects.filter(
+                membre=request.user.membre,
+                type="remboursement_pret",
+                statut="En attente"
+            ).exists():
+                messages.error(request, "Une demande de remboursement est déjà en attente.")
+                return redirect(request.path)
 
-                        messages.success(request, 'Votre demande de pret a été soumise avec succès !')
-                        return redirect('membres:demande_pret')  # Redirigez vers
-                
-                    else:
-                        # Solde insuffisant ou prets en cours, afficher un message d'erreur
-                        messages.error(request, 'Solde invalide, veuillez réessayer')
-                
-                else:
-                    messages.error(request, 'Vous avez déjà une demande de remboursement en cours, veuillez patienter qu\'elle soit traitée')
+            # Créer et enregistrer la transaction
+            transaction = form.save(commit=False)
+            transaction.membre = request.user.membre
+            transaction.type = "remboursement_pret"
+            transaction.statut = "Approuvé"
+            transaction.description = f"Remboursement automatique du prêt N°{pret.pk}"
+            transaction.date_approbation = timezone.now()
+            transaction.save()
 
-            else:
-                # Mot de passe incorrect, afficher un message d'erreur
-                messages.error(request, 'Mot de passe incorrect. Veuillez réessayer')
+            # Créer l'objet de remboursement
+            RemboursementsPret.objects.create(
+                pret=pret,
+                montant=montant,
+                devise=pret.devise,
+                transaction=transaction,
+                statut="Remboursé"
+            )
+
+            # Mise à jour du prêt
+            pret.solde_remboursé += montant
+            if pret.solde_remboursé >= pret.montant_remboursé:
+                pret.solde_remboursé = pret.montant_remboursé  # éviter dépassement
+                if pret.statut == "Depassé":
+                    BalanceAdmin.objects.create(
+                        montant=5 * (2800 if pret.devise == "CDF" else 1),
+                        devise=pret.devise,
+                        type="remboursement_pret"
+                    )
+                pret.statut = "Remboursé"
+                pret.date_remboursement = timezone.now()
+                pret.transaction.save()
+            pret.save()
+
+            # Mise à jour du compte
+            compte_membre.solde -= montant
+            compte_membre.save()
+
+            messages.success(request, "Remboursement effectué avec succès !")
+            return redirect("membres:demande_pret")
         else:
-            messages.error(request, 'Veuillez corriger les erreurs dans le formulaire')
-
+            messages.error(request, "Veuillez corriger les erreurs dans le formulaire.")
     else:
-        form = TransactionsForm(request.POST)
-        
+        form = TransactionsForm()
+
     context = {
         "form": form,
         "pret": pret,
-        "montant_restant": pret.montant_remboursé - pret.solde_remboursé,
-        "numeros_categories": numeros_categories
+        "montant_restant": montant_restant,
     }
 
     return render(request, "membres/rembourser_pret.html", context)
@@ -742,22 +773,29 @@ def objectif(request, objectif_id):
 @verifier_membre
 def retrait(request):
     membre = get_object_or_404(Membres, user=request.user)
-    reseaux = NumerosAgent.objects.values_list('reseau', flat=True).distinct()
 
-    montant_retraits = float(Transactions.objects.filter(membre=membre, devise="CDF" if membre.contribution_mensuelle.devise == "CDF" else "USD", statut="Approuvé", type="retrait").aggregate(total=Sum('montant'))['total'] or 0)
-    montant_benefices = float(Benefices.objects.filter(membre=membre, devise="CDF" if membre.contribution_mensuelle.devise == "CDF" else "USD", statut=True).aggregate(total=Sum('montant'))['total'] or 0) - montant_retraits
+    #verfication s'il y a deja eu un retrait
+    montant_retraits_cdf = float(Transactions.objects.filter(membre=membre, devise="CDF", statut="Approuvé", type="retrait").aggregate(total=Sum('montant'))['total'] or 0)
+    montant_retraits_usd = float(Transactions.objects.filter(membre=membre, devise="USD", statut="Approuvé", type="retrait").aggregate(total=Sum('montant'))['total'] or 0)
+
+    montant_benefices_cdf = float(Benefices.objects.filter(membre=membre, devise="CDF", statut=True).aggregate(total=Sum('montant'))['total'] or 0) - montant_retraits_cdf
+    montant_benefices_usd = float(Benefices.objects.filter(membre=membre, devise="USD", statut=True).aggregate(total=Sum('montant'))['total'] or 0) - montant_retraits_usd
 
     if request.method == "POST":
         form = TransactionsForm(request.POST)
-        if timezone.now().month == 12:
+        if timezone.now().month >= 3:
 
             if form.is_valid():
                 transaction = form.save(commit=False)
 
+                montant_retraits = float(Transactions.objects.filter(membre=membre, devise="CDF" if transaction.devise == "CDF" else "USD", statut="Approuvé", type="retrait").aggregate(total=Sum('montant'))['total'] or 0)
+                montant_benefices = float(Benefices.objects.filter(membre=membre, devise="USD" if transaction.devise == "CDF" else "USD", statut=True).aggregate(total=Sum('montant'))['total'] or 0) - montant_retraits
+
+
                 if not Transactions.objects.filter(membre=membre, type="retrait_tout", statut__in=["En attente", "Demande"]).exists():
                     if not Retraits.objects.filter(membre=membre, transaction__statut__in=["Demande", "En attente"], statut__in=["En attente", "Approuvé"]).exists():
                         if transaction.montant > 0 and transaction.montant <= montant_benefices:
-                            montant = transaction.montant if membre.contribution_mensuelle.devise == "USD" else transaction.montant / 2800
+                            montant = transaction.montant if transaction.devise == "USD" else transaction.montant / 2800
 
                             # montant selon les frais de retrait
                             if montant > 0 and montant <= 10: frais = 0.085
@@ -800,7 +838,8 @@ def retrait(request):
     context = {
         "form": form,
         "membre": membre,
-        "montant_benefices": montant_benefices,
+        "montant_benefices_cdf": montant_benefices_cdf,
+        "montant_benefices_usd": montant_benefices_usd,
         "date": timezone.now()
     }
 

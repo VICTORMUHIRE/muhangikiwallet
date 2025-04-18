@@ -43,8 +43,8 @@ class Membres(models.Model):
     compte_CDF = models.OneToOneField(NumerosCompte, on_delete=models.CASCADE, max_length=15, unique=True, related_name="membre", verbose_name="Compte CDF")
     compte_USD = models.OneToOneField(NumerosCompte, on_delete=models.CASCADE, max_length=15, unique=True, verbose_name="Compte USD")
 
-    contribution_mensuelle = models.ForeignKey(ContributionsMensuelles, on_delete=models.CASCADE, verbose_name="Contribution mensuelle")
-    mois_contribution = models.DateField(auto_now_add=True, verbose_name="Mois de contribution")
+    contribution_mensuelle = models.ForeignKey(ContributionsMensuelles,null=True,blank=True, on_delete=models.CASCADE, verbose_name="Contribution mensuelle")
+    mois_contribution = models.DateField(null=True,blank=True,auto_now_add=True, verbose_name="Mois de contribution")
 
     status = models.BooleanField(default=False)
 

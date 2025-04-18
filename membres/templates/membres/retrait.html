@@ -17,7 +17,8 @@
                 <div class="card-header bg-white text-center p-3 fs-4">
                     Effectuer un Retrait
                     <div class="fs-6">
-                        <label for="total_benefices" class="form-label">Total des bénéfices:</label> <span id="total_benefices" class="font-weight-bold mb-color">{{ montant_benefices|floatformat:2 }} {{ membre.contribution_mensuelle.devise }}</span>
+                        <label for="total_benefices" class="form-label">Total des bénéfices(CDF):</label> <span id="total_benefices" class="font-weight-bold mb-color">{{ montant_benefices_cdf|floatformat:2 }} CDF</span><br/>
+                        <label for="total_benefices" class="form-label">Total des bénéfices(CDF):</label> <span id="total_benefices" class="font-weight-bold mb-color">{{ montant_benefices_usd|floatformat:2 }} USD</span>
                     </div>
                 </div>
                 <div class="card-body px-1">

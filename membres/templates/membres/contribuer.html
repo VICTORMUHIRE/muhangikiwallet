@@ -4,154 +4,87 @@
 {% block title %}Contribution{% endblock %}
 
 {% block content %}
-
-    <div class="row mt-5 mt-sm-0 mb-3 mb-md-5">
+<div class="row mt-5 mt-sm-0 mb-3 mb-md-5">
     {% if messages %}
         {% for message in messages %}
-        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{message.tags}}{% endif %} alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
+        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
         {% endfor %}
     {% endif %}
 
-
-        <div class="card border-0">
-            <div class="card-header bg-white text-center fs-4">
-                Contribution mensuelle
-                <div class="fs-6">
-                    Mois : <span class="roboto-regular">{{ membre.mois_contribution|date:"E" }}</span>, Solde actuel : <span class="roboto-regular">{{ contribution_actuelle|stringformat:".2f" }} / {{ contribution_mensuelle.montant|stringformat:".2f" }} {% if contribution_mensuelle.devise == 'USD' %} $ {% else %} FC {% endif %}</span>
-                </div>
-                <div class="fs-6">
-                    Restant : <span class="roboto-regular">{{ montant_restant|stringformat:".2f" }} {% if contribution_mensuelle.devise == 'USD' %} $ {% else %} FC {% endif %}</span>
-                </div>
-            </div>
-
-            <div class="card-body px-1">
-                <form method="post" enctype="multipart/form-data" id="contributionForm">
-                    {% csrf_token %}
-                    <div class="row mb-3">
-                        <div class="form-group col-md-8">
-                            <label class="form-label" for="{{ form.montant.id_for_label }}">Contribution mensuelle</label>
-                            <input type="number" class="form-control" id="{{ form.montant.id_for_label }}" name="{{ form.montant.html_name }}" value="{% if form.montant.value %}{{ form.montant.value|stringformat:'.2f' }}{% else %}{{ montant_restant|stringformat:'.2f' }}{% endif %}" required>
-                        </div>
-                        <div class="form-group col-md-4">
-                            <div class="form-group">
-                                <label class="form-label" for="{{ form.devise.id_for_label }}">Devise</label>
-                                <input type="text" class="form-control" id="{{ form.devise.id_for_label }}" name="{{ form.devise.html_name }}" value="{{ contribution_mensuelle.devise }}" readonly required>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="numero_agent" class="form-label">Numéro de l'agent</label>
-                        <select class="form-control form-select" id="numero_agent" name="numero_agent">
-                            {% for reseau, numeros in numeros_categories.items %}  <!-- Assuming 'numeros_categories' is in context -->
-                                <optgroup label="{{ reseau }}">
-                                    {% for numero, id in numeros %}
-                                        <option value="{{ id }}">{{ numero }}</option>
-                                    {% endfor %}
-                                </optgroup>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div class="mb-3 d-flex flex-column align-items-center justify-content-center">
-                        <label for="preuve" class="form-label">Preuve de paiement</label>
-                        <input type="file" class="form-control d-none" id="preuve" name="preuve" onchange="previewImage(this);" required>
-                        <div id="imagePreview" class="image-preview text-center" onclick="document.getElementById('preuve').click();">
-                            <span class="upload-icon"><i class="fas fa-image"></i></span>
-                        </div>
-                    </div>
-
-                    <div class="form-group text-center">
-                        <button type="button" class="btn btn-mw" data-bs-toggle="modal" data-bs-target="#confirmationModal">Confirmer</button>
-                    </div>
-                </form>
+    <div class="card border-0">
+        <div class="card-header bg-white text-center fs-4">
+            Nouvelle contribution
+            <div class="fs-6 my-3" style="color: #616161;">
+                <p class="roboto-regular">Balance USD : {{ membre.compte_USD.solde|stringformat:".2f" }} $</p> 
+                <p class="roboto-regular">Balance CDF : {{ membre.compte_CDF.solde|stringformat:".2f" }} FC</p>
             </div>
         </div>
 
-        <!-- Modal -->
-        <div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="confirmationModalLabel">Confirmation du paiement</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <div class="card-body px-1">
+            <form method="post" id="contributionForm">
+                {% csrf_token %}
+                <div class="flex-col items-center mb-3">
+                    <div class="form-group col-md-6">
+                        <label class="form-label" for="{{ form.montant.id_for_label }}">Montant</label>
+                        <input type="number" class="form-control" id="{{ form.montant.id_for_label }}" name="{{ form.montant.html_name }}" value="{{ form.montant.value|stringformat:'.2f' }}" required>
                     </div>
-                    <div class="modal-body">
-                        <form id="passwordForm">
-                            {% csrf_token %}
-                            <div class="mb-3">
-                                <label for="mot_de_passe" class="form-label">Mot de passe</label>
-                                <input type="password" class="form-control" id="mot_de_passe" name="mot_de_passe" required>
-                            </div>
-                            <button type="submit" class="btn btn-mw">Valider</button>
-                        </form>
+                    <div class="form-group col-md-6">
+                        <label class="form-label" for="{{ form.devise.id_for_label }}">Devise</label>
+                        {{ form.devise }}
                     </div>
+                </div>
+
+                <div class="form-group text-center">
+                    <button type="button" class="btn btn-mw" data-bs-toggle="modal" data-bs-target="#confirmationModal">Confirmer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmationModalLabel">Confirmation du paiement</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="passwordForm">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="mot_de_passe" class="form-label">Mot de passe</label>
+                            <input type="password" class="form-control" id="mot_de_passe" name="mot_de_passe" required>
+                        </div>
+                        <button type="submit" class="btn btn-mw">Valider</button>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-    <script>
-        function previewImage(input) {
-            const previewContainer = document.getElementById('imagePreview');
-            if (input.files && input.files[0]) {
-                var reader = new FileReader();
+<script>
+    document.getElementById('passwordForm').addEventListener('submit', function(event) {
+        event.preventDefault();
 
-                reader.onload = function(e) {
-                    previewContainer.innerHTML = `<img src="${e.target.result}" style="max-width: 200px; max-height: 200px;" alt="Image Preview">`;
-                }
+        const password = document.getElementById('mot_de_passe').value;
+        const contributionForm = document.getElementById('contributionForm');
 
-                reader.readAsDataURL(input.files[0]);
-            } else {
-                previewContainer.innerHTML = '<span class="upload-icon"><i class="fas fa-upload"></i></span>';
-            }
+        const passwordInput = document.createElement('input');
+        passwordInput.type = 'hidden';
+        passwordInput.name = 'mot_de_passe';
+        passwordInput.value = password;
+        contributionForm.appendChild(passwordInput);
+
+        if (contributionForm.checkValidity()) {
+            contributionForm.submit();
+        } else {
+            contributionForm.reportValidity();
         }
-
-
-        document.getElementById('passwordForm').addEventListener('submit', function(event) {
-            event.preventDefault();
-
-            const password = document.getElementById('mot_de_passe').value;
-            const contributionForm = document.getElementById('contributionForm');
-
-            const passwordInput = document.createElement('input');
-            passwordInput.type = 'hidden';
-            passwordInput.name = 'mot_de_passe';
-            passwordInput.value = password;
-            contributionForm.appendChild(passwordInput);
-
-            if (contributionForm.checkValidity()) contributionForm.submit()
-            else {
-                contributionForm.reportValidity();
-                alert("Veuilllez inserer la preuve");
-            }
-        });
-
-    </script>
-
-    <style>
-        .image-preview {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: 200px;
-            height: 200px;
-            border: 1px dashed #ccc;
-            margin-top: 10px;
-        }
-
-        .upload-icon {
-            font-size: 3em;
-            color: #ccc;
-        }
-
-        .image-preview img {
-            max-width: 100%;
-            max-height: 100%;
-        }
-    </style>
-
+    });
+</script>
 {% endblock %}
