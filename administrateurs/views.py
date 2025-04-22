@@ -12,14 +12,14 @@ from django.db.models import Q
 from membres.models import Membres
 from organisations.models import Organisations
 from agents.models import Agents
-from .models import Administrateurs, ContributionsMensuelles, CodesReference, NumerosCompte, Users
+from .models import Administrateurs, ContributionsMensuelles, CodesReference, NumerosCompte, Users, Constantes, HistoriqueConstantes
 from agents.models import Agents, NumerosAgent
 from agents.forms import AgentsForm, ModifierAgentsForm
 from organisations.models import Organisations
 from organisations.forms import OrganisationsForm
 from transactions.models import Transactions, Prets, TypesPret, Contributions, DepotsObjectif, Retraits, Transferts, DepotsInscription, Benefices, RetraitsObjectif, AnnulationObjectif, RemboursementsPret, RetraitsAdmin, BalanceAdmin
 
-from .forms import AdministrateurForm
+from .forms import AdministrateurForm, ConstantesForm
 from membres.forms import MembresForm, ModifierMembresForm
 from organisations.forms import OrganisationsForm
 from transactions.forms import TransactionsForm, TypesPretForm, ContributionsForm, PretsForm, TransfertsForm, RetraitsForm, DepotsInscriptionForm
@@ -981,3 +981,31 @@ def refuser_retrait_tout(request, retrait_id):
     retrait.save()
     messages.success(request, "Le retrait a été rejeté avec succès")
     return redirect("administrateurs:home")
+
+
+# vues pour la modification des Constantes
+@login_required
+def constantes(request):
+    constantes = Constantes.objects.all().order_by('key')
+
+    # Forme vide par défaut
+    form = ConstantesForm()
+
+    if request.method == 'POST':
+        if request.POST.get('id'):  # Modification
+            setting = get_object_or_404(Constantes, id=request.POST['id'])
+            form = ConstantesForm(request.POST, instance=setting)
+        else:  # Nouvelle constante
+            form = ConstantesForm(request.POST)
+
+        if form.is_valid():
+            obj = form.save(commit=False)
+            obj.modifie_par = request.user
+            obj.save()
+            messages.success(request, "Constante enregistrée.")
+            return redirect('administrateurs:constantes')  # Recharge la page
+
+    return render(request, 'administrateurs/constantes.html', {
+        'settings': constantes,
+        'form': form,
+    })

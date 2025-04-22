@@ -167,6 +167,16 @@
             --orange-active: #ffe0b2; /* Orange pâle plus marqué */
         }
 
+        .ms-desktop-250 {
+            margin-left: 0 !important; 
+          }
+          
+          @media (min-width: 992px) {
+            .ms-desktop-250 {
+              margin-left: 250px !important;
+            }
+          }
+
         /* Sidebar: liens de menu */
         #sidebar .nav-link {
             color: #616161;
@@ -309,7 +319,8 @@
             </div>
         </nav>
         
-        <main class="flex-grow-1 p-3" style="background-color: #f8f9fa; overflow-y: auto; margin-left:250px">
+
+        <main class="flex-grow-1 p-3 ms-desktop-250 ms-0" style="background-color: #f8f9fa; overflow-y: auto; ">
             <!-- le loader doit se stopper apres chargement -->
             <div id="loader" style="display: none;">
                 <img src="{% static 'loader.gif' %}?v=1" alt="Loading...">

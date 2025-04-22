@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm
-from .models import Administrateurs
+from .models import Administrateurs, Constantes
 
 
 
@@ -56,3 +56,11 @@ class CustomLoginForm(AuthenticationForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['username'].widget.attrs.update({'placeholder': 'Entrez votre numéro de téléphone'})
+
+class ConstantesForm(forms.ModelForm):
+    class Meta:
+        model = Constantes
+        fields = ['key', 'value', 'type', 'description']
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 2}),
+        }

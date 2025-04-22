@@ -196,3 +196,51 @@ class Administrateurs(models.Model):
     class Meta:
         verbose_name = _("Administrateur")
         verbose_name_plural = _("Administrateurs")
+
+
+
+
+
+# creeation des modeles pour constante
+class TypeConstante(models.TextChoices):
+    PERCENTAGE = "PERCENTAGE", "Pourcentage"
+    CURRENCY = "CURRENCY", "Monétaire"
+    FLOAT = "FLOAT", "Nombre décimal"
+    EXCHANGE_RATE = "EXCHANGE_RATE", "Taux de change"
+
+
+class Constantes(models.Model):
+    key = models.CharField(max_length=100, unique=True)
+    value = models.DecimalField(max_digits=10, decimal_places=4, default=Decimal('0.0000'))
+    type = models.CharField(max_length=20, choices=TypeConstante.choices, default=TypeConstante.FLOAT)
+    description = models.TextField(blank=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    updated_by = models.ForeignKey(Administrateurs, on_delete=models.SET_NULL, null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.key}: {self.value} ({self.type})"
+
+    def save(self, *args, **kwargs):
+        if self.pk:
+            old = Constantes.objects.get(pk=self.pk)
+            if old.value != self.value:
+                HistoriqueConstantes.objects.create(
+                    setting=self,
+                    old_value=old.value,
+                    new_value=self.value,
+                    changed_by=self.modifie_par
+                )
+        super().save(*args, **kwargs)
+
+
+class HistoriqueConstantes(models.Model):
+    setting = models.ForeignKey(Constantes, on_delete=models.CASCADE, related_name="histories")
+    old_value = models.DecimalField(max_digits=10, decimal_places=5)
+    new_value = models.DecimalField(max_digits=10, decimal_places=5)
+    changed_at = models.DateTimeField(auto_now_add=True)
+    changed_by = models.ForeignKey(Administrateurs, on_delete=models.SET_NULL, null=True)
+
+    def __str__(self):
+        return f"{self.setting.key} changé de {self.old_value} à {self.new_value} le {self.changed_at}"
+
+

@@ -41,5 +41,6 @@ urlpatterns = [
     path("rejeter_retrait/<int:retrait_id>", views.rejeter_retrait, name="rejeter_retrait"),
 
     path("demande_retrait_tout/<int:retrait_id>", views.demande_retrait_tout, name="demande_retrait_tout"),
-    path("refuser_retrait_tout/<int:retrait_id>", views.refuser_retrait_tout, name="refuser_retrait_tout")
+    path("refuser_retrait_tout/<int:retrait_id>", views.refuser_retrait_tout, name="refuser_retrait_tout"),
+    path("constantes", views.constantes, name="constantes")
 ]
