@@ -140,6 +140,42 @@
                 display: none; /* Masquer la navigation standard sur mobile */
             }
         }
+        .ms-desktop-250 {
+            margin-left: 0 !important; 
+          }
+          
+          @media (min-width: 700px) {
+            .ms-desktop-250 {
+              margin-left: 250px !important;
+            }
+          }
+
+          :root {
+            --orange-hover: #fff3e0; /* Orange très léger */
+            --orange-active: #ffe0b2; /* Orange pâle plus marqué */
+        }
+
+        /* Sidebars: liens de menu */
+        #sidebars .nav-link {
+            color: #616161;
+            border-radius: 4px;
+            margin: 5px 0;
+            letter-spacing: .5px;
+            font-size: .9rem;
+            transition: background-color 0.2s ease;
+        }
+
+        #sidebars .nav-link:hover {
+            background-color: var(--orange-hover);
+            color: #000;
+        }
+
+        #sidebars .nav-link.active {
+            background-color: var(--orange-active);
+            color: #000;
+            font-weight: 500;
+        }
+
 
     </style>
 </head>
@@ -150,29 +186,29 @@
     </div>
     <style>
 
-    #loader {
-        position: fixed;
-        left: 50%;
-        top: 50%;
-        transform: translate(-50%, -50%);
-        z-index: 1000; /* Assurez-vous qu'il est au-dessus des autres éléments */
-
-       
-    }
-    /* le loader sur la vue du mobile */
-    @media (max-width: 768px) {
         #loader {
             position: fixed;
             left: 50%;
             top: 50%;
             transform: translate(-50%, -50%);
             z-index: 1000; /* Assurez-vous qu'il est au-dessus des autres éléments */
-           
+
+        
+        }
+        /* le loader sur la vue du mobile */
+        @media (max-width: 768px) {
+            #loader {
+                position: fixed;
+                left: 50%;
+                top: 50%;
+                transform: translate(-50%, -50%);
+                z-index: 1000; /* Assurez-vous qu'il est au-dessus des autres éléments */
+            
+            }
+
         }
 
-    }
-
-</style>
+    </style>
 
     <!-- Top App Bar (pour mobile) -->
     <div class="top-app-bar bg-white p-2 d-flex align-items-center justify-content-between">
@@ -223,101 +259,96 @@
         {% endif %}
     </div>
 
-    <header>
-        <nav class="navbar navbar-expand-lg navbar-light p-0">
-            <div class="container-fluid">
-                <a class="navbar-brand align-middle" href="{% url 'administrateurs:home' %}">
-                    <img src="{% static 'LOGO_MUHANGIKI_WALLET_NOIR.png' %}" alt="Logo Muhangiki Wallet" height="50" class="d-inline-block">
-                    <span>Muhangiki Wallet</span>
+     <!-- sidebar -->
+    <nav  id="sidebars" class="d-none d-md-block bg-white border-end" style="width: 250px; height:100vh; flex-shrink: 0; position:fixed">
+        <div class="position-sticky pt-3 px-2">
+        
+        <!-- Logo & Titre -->
+        <div class="sidebar-section-title px-3">
+            <a class="navbar-brand align-middle" href="{% url 'administrateurs:home' %}">
+            <img src="{% static 'LOGO_MUHANGIKI_WALLET_NOIR.png' %}" alt="Logo Muhangiki Wallet" height="50" class="d-inline-block" />
+            <span>Muhangiki Wallet</span>
+            </a>
+        </div>
+    
+        <!-- Menu Principal -->
+        <ul class="nav flex-column mb-2 mt-3">
+            {% if request.user.is_authenticated %}
+            
+            <li class="nav-item">
+            <a class="nav-link {% if request.path == '/administrateurs/' %}active{% endif %}" href="{% url 'administrateurs:home' %}">
+                <i class="fa fa-chart-line me-2"></i> Accueil
+            </a>
+            </li>
+    
+            <li class="nav-item">
+            <a class="nav-link {% if '/membres/' in request.path %}active{% endif %}" href="{% url 'administrateurs:membres' %}">
+                <i class="fa fa-piggy-bank me-2"></i> Membres
+            </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if '/agents/' in request.path %}active{% endif %}" href="{% url 'administrateurs:agents' %}">
+                    <i class="fa fa-piggy-bank me-2"></i> Agents
                 </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="collapse navbar-collapse justify-content-between" id="navbarNav"> 
-                    <ul class="navbar-nav d-flex justify-content-center flex-grow-1">
-                        {% if request.user.is_authenticated %}
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.path == '/administrateurs/' %}active{% endif %}" aria-current="page" href="{% url 'administrateurs:home' %}">
-                                <i class="fa fa-home"></i>
-                                Accueil
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if '/membres/' in request.path %}active{% endif %}" href="{% url 'administrateurs:membres' %}">
-                                <i class="fa fa-users"></i>
-                                Membres
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if '/agents/' in request.path %}active{% endif %}" href="{% url 'administrateurs:agents' %}">
-                                <i class="fa-solid fa-user-tie"></i>
-                                Agents
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if '/transactions/' in request.path %}active{% endif %}" href="{% url 'administrateurs:transactions' %}">
-                                <i class="fa fa-exchange-alt"></i>
-                                Transactions
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if '/parametres/' in request.path %}active{% endif %}" href="/admin">
-                                <i class="fa fa-cog"></i>
-                                Paramètres
-                            </a>
-                        </li>
-                    </ul>
-                    <ul class="navbar-nav rounded-4" style="background-color: #ffdeba;">
-                        <li class="nav-item dropdown">
-                            <a class="nav-link text-dark d-flex align-items-center justify-content-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                {% if user.admin.photo_profile %}
-                                <img src="{{user.admin.photo_profile.url}}" alt="Photo de profil" class="rounded-circle" height="30"> 
-                                {% elif user.admin.sexe == 'M' %}
-                                <i class="fas fa-user-circle fa-2x"></i>
-                                {% else %}
-                                <i class="fas fa-user-circle fa-2x"></i>
-                                {% endif %}
-                                <span class="mx-2 text-dark">{{ user.admin.nom }}</span>
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                                <li><a class="dropdown-item" href="#">
-                                    <i class="fa fa-user"></i>
-                                    Mon profil
-                                </a></li>
-                                <li><a class="dropdown-item" href="#">
-                                    <i class="fa fa-bell"></i>
-                                    Notifications
-                                    <span class="badge bg-secondary">3</span>
-                                </a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <!-- <li><a class="dropdown-item text-danger" href="{% url 'logout' %}">
-                                    <i class="fa fa-sign-out-alt"></i>
-                                    Déconnexion
-                                </a></li> -->
-                                <li>
-                                    <a href="#" class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#logoutModal">
-                                        <i class="fa fa-sign-out-alt"></i> Déconnexion
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                    {% else %}
-                    </ul>
-                    <ul class="navbar-nav">
-                        <li class="nav-item">
-                            <a class="nav-link active btn btn-sm py-1" href="{% url 'login' %}">Connexion</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link active btn btn-sm ms-3 py-1" href="{% url 'administrateurs:inscription' %}">Inscription</a>
-                        </li>
-                    {% endif %}
-                    </ul>
-                </div>
-            </div>
-        </nav>
-    </header>
+            </li>
 
-    <main class="container-fluid container-md py-4 d-flex flex-column">
+            <li class="nav-item">
+                <a class="nav-link {% if '/constantes/' in request.path %}active{% endif %}" href="{% url 'administrateurs:constantes' %}">
+                    <i class="fa fa-piggy-bank me-2"></i> Constantes
+                </a>
+                </li>
+    
+            <li class="nav-item">
+            <a class="nav-link {% if '/objectifs/' in request.path %}active{% endif %}" href="{% url 'administrateurs:objectifs' %}">
+                <i class="fa fa-money-check-alt me-2"></i> Objectifs
+            </a>
+            </li>
+    
+            <li class="nav-item">
+            <a class="nav-link {% if '/transactions/' in request.path %}active{% endif %}" href="{% url 'administrateurs:transactions' %}">
+                <i class="fa fa-exchange-alt me-2"></i> Transactions
+            </a>
+            </li>
+
+            {% endif %}
+        </ul>
+    
+        <!-- Section Support -->
+        <div class="sidebar-section-title px-3" style="color: #888;">Support</div>
+        <ul class="nav flex-column mb-2">
+    
+            <li class="nav-item">
+            <a class="nav-link {% if '/parametres/' in request.path %}active{% endif %}" href="/admin">
+                <i class="fa fa-cog me-2"></i> Paramètres
+            </a>
+            </li>
+    
+            <li class="nav-item">
+                <a class="nav-link {% if request.path == '/logout/' %}active{% endif %}" data-bs-toggle="modal" data-bs-target="#logoutModal" href="{% url 'logout' %}">
+                <i class="fa fa-sign-out-alt me-2"></i> Déconnexion
+                </a>
+            </li>
+        </ul>
+        </div>
+    </nav>
+
+    <main class="flex-grow-1 p-3 ms-desktop-250 ms-0" style="background-color: #f8f9fa; overflow-y: auto; ">
+        <!-- le loader doit se stopper apres chargement -->
+        <div id="loader" style="display: none;">
+            <img src="{% static 'loader.gif' %}?v=1" alt="Loading...">
+        </div>
+
+        <style>
+            #loader {
+                display:block;
+                position: fixed;
+                left: 50%;
+                top: 50%;
+                transform: translate(-50%, -50%);
+                z-index: 1000; /* Assurez-vous qu'il est au-dessus des autres éléments */
+            
+            }
+        </style>
         {% block content %}
         {% endblock %}
     </main>

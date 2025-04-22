@@ -202,17 +202,25 @@ class Administrateurs(models.Model):
 
 
 # creeation des modeles pour constante
-class TypeConstante(models.TextChoices):
-    PERCENTAGE = "PERCENTAGE", "Pourcentage"
-    CURRENCY = "CURRENCY", "Monétaire"
-    FLOAT = "FLOAT", "Nombre décimal"
-    EXCHANGE_RATE = "EXCHANGE_RATE", "Taux de change"
+class SettingKeys(models.TextChoices):
+    ABONNEMENT_ANNUEL = "abonnement_annuel", "Abonnement annuel (1ère année)"
+    RECHARGE_MOMO = "recharge_momo", "Recharge via Mobile Money"
+    RETRAIT_MOMO = "retrait_momo", "Retrait via Mobile Money"
+    RECHARGE_AGENT = "recharge_agent", "Recharge via Agent"
+    RETRAIT_AGENT = "retrait_agent", "Retrait via Agent"
+    RECHARGE_INVEST = "recharge_invest", "Recharge Investissement"
+    RETRAIT_INVEST = "retrait_invest", "Retrait Investissement"
+    RECHARGE_OBJECTIF = "recharge_objectif", "Recharge Objectif"
+    RETRAIT_OBJECTIF = "retrait_objectif", "Retrait Objectif"
+    PAIEMENT_SERVICE = "paiement_service", "Paiement Service"
+    TRANSFERT_PP = "transfert_pp", "Transfert PP"
+    RETRAIT_BENEFICE = "retrait_benefice", "Retrait bénéfices"
+    TAUX_CHANGE = "taux_change", "Taux de change"
 
 
 class Constantes(models.Model):
-    key = models.CharField(max_length=100, unique=True)
+    key = models.CharField(max_length=100,choices=SettingKeys.choices, unique=True)
     value = models.DecimalField(max_digits=10, decimal_places=4, default=Decimal('0.0000'))
-    type = models.CharField(max_length=20, choices=TypeConstante.choices, default=TypeConstante.FLOAT)
     description = models.TextField(blank=True, null=True)
     updated_at = models.DateTimeField(auto_now=True)
     updated_by = models.ForeignKey(Administrateurs, on_delete=models.SET_NULL, null=True, blank=True)
