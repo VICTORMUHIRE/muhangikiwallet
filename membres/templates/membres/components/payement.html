@@ -1,0 +1,321 @@
+<div class="col-md-6 px-3">
+  <div class="card border-0 rounded-2 shadow-sm">
+    <div class="card-body p-4">
+      <!-- Header Bienvenue -->
+      <div class="d-flex align-items-center mb-4">
+        <div
+          class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3"
+          style="width: 48px; height: 48px"
+        >
+          <i class="fas fa-user fa-lg"></i>
+        </div>
+        <div>
+          <h5 class="fw-bold mb-1">
+            Bienvenue{% if membre.sexe == "F" %}e{% endif %}
+            <span class="text-primary"
+              >{{ user.membre.nom }} {{ user.membre.postnom }}</span
+            >
+          </h5>
+          <p class="text-muted small">Gérez vos fonds facilement.</p>
+        </div>
+      </div>
+
+      <!-- Soldes -->
+      <h6 class="text-muted small fw-semibold mb-3">Vos soldes actuels</h6>
+      <div class="row">
+      <div class="col-md-6 mb-3">
+        <div class="card border rounded-3 shadow-sm">
+          <div class="card-body p-3">
+            <h6 class="text-muted mb-2">
+              <i class="fas fa-dollar-sign me-2"></i> Balance USD
+            </h6>
+            <p class="h5 mb-0 text-success">
+              {{ compte_usd|floatformat:2 }} USD
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6 mb-3">
+        <div class="card border rounded-3 shadow-sm">
+          <div class="card-body p-3">
+            <h6 class="text-muted mb-2">
+              <i class="fas fa-coins me-2"></i> Balance CDF
+            </h6>
+            <p class="h5 mb-0 text-primary">
+              {{ compte_cdf|floatformat:2 }} CDF
+            </p>
+          </div>
+        </div>
+      </div>
+      </div>
+      <div class="d-flex flex-wrap gap-2">
+        <button
+          class="btn btn-success btn-sm rounded-pill px-3"
+          data-bs-toggle="modal"
+          data-bs-target="#depositModal"
+        >
+          <i class="fas fa-arrow-alt-circle-up me-1"></i> Recharger
+        </button>
+        <button
+          class="btn btn-danger btn-sm rounded-pill px-3"
+          data-bs-toggle="modal"
+          data-bs-target="#withdrawModal"
+        >
+          <i class="fas fa-arrow-alt-circle-down me-1"></i> Retirer
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div
+  class="modal fade"
+  id="depositModal"
+  tabindex="-1"
+  aria-labelledby="depositModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="depositModalLabel">
+          Recharger votre compte
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <p>Choisissez la devise à recharger :</p>
+        <div class="d-grid gap-2 mb-3">
+          <button
+            class="btn btn-outline-success btn-sm rounded-pill"
+            onclick="showDepositNodes('USD')"
+          >
+            USD
+          </button>
+          <button
+            class="btn btn-outline-primary btn-sm rounded-pill"
+            onclick="showDepositNodes('CDF')"
+          >
+            CDF
+          </button>
+        </div>
+        <div id="depositDetails"></div>
+      </div>
+      <div class="modal-footer">
+        <button
+          type="button"
+          class="btn btn-secondary btn-sm rounded-pill"
+          data-bs-dismiss="modal"
+        >
+          Annuler
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div
+  class="modal fade"
+  id="withdrawModal"
+  tabindex="-1"
+  aria-labelledby="withdrawModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="withdrawModalLabel">Retirer des fonds</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <p>Choisissez la devise à retirer :</p>
+        <div class="d-grid gap-2 mb-3">
+          <button
+            class="btn btn-outline-success btn-sm rounded-pill"
+            onclick="showWithdrawNodes('USD')"
+          >
+            USD
+          </button>
+          <button
+            class="btn btn-outline-primary btn-sm rounded-pill"
+            onclick="showWithdrawNodes('CDF')"
+          >
+            CDF
+          </button>
+        </div>
+        <div id="withdrawDetails"></div>
+      </div>
+      <div class="modal-footer">
+        <button
+          type="button"
+          class="btn btn-secondary btn-sm rounded-pill"
+          data-bs-dismiss="modal"
+        >
+          Annuler
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function showDepositNodes(currency) {
+    const detailsDiv = document.getElementById("depositDetails");
+    detailsDiv.innerHTML = ""; // Clear previous content
+
+    if (currency === "USD") {
+      detailsDiv.innerHTML = `
+                <p class="mt-2">Choisissez votre méthode de paiement pour USD :</p>
+                <div class="d-grid gap-2 mb-3">
+                    <button class="btn btn-outline-primary btn-sm rounded-pill" onclick="showDepositDetails('USD', 'mobileMoney')"><i class="fas fa-mobile-alt me-1"></i> Mobile Money</button>
+                    <button class="btn btn-outline-info btn-sm rounded-pill" onclick="showDepositDetails('USD', 'agentWallet')"><i class="fas fa-user-tie me-1"></i> Agent Muhangiki Wallet</button>
+                </div>
+                <div id="depositUSDDetails"></div>
+            `;
+    } else if (currency === "CDF") {
+      detailsDiv.innerHTML = `
+                <p class="mt-2">Choisissez votre méthode de paiement pour CDF :</p>
+                <div class="d-grid gap-2 mb-3">
+                    <button class="btn btn-outline-primary btn-sm rounded-pill" onclick="showDepositDetails('CDF', 'mobileMoney')"><i class="fas fa-mobile-alt me-1"></i> Mobile Money</button>
+                    <button class="btn btn-outline-info btn-sm rounded-pill" onclick="showDepositDetails('CDF', 'agentWallet')"><i class="fas fa-user-tie me-1"></i> Agent Muhangiki Wallet</button>
+                </div>
+                <div id="depositCDFDetails"></div>
+            `;
+    }
+  }
+
+  function showWithdrawNodes(currency) {
+    const detailsDiv = document.getElementById("withdrawDetails");
+    detailsDiv.innerHTML = "";
+
+    if (currency === "USD") {
+      detailsDiv.innerHTML = `
+                <p class="mt-2">Choisissez votre méthode de retrait pour USD :</p>
+                <div class="d-grid gap-2 mb-3">
+                    <button class="btn btn-outline-primary btn-sm rounded-pill" onclick="showWithdrawDetails('USD', 'mobileMoney')"><i class="fas fa-mobile-alt me-1"></i> Mobile Money</button>
+                    <button class="btn btn-outline-info btn-sm rounded-pill" onclick="showWithdrawDetails('USD', 'agentWallet')"><i class="fas fa-user-tie me-1"></i> Agent Muhangiki Wallet</button>
+                </div>
+                <div id="withdrawUSDDetails"></div>
+            `;
+    } else if (currency === "CDF") {
+      detailsDiv.innerHTML = `
+                <p class="mt-2">Choisissez votre méthode de retrait pour CDF :</p>
+                <div class="d-grid gap-2 mb-3">
+                    <button class="btn btn-outline-primary btn-sm rounded-pill" onclick="showWithdrawDetails('CDF', 'mobileMoney')"><i class="fas fa-mobile-alt me-1"></i> Mobile Money</button>
+                    <button class="btn btn-outline-info btn-sm rounded-pill" onclick="showWithdrawDetails('CDF', 'agentWallet')"><i class="fas fa-user-tie me-1"></i> Agent Muhangiki Wallet</button>
+                </div>
+                <div id="withdrawCDFDetails"></div>
+            `;
+    }
+  }
+
+  function showDepositDetails(currency, method) {
+    let detailsDiv;
+    if (currency === "USD") {
+      detailsDiv = document.getElementById("depositUSDDetails");
+    } else if (currency === "CDF") {
+      detailsDiv = document.getElementById("depositCDFDetails");
+    }
+
+    if (detailsDiv) {
+      detailsDiv.innerHTML = "";
+      if (method === "mobileMoney") {
+        detailsDiv.innerHTML = `
+                    <p class="mt-2">Sélectionnez votre opérateur Mobile Money :</p>
+                    <div class="d-grid gap-2 mb-3">
+                        <button class="btn btn-outline-success btn-sm rounded-pill" onclick="showPaymentForm('${currency}', 'airtelMoney')"><i class="fas fa-mobile me-1"></i> Airtel Money</button>
+                        <button class="btn btn-outline-warning btn-sm rounded-pill" onclick="showPaymentForm('${currency}', 'orangeMoney')"><i class="fas fa-mobile me-1"></i> Orange Money</button>
+                        <button class="btn btn-outline-info btn-sm rounded-pill" onclick="showPaymentForm('${currency}', 'mPesa')"><i class="fas fa-mobile me-1"></i> M-Pesa</button>
+                    </div>
+                    <div id="paymentForm"></div>
+                `;
+      } else if (method === "agentWallet") {
+        detailsDiv.innerHTML = `
+                    <p class="mt-2">Veuillez contacter un agent Muhangiki Wallet et lui fournir votre ID de compte pour le rechargement en ${currency}.</p>
+                    <p>ID de votre compte : <span class="fw-bold">{{ user.membre.id }}</span></p>
+                    <p class="text-muted small">Une fois le paiement effectué avec l'agent, votre solde sera mis à jour.</p>
+                `;
+      }
+    }
+  }
+
+  function showWithdrawDetails(currency, method) {
+    let detailsDiv;
+    if (currency === "USD") {
+      detailsDiv = document.getElementById("withdrawUSDDetails");
+    } else if (currency === "CDF") {
+      detailsDiv = document.getElementById("withdrawCDFDetails");
+    }
+
+    if (detailsDiv) {
+      detailsDiv.innerHTML = "";
+      if (method === "mobileMoney") {
+        detailsDiv.innerHTML = `
+                    <p class="mt-2">Sélectionnez votre opérateur Mobile Money pour le retrait en ${currency} :</p>
+                    <div class="d-grid gap-2 mb-3">
+                        <button class="btn btn-outline-success btn-sm rounded-pill" onclick="showWithdrawalForm('${currency}', 'airtelMoney')">Airtel Money</button>
+                        <button class="btn btn-outline-warning btn-sm rounded-pill" onclick="showWithdrawalForm('${currency}', 'orangeMoney')">Orange Money</button>
+                        <button class="btn btn-outline-info btn-sm rounded-pill" onclick="showWithdrawalForm('${currency}', 'mPesa')">M-Pesa</button>
+                    </div>
+                    <div id="withdrawalForm"></div>
+                `;
+      } else if (method === "agentWallet") {
+        detailsDiv.innerHTML = `
+                    <p class="mt-2">Pour effectuer un retrait via un agent Muhangiki Wallet en ${currency}, veuillez initier une demande de retrait et vous rendre chez l'agent avec votre code de retrait.</p>
+                    <button class="btn btn-primary btn-sm rounded-pill">Demander un code de retrait</button>
+                    <div id="withdrawalCode" class="mt-2"></div>
+                `;
+      }
+    }
+  }
+
+  function showPaymentForm(currency, operator) {
+    const paymentFormDiv = document.getElementById("paymentForm");
+    paymentFormDiv.innerHTML = "";
+    paymentFormDiv.innerHTML = `
+            <h6 class="mt-3">Recharger en ${currency} via ${operator}</h6>
+            <div class="mb-3">
+                <label for="depositAmount" class="form-label small text-muted">Montant à recharger</label>
+                <div class="input-group">
+                    <input type="number" class="form-control form-control-sm rounded" id="depositAmount" placeholder="Montant">
+                    <span class="input-group-text">${currency}</span>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label for="mobileNumber" class="form-label small text-muted">Votre numéro ${operator}</label>
+                <input type="tel" class="form-control form-control-sm rounded" id="mobileNumber" placeholder="Votre numéro">
+            </div>
+            <button class="btn btn-primary btn-sm rounded-pill">Confirmer le rechargement</button>
+        `;
+  }
+
+  function showWithdrawalForm(currency, operator) {
+    const withdrawalFormDiv = document.getElementById("withdrawalForm");
+    withdrawalFormDiv.innerHTML = "";
+    withdrawalFormDiv.innerHTML = `
+            <h6 class="mt-3">Retirer en ${currency} via ${operator}</h6>
+            <div class="mb-3">
+                <label for="withdrawalAmount" class="form-label small text-muted">Montant à retirer</label>
+                <div class="input-group">
+                    <input type="number" class="form-control form-control-sm rounded" id="withdrawalAmount" placeholder="Montant">
+                    <span class="input-group-text">${currency}</span>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label for="mobileNumber" class="form-label small text-muted">Votre numéro ${operator}</label>
+                <input type="tel" class="form-control form-control-sm rounded" id="mobileNumber" placeholder="Votre numéro">
+            </div>
+            <button class="btn btn-danger btn-sm rounded-pill">Confirmer le retrait</button>
+        `;
+  }
+</script>

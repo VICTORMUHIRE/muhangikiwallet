@@ -244,7 +244,7 @@ class AnnulationObjectif(models.Model):
     
     montant = models.FloatField(verbose_name="Montant")
     devise = models.CharField(max_length=3, choices=DEVISE_CHOICES, verbose_name="Devise")
-    frais = models.FloatField(verbose_name="Frais")
+    frais = models.FloatField(verbose_name="Frais",null=True, blank=True)
 
     date = models.DateTimeField(auto_now_add=True, verbose_name="Date")
     date_approbation = models.DateTimeField(blank=True, null=True, verbose_name="Date d'approbation")

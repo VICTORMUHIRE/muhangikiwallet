@@ -596,13 +596,8 @@ def objectifs(request):
 @login_required
 @verifier_membre
 def depot_objectif(request, objectif_id):
-    objectif = get_object_or_404(Objectifs, membre=request.user.membre, pk=objectif_id, statut="En cours")
-
-    reseaux = NumerosAgent.objects.values_list('reseau', flat=True).distinct()
-    numeros_categories = {reseau: [] for reseau in reseaux}
-    for reseau in reseaux:
-        for numero_agent in NumerosAgent.objects.filter(reseau=reseau):
-            numeros_categories[reseau].append((numero_agent.numero, numero_agent.pk))
+    membre = request.user.membre
+    objectif = get_object_or_404(Objectifs, membre=membre, pk=objectif_id, statut="En cours")
 
     if request.method == "POST":
         depot_objectif_form = DepotsObjectifForm(request.POST)
@@ -619,16 +614,27 @@ def depot_objectif(request, objectif_id):
 
                     transaction.membre = request.user.membre
                     transaction.devise = depot_objectif.devise = depot_objectif.objectif.devise
-                    transaction.agent = transaction.numero_agent.agent
+                    transaction.type = "depot_objectif"                    
 
-                    transaction.type = "depot_objectif"
-                    transaction.statut = "En attente"
+                    compte = membre.compte_USD if transaction.devise == "USD" else membre.compte_CDF
 
                     if not Transactions.objects.filter(membre=request.user.membre, type="depot_objectif", statut="En attente").exists():
-                        if transaction.montant > 0 and transaction.montant <= float(objectif.montant_cible) - float(objectif.montant):
+                        if transaction.montant > 0 and transaction.montant <= float(objectif.montant_cible) - float(objectif.montant) and  compte.solde >= transaction.montant:
+                            transaction.statut = "Approuvé"
                             transaction.save()
 
-                            depot_objectif.transaction = transaction
+                            #retrait de l'argent de l'objectif dans le compte principal du membre
+                            compte.solde -= transaction.montant
+                            compte.save()
+
+                            depot_objectif.transaction = transaction                           
+                            depot_objectif.statut = "Approuvé"
+                            depot_objectif.date_approbation = timezone.now()
+                            objectif.montant = float(objectif.montant) + float(transaction.montant)
+                            
+                            if objectif.montant >= objectif.montant_cible: objectif.statut = "Atteint"
+                            
+                            depot_objectif.objectif.save()
                             depot_objectif.save()
 
                             messages.success(request, "Votre dépôt sur objectif a été soumis avec succès !")
@@ -654,7 +660,6 @@ def depot_objectif(request, objectif_id):
     context = {
         "form": form,
         "depot_objectif_form": depot_objectif_form,
-        "numeros_categories": numeros_categories,
         "objectif": objectif,
         "montant_restant": objectif.montant_cible - objectif.montant
     }
@@ -717,38 +722,39 @@ def retrait_objectif(request, objectif_id):
 def annulation_objectif(request, objectif_id):
     objectif = get_object_or_404(Objectifs, membre=request.user.membre, pk=objectif_id, statut__in=['En cours', 'Epuisé'])
     membre = request.user.membre
-
+    compte = membre.compte_USD if objectif.devise == "USD" else membre.compte_CDF
     if request.method == 'POST':
         password = request.POST.get('password')
 
         if check_password(password, request.user.password):
             if not Transactions.objects.filter(membre=membre, type="retrait_tout", statut__in=["En attente", "Demande"]).exists():
                 if not Transactions.objects.filter(membre=membre, type="annulation_objectif", statut="Demande").exists():
-                    montant_total_USD = objectif.montant / 2800 if objectif.devise == "CDF" else objectif.montant
-    
-                    if montant_total_USD > 0 and montant_total_USD <= 10: frais = 0.085
-                    elif montant_total_USD > 10 and montant_total_USD <= 20: frais = 0.058
-                    elif montant_total_USD > 20 and montant_total_USD <= 50: frais = 0.0295
-                    elif montant_total_USD > 50 and montant_total_USD <= 400: frais = 0.0175
-                    elif montant_total_USD > 400: frais = 0.01
 
-                    frais = 0.1
+                    # retransferer l'agent qui ete deja affecte a l'objecitf dans le compte prisipal
+                    compte.solde += Decimal(str(objectif.montant))
+                    compte.save()
 
                     AnnulationObjectif.objects.create(
+
                         membre=membre,
                         objectif=objectif,
                         montant=objectif.montant,
                         devise=objectif.devise,
-                        frais=frais,
+                        date_approbation = timezone.now(),
+                        statut="Approuvé",
                         transaction=Transactions.objects.create(
                             membre=membre,
-                            montant=objectif.montant * (1 - frais),
+                            montant=objectif.montant,
                             devise=objectif.devise,
+                            statut="Approuvé",
                             type="annulation_objectif"
                         )
                     )
-
-                    messages.success(request, f"Annulation de l'objectif '{objectif.nom}' envoyé avec succès")
+                    objectif.statut = "Annulé"
+                    objectif.save()
+                    
+                    
+                    messages.success(request, f"Objectif '{objectif.nom}' annulé avec succès")
 
                 else:
                     messages.error(request, "Vous avez une demande d'annulation en attente, patientez svp !")
