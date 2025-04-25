@@ -8,6 +8,8 @@ from django.contrib.auth import update_session_auth_hash
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum
+
+from membres.service import rechargerCompteService
 from .models import Membres
 from .forms import MembresForm, ModifierMembresForm
 from agents.models import Agents, NumerosAgent
@@ -17,8 +19,8 @@ from objectifs.models import Objectifs
 from objectifs.forms import ObjectifsForm
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import login, update_session_auth_hash
-from transactions.models import BalanceAdmin, Transactions, Prets, RemboursementsPret, TypesPret, Contributions, DepotsObjectif, Retraits, Transferts, DepotsInscription, Benefices, RetraitsObjectif, AnnulationObjectif
-from transactions.forms import ContributionsForm, PretsForm, TransfertsForm, RetraitsForm, DepotsInscriptionForm, TypesPretForm, TransactionsForm, DepotsObjectifForm
+from transactions.models import BalanceAdmin, Solde, Transactions, Prets, RemboursementsPret, TypesPret, Contributions, DepotsObjectif, Retraits, Transferts, DepotsInscription, Benefices, RetraitsObjectif, AnnulationObjectif
+from transactions.forms import ContributionsForm, PretsForm, SoldeForm, TransfertsForm, RetraitsForm, DepotsInscriptionForm, TypesPretForm, TransactionsForm, DepotsObjectifForm
 from datetime import datetime, timedelta
 from django.utils import timezone
 from functools import wraps
@@ -222,6 +224,8 @@ def home(request):
 
     transactions = Transactions.objects.filter(membre=membre).order_by("-date")
 
+    form = SoldeForm()
+
     context = {
         "membre": membre,
         "compte_usd":compte_usd.solde,
@@ -236,6 +240,7 @@ def home(request):
         "transactions": transactions,
         "benefices_CDF": float(benefices_CDF) - float(total_retraits_CDF),
         "benefices_USD": float(benefices_USD) - float(total_retraits_USD),
+        "form":form,
     }
 
     return render(request, "membres/home.html", context)
@@ -1015,3 +1020,78 @@ def retirer_tout(request):
 @verifier_membre
 def notifications(request):
     return render(request, "membres/notifications.html")
+
+
+# Traite le payement via mobile money chez un membre
+
+@login_required
+@verifier_membre
+def recharger_compte(request):
+    membre = request.user.membre
+    frais_retrait = Decimal("0.035")
+
+    if request.method == 'POST':
+        form = SoldeForm(request.POST)
+        mot_de_passe = request.POST.get("password")
+        fournisseur = request.POST.get("fournisseur")
+        if check_password(mot_de_passe, request.user.password):
+            if form.is_valid():
+                montant = form.cleaned_data['montant']
+                devise = form.cleaned_data['devise']
+                numero = form.cleaned_data['account_sender']
+                net_montant = montant - (frais_retrait * montant)
+
+                reference = f"TX-{request.user.id}-{timezone.now().strftime('%Y%m%d%H%M%S')}"
+                data = {
+                    "numero": numero,
+                    "montant": float(montant),
+                    "devise": devise,
+                    "reference": reference,
+                    "fournisseur": fournisseur
+                }
+
+                if montant <= 0:
+                    messages.error(request, "Montant invalide.")
+                    return redirect("membres:home")
+
+                # Appel à l'API de paiement
+                if rechargerCompteService(data):
+                    with db_transaction.atomic():
+                        transaction = Transactions.objects.create(
+                            membre=membre,
+                            type="Rechargement compte",
+                            montant=net_montant,
+                            devise=devise,
+                            statut="Approuvé",
+                            date_approbation=timezone.now()
+                        )
+
+                        Solde.objects.create(
+                            transaction=transaction,
+                            montant=net_montant,
+                            devise=devise,
+                            account_sender=numero,
+                            frais_retrait=frais_retrait
+                        )
+
+                        # Crédit du compte
+                        compte = membre.compte_USD if devise == "USD" else membre.compte_CDF
+                        compte.solde += net_montant
+                        compte.save()
+
+                        messages.success(request, "Rechargement effectué avec succès.")
+                        return redirect("membres:home")
+                else:
+                    messages.error(request, "Échec du paiement. Veuillez réessayer.")
+            else:
+                messages.error(request, "Formulaire invalide.")
+        else:
+            messages.error(request, "Mot de passe incorrect.")
+    else:
+        form = SoldeForm()
+
+    return render(request, "membres/home.html", {
+        "form": form,
+        "membre": membre,
+    })
+

@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import Transactions, Contributions, Retraits, DepotsObjectif, Transferts, Prets, TypesPret, DepotsInscription, Fidelites
+from .models import Solde, Transactions, Contributions, Retraits, DepotsObjectif, Transferts, Prets, TypesPret, DepotsInscription, Fidelites
 
 
 # Formulaire de transaction
@@ -60,3 +60,40 @@ class FidelitesForm(forms.ModelForm):
     class Meta:
         model = Fidelites
         fields = ["membre", "point", "transaction", "description"]
+
+class SoldeForm(forms.ModelForm):
+
+    class Meta:
+        model = Solde
+        fields = ['montant', 'devise', 'account_sender']
+        widgets = {
+            'montant': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Montant à déposer',
+                'min': '0.01',
+            }),
+            'devise': forms.Select(attrs={
+                'class': 'form-control',
+            }),
+            'account_sender': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Numéro de téléphone de l\'expéditeur',
+            }),
+        }
+        labels = {
+            'montant': 'Montant',
+            'devise': 'Devise',
+            'account_sender': 'Numéro de téléphone',
+        }
+
+    def clean_montant(self):
+        montant = self.cleaned_data.get('montant')
+        if montant <= 0:
+            raise forms.ValidationError("Le montant doit être supérieur à 0.")
+        return montant
+
+    def clean_account_sender(self):
+        numero = self.cleaned_data.get('account_sender')
+        if not numero or len(numero) < 9:
+            raise forms.ValidationError("Numéro de téléphone invalide.")
+        return numero

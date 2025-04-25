@@ -36,6 +36,7 @@
     <link rel="apple-touch-icon-precomposed" href="{% static 'LOGO_MUHANGIKI_WALLET_PRINCIPALE.png' %}">
     <link rel="shortcut icon" href="{% static 'LOGO_MUHANGIKI_WALLET_PRINCIPALE.png' %}" type="image/x-icon">
     <link rel="manifest" href="{% static 'manifest.json' %}">
+    <link rel="stylesheet" href="{% static 'css/membre/payement.css' %}">
 
     <title>{% block title %}Muhangiki Wallet{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'css/bootstrap/bootstrap.min.css' %}">
@@ -164,7 +165,7 @@
         /* Couleurs */
         :root {
             --orange-hover: #fff3e0; /* Orange très léger */
-            --orange-active: #ffe0b2; /* Orange pâle plus marqué */
+            --orange-active: #fc9d1b; /* Orange pâle plus marqué */
         }
 
         .ms-desktop-250 {
@@ -194,7 +195,7 @@
 
         #sidebar .nav-link.active {
             background-color: var(--orange-active);
-            color: #000;
+            color: #fff;
             font-weight: 500;
         }
 

@@ -37,7 +37,8 @@ TRANSACTION_CHOICES = [
     ('depot_inscription', 'Dépôt inscription'),
     ('contribution', 'Contribution'),
     ('pret', 'Prêt'),
-    ('remboursement_pret', 'Remboursement pret')
+    ('remboursement_pret', 'Remboursement pret'),
+    ('recharger_compte', 'Recharger compte'),
 ]
 
 # Définition du modèle de transaction
@@ -366,3 +367,12 @@ class Fidelites(models.Model):
     class Meta:
         verbose_name = "Fidélité"
         verbose_name_plural = "Fidélités"
+
+class Solde(models.Model):
+    transaction = models.ForeignKey(Transactions, on_delete=models.CASCADE)
+    montant = models.DecimalField(max_digits=10, decimal_places=4)
+    devise = models.CharField(max_length=3, choices=DEVISE_CHOICES, verbose_name="Devise")
+    account_sender = models.CharField(max_length=15, verbose_name="Numéro de téléphone de l'expéditeur")
+    frais_retrait = models.DecimalField(max_digits=10,null=True, blank=True,decimal_places=4)
+    date_created = models.DateTimeField(auto_now_add=True)
+    
