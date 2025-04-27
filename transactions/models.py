@@ -375,4 +375,8 @@ class Solde(models.Model):
     account_sender = models.CharField(max_length=15, verbose_name="Numéro de téléphone de l'expéditeur")
     frais_retrait = models.DecimalField(max_digits=10,null=True, blank=True,decimal_places=4)
     date_created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Solde"
+        verbose_name_plural = "soldes"
     
