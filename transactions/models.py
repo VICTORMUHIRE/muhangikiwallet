@@ -112,7 +112,7 @@ class RetraitsAdmin(models.Model):
 
 # Modèle pour les types de pret
 class TypesPret(models.Model):
-    nom = models.CharField(max_length=45, verbose_name="Nom du type de pret")
+    nom = models.CharField(max_length=45,unique=True, verbose_name="Nom du type de pret")
     description = models.TextField(blank=True, null=True, verbose_name="Description")
     taux_interet = models.DecimalField(max_digits=5, decimal_places=2, verbose_name="Taux d'intérêt (%)")
     delais_traitement = models.IntegerField(default=24, verbose_name="Délai de traitement (heures)")
@@ -383,7 +383,10 @@ class Solde(models.Model):
     frais_retrait = models.DecimalField(max_digits=10,null=True, blank=True,decimal_places=4)
     date_created = models.DateTimeField(auto_now_add=True)
 
+    def __str__(self):
+        return f"Rechargement de {self.montant} {self.devise} "
+
     class Meta:
         verbose_name = "Solde"
-        verbose_name_plural = "soldes"
+        verbose_name_plural = "Soldes"
     

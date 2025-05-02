@@ -3,6 +3,11 @@ from django import forms
 
 from .models import Solde, Transactions, Contributions, Retraits, DepotsObjectif, Transferts, Prets, TypesPret, DepotsInscription, Fidelites
 
+MODE_PAYEMENT_CHOICES = [
+    ('hebdomadaire', 'Hebdomadaire'),
+    ('mensuel', 'Mensuel'),
+    ('annuel', 'annuel'),
+]
 
 # Formulaire de transaction
 class TransactionsForm(forms.ModelForm):
