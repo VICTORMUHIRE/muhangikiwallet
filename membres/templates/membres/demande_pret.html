@@ -1,216 +1,59 @@
 {% extends 'membres/base.html' %}
-
+{% load static %}
 {% block title %}Demande de Prêt{% endblock %}
-
 {% block content %}
 
-    <div class="row mt-5 mt-sm-0 mb-4 mb-md-5 justify-content-center">
-        <div class="col-md-8">  <!-- Added container for responsiveness -->
-            {% if messages %}
-            {% for message in messages %}
-            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{message.tags}}{% endif %} alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+<div class="container-fluid p-3 p-md-4 rounded-3" style="background-color: #fff; min-height: 100%;">
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{message.tags}}{% endif %} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    {% include "membres/components/demandePretModal.html" %}
+
+    <div class="mt-4">
+        <div class="card border-0 rounded-3 shadow-sm">
+            <div class="card-header bg-white p-3 border">
+                <h6 class="mb-0 fw-semibold" style="color: #616161;"><i class="fas fa-history me-2"></i> Historique de vos demandes</h6>
             </div>
-            {% endfor %}
-            {% endif %}
-
-            <div class="card border-0 px-2">
-                <div class="card-header bg-white text-center fs-4">  <!-- Consistent styling with other forms -->
-                    Demande de Prêt
-                    <div class="fs-6">
-                        Montant max : <span class="roboto-regular">{{ solde_total_contribution_cdf|stringformat:".2f" }} FC ou {{ solde_total_contribution_usd|stringformat:".2f" }} $</span>
+            <div class="card-body p-3">
+                {% for demande in demandes_pret %}
+                <div class="list-group-item list-group-item-action rounded-3 p-3 mb-2 border-0 shadow-sm"  onclick="location.href='{% url 'membres:transaction' demande.transaction.pk %}'" style="cursor: pointer; background-color: #fff;">
+                    <div class="d-flex w-100 flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2">
+                        <div>
+                            <h6 class="mb-1 fw-normal">
+                                <i class="fas fa-arrow-right me-1 "></i> Prêt de <span>{{ demande.montant_remboursé|stringformat:".2f" }} {{ demande.devise }}</span>
+                                {% if demande.statut == 'Depassé' %}
+                                    <span class="badge bg-danger ms-2">+{% if demande.devise == "USD" %}5{% else %}14 000{% endif %} {{ demande.devise }}</span>
+                                {% endif %}
+                            </h6>
+                            <small class="text-muted"><i class="fas fa-calendar-alt me-1"></i> Demandé le : {{ demande.date_demande|date:"d/m/Y à H:i" }}</small><br>
+                            {% if demande.statut == 'Approuvé' %}
+                                <small class="text-success fw-semibold"><i class="fas fa-hourglass-half me-1 "></i> Remboursement limite : {{ demande.date_remboursement|date:"d/m/Y" }}</small>
+                            {% endif %}
+                        </div>
+                        <div class="text-start text-md-end">
+                            <span class="badge rounded-pill" style="background-color: {% if demande.transaction.statut == 'Approuvé' %}#d4edda; color: #155724;{% elif demande.statut in 'Rejeté Depassé' %}#f8d7da; color: #721c24;{% elif demande.statut == 'Remboursé' %}#e0f7fa; color: #00838f;{% else %}#fff3cd; color: #85640a;{% endif %}">
+                                {% if demande.statut == 'Approuvé' and demande.transaction.statut == 'En attente' %}En attente{% else %}{{ demande.statut }}{% endif %}
+                            </span>
+                            {% if demande.transaction.statut == 'Approuvé' %}
+                                <a class="btn btn-sm btn-outline-success rounded-pill mt-1 mt-md-0 ms-md-2 d-inline-block" href="{% url 'membres:rembourser_pret' demande.transaction.pk %}"><i class="fas fa-reply me-1"></i> Rembourser</a>
+                            {% endif %}
+                        </div>
                     </div>
+                    
                 </div>
-                <div class="card-body px-1">
-                    <form method="post" id="loan-form" enctype="multipart/form-data">  <!-- Added enctype for file uploads -->
-                        {% csrf_token %}
-                        <div class="row mb-3">
-                            <div class="form-group col-md-8">
-                                <label class="form-label" for="{{ form.montant.id_for_label }}">Montant</label>
-                                <input type="number" class="form-control" id="{{ form.montant.id_for_label }}" name="{{ form.montant.html_name }}" value="{{ form.montant.value|default:'' }}" placeholder="Entrez le montant">
-                            </div>
-    
-                            <div class="form-group col-md-4">
-                                <label class="form-label" for="{{ form.devise.id_for_label }}">Devise</label>
-                                <select class="form-select" id="{{ form.devise.id_for_label }}" name="{{ form.devise.html_name }}">
-                                    <option value="CDF" {% if form.devise.value == 'CDF' %}selected{% endif %}>CDF</option>
-                                    <option value="USD" {% if form.devise.value == 'USD' %}selected{% endif %}>USD</option>
-                                </select>
-                            </div>
-                        </div>
-    
-                        {% comment %} <div class="mb-3">
-                            <label class="form-label" for="{{ form.type_pret.id_for_label }}">Type de crédit</label>
-                            <select class="form-select" id="{{ form.type_pret.id_for_label }}" name="{{ form.type_pret.html_name }}">
-                                <option value="">-- Choisissez un type de crédit --</option>
-                                {% for type_pret in types_pret %}
-                                    <option value="{{ type_pret.id }}"
-                                        data-taux="{{ type_pret.taux_interet|stringformat:".2f" }}"
-                                        data-delai="{{ type_pret.delai_remboursement }}"
-                                        {% if type_pret.id == form.type_pret.value %}selected{% endif %}>
-                                        {{ type_pret.nom }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                        </div> {% endcomment %}
-
-                        <!-- <h4 class="text-center">Details du pret</h4> -->
-    
-                        <div class="mb-3">
-                            <label for="taux_interet">Taux d'intérêt : </label>
-                            <strong id="taux_interet" class="font-weight-bold mb-color">15%</strong>
-                        </div>
-                        <div class="mb-3">
-                            <label for="delai_remboursement">Délai de remboursement : </label>
-                            <strong id="delai_remboursement" class="font-weight-bold mb-color">-</strong>
-                        </div>
-                        <div class="mb-3">
-                            <label for="montant_rembourser">Montant à recevoir : </label>
-                            <strong id="montant" class="font-weight-bold mb-color">-</strong>
-                        </div>
-                        <div class="mb-3">
-                            <label for="montant_rembourser">Montant à rembourser : </label>
-                            <strong id="montant_rembourser" class="font-weight-bold mb-color">-</strong>
-                        </div>
-
-                        <div class="form-group text-center">
-                            <button type="button" class="btn btn-mw text-white" id="submitLoanBtn" data-bs-toggle="modal" data-bs-target="#passwordConfirmModal">
-                                Confirmer la Demande
-                            </button>
-                        </div>
-    
-                    </form>
-                </div>
-            </div>
-    
-            <!-- Historique Section -->
-            <div class="my-4">
-                <div class="card shadow px-2">
-                    <div class="card-header bg-white text-center p-3 fs-4">
-                        <h2>Historique des demandes</h2>
-                    </div>
-                    <div class="card-body">
-                        {% for demande in demandes_pret %}
-                            <div onclick="location.href='{% url 'membres:transaction' demande.transaction.pk %}'" class="btn btn-light card mb-3 {% if demande.statut == 'Depassé' %}border-danger{% endif %}">
-                                <div class="card-title d-flex align-items-center justify-content-between">
-                                    <span class="badge bg-{% if demande.transaction.statut == 'Approuvé' %}success{% elif demande.statut in 'Rejeté Depassé' %}danger{% elif demande.statut == 'Remboursé' %}info{% else %}warning{% endif %}">
-                                        {% if demande.statut == 'Approuvé' and demande.transaction.statut == 'En attente' %}En attente{% else %}{{ demande.statut }}{% endif %}
-                                    </span>
-                                    {% if demande.statut == 'Approuvé' %}
-                                    <span class="card-text "><strong class="fw-bold"> limite : </strong>
-                                        <small class="d-none d-md-inline">{{ demande.date_remboursement|date:"d E Y" }}</small>
-                                        <small class="d-md-none">{{ demande.date_remboursement|date:"d M Y" }}</small>
-                                        <small class="d-md-none">{{ demande.date_remboursement|date:"H:i" }}</small>
-                                        <small class="d-none d-md-inline">{{ demande.date_remboursement|date:"H:i:s" }}</small>
-                                    </span>
-                                    {% endif %}
-                                </div>
-
-                                <div class="card-title d-flex align-items-center justify-content-between">
-                                    <span class="card-text fs-6"><strong>Montant:</strong> {% if demande.statut == 'Depassé' %}{% if demande.devise == "USD" %}{{ demande.montant_remboursé|add:"-5"|stringformat:".2f" }}{% else %}{{ demande.montant_remboursé|add:"-14000"|stringformat:".2f" }}{% endif %}{% else %}{{ demande.montant_remboursé|stringformat:".2f" }}{% endif %} {{ demande.devise }} {% if demande.statut == 'Depassé' %}<span class="badge bg-danger me-2">+{% if demande.devise == "USD" %}5{% else %}14 000{% endif %} {{ demande.devise }}</span>{% endif %}</span>
-                                    {% if demande.transaction.statut == 'Approuvé' %}
-                                        <a class="btn btn-sm btn-primary text-white" href="{% url 'membres:rembourser_pret' demande.transaction.pk %}">Rembourser</a>
-                                    {% else %}
-                                    <span class="card-text ">
-                                        <small class="d-none d-md-inline">{{ demande.date_demande|date:"d E Y" }}</small>
-                                        <small class="d-md-none">{{ demande.date_demande|date:"d M Y" }}</small>
-                                        <small class="d-md-none">{{ demande.date_demande|date:"H:i" }}</small>
-                                        <small class="d-none d-md-inline">{{ demande.date_demande|date:"H:i:s" }}</small>
-                                    </span>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        {% empty %}
-                            <p>Aucune demande de pret effectuée.</p>
-                        {% endfor %}
-                    </div>
-                </div>
+                {% empty %}
+                <p class="text-center text-muted"><i class="fas fa-exclamation-triangle me-1 text-warning"></i> Aucune demande de prêt n'a été effectuée pour le moment.</p>
+                {% endfor %}
             </div>
         </div>
     </div>
+    
+</div>
 
-
-    <!-- Modal -->
-    <div class="modal fade" id="passwordConfirmModal" tabindex="-1" aria-labelledby="passwordConfirmModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">  <!-- Make modal centered -->
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="passwordConfirmModalLabel">Confirmation du mot de passe</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="passwordForm">
-                        {% csrf_token %}
-                        <div class="mb-3">
-                            <label for="mot_de_passe" class="form-label">Mot de passe</label>
-                            <input type="password" class="form-control" id="mot_de_passe" name="mot_de_passe" required>
-                        </div>
-                        <div class="modal-footer">  <!-- Submit in footer -->
-                            <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Annuler</button>
-                            <button type="submit" class="btn btn-mw">Confirmer</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-
-
-<script>
-    // Fonction pour mettre à jour les champs calculés
-    function updateLoanDetails() {
-        // Récupérer les valeurs du formulaire
-        var montant = parseFloat(document.getElementById("{{ form.montant.id_for_label }}").value) || 0;
-        var selectTypeCredit = document.getElementById("{{ form.type_pret.id_for_label }}");
-        var selectedOption = selectTypeCredit?.options[selectTypeCredit.selectedIndex];
-        var tauxInteret = parseFloat(selectedOption?.getAttribute('data-taux').replace(',', '.')) || 10;
-        var delaiRemboursement = parseInt(selectedOption?.getAttribute('data-delai')) || 120;
-        var devise = document.getElementById("{{ form.devise.id_for_label }}").value;
-
-        // Vérifier si les valeurs sont valides avant de calculer
-        if (tauxInteret > 0 && delaiRemboursement > 0) {
-            // Calcul du montant à rembourser (intérêts simples)
-            var montantRecevoir = montant * (1 - tauxInteret / 100);
-            var montantRembourser = montant;
-
-            // Mettre à jour les champs dans le formulaire
-            document.getElementById("taux_interet").textContent = tauxInteret + "%";
-            document.getElementById("delai_remboursement").textContent = delaiRemboursement + " jours" + " ou " + delaiRemboursement / 30 + " mois";
-            document.getElementById("montant").textContent = montantRecevoir.toFixed(2)+(devise == "CDF" ? " FC" : " $");
-            document.getElementById("montant_rembourser").textContent = montantRembourser.toFixed(2)+(devise == "CDF" ? " FC" : " $");
-        } else {
-            // Afficher des tirets si les valeurs ne sont pas valides
-            document.getElementById("taux_interet").textContent = "-";
-            document.getElementById("delai_remboursement").textContent = "-";
-            document.getElementById("montant_rembourser").textContent = "-";
-        }
-    }
-
-    // Ajouter des écouteurs d'événements pour mettre à jour les calculs
-    document.getElementById("{{ form.montant.id_for_label }}").addEventListener("input", updateLoanDetails);
-    document.getElementById("{{ form.type_pret.id_for_label }}")?.addEventListener("change", updateLoanDetails);
-    document.getElementById("{{ form.devise.id_for_label }}").addEventListener("change", updateLoanDetails);
-    window.addEventListener("load", updateLoanDetails);
-
-    // Gestionnaire d'événements pour le bouton "Confirmer" dans le modal
-    document.getElementById('passwordForm').addEventListener('submit', function(event) {
-        event.preventDefault();
-
-        var password = document.getElementById('mot_de_passe').value;
-        var loanForm = document.getElementById('loan-form');
-
-        // Ajouter le mot de passe au formulaire avant la soumission
-        var passwordInput = document.createElement('input');
-        passwordInput.type = 'hidden';
-        passwordInput.name = 'password';
-        passwordInput.value = password;
-        loanForm.appendChild(passwordInput);
-
-        // Soumettre le formulaire
-        loanForm.submit();
-    });
-
-</script>
 {% endblock %}
-

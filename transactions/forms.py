@@ -1,3 +1,4 @@
+from datetime import timedelta, timezone
 from django import forms
 
 from .models import Solde, Transactions, Contributions, Retraits, DepotsObjectif, Transferts, Prets, TypesPret, DepotsInscription, Fidelites
@@ -14,11 +15,15 @@ class TransactionsForm(forms.ModelForm):
             "devise": forms.Select(attrs={"class": "form-control form-select"}),
         }
 
+# forms.py
 class PretsForm(forms.ModelForm):
+    mode_payement = forms.ChoiceField(choices=MODE_PAYEMENT_CHOICES, label="Mode de paiement")
+
     class Meta:
         model = Prets
-        fields = ["type_pret", "montant", "devise"]
+        fields = ["type_pret", "montant", "devise", "mode_payement"]
 
+    
 # Formulaire de type de pret
 class TypesPretForm(forms.ModelForm):
     class Meta:

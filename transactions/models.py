@@ -40,6 +40,11 @@ TRANSACTION_CHOICES = [
     ('remboursement_pret', 'Remboursement pret'),
     ('recharger_compte', 'Recharger compte'),
 ]
+MODE_PAYEMENT_CHOICES = [
+    ('hebdomadaire', 'Hebdomadaire'),
+    ('mensuel', 'Mensuel'),
+    ('annuel', 'annuel'),
+]
 
 # Définition du modèle de transaction
 class Transactions(models.Model):
@@ -110,7 +115,8 @@ class TypesPret(models.Model):
     nom = models.CharField(max_length=45, verbose_name="Nom du type de pret")
     description = models.TextField(blank=True, null=True, verbose_name="Description")
     taux_interet = models.DecimalField(max_digits=5, decimal_places=2, verbose_name="Taux d'intérêt (%)")
-    delai_remboursement = models.IntegerField(verbose_name="Delai de remboursement")
+    delais_traitement = models.IntegerField(default=24, verbose_name="Délai de traitement (heures)")
+    delai_remboursement = models.IntegerField(verbose_name="Delai de remboursement(en mois)")
 
     def __str__(self):
         return self.nom
@@ -124,14 +130,15 @@ class Prets(models.Model):
     administrateur = models.ForeignKey(Administrateurs, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Administrateur")
     membre = models.ForeignKey(Membres, blank=True, null=True, on_delete=models.CASCADE, verbose_name="Membres")
 
-    type_pret = models.ForeignKey(TypesPret, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Type de pret")
+    type_pret = models.ForeignKey(TypesPret, null=True, blank=True, on_delete=models.CASCADE, verbose_name="Type de pret")
     transaction = models.ForeignKey(Transactions, on_delete=models.CASCADE, blank=True, null=True, related_name="pret", verbose_name="Transaction")
 
     montant = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Montant du pret")
+    montant_payer=models.DecimalField(max_digits=10, decimal_places=2,verbose_name="montant a payer", default= 0.0)
     montant_remboursé = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Montant remboursé")
     solde_remboursé = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Solde remboursé")
     devise = models.CharField(max_length=3, choices=DEVISE_CHOICES, verbose_name="Devise")
-
+    mode_payement = models.CharField(max_length=15, choices=MODE_PAYEMENT_CHOICES, verbose_name="mode payement", default="hebdomadaire")
     date_demande = models.DateTimeField(auto_now_add=True, verbose_name="Date de demande")
     date_approbation = models.DateTimeField(blank=True, null=True, verbose_name="Date d'approbation")
     date_remboursement = models.DateTimeField(verbose_name="Date de remboursement")

@@ -1,0 +1,546 @@
+<style>
+  .modal-content {
+    border-radius: 0.5rem;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+    min-height: 50vh; /* Ajustez selon vos besoins */
+    max-height: 70vh; /* Ajustez selon vos besoins */
+    overflow-y: auto;
+    padding: 1.5rem;
+  }
+
+  .step-header {
+    display: flex !important;
+    align-items: center !important;
+    margin-bottom: 1.5rem; /* Plus d'espace comme dans le paiement */
+  }
+
+  .btn-link-back {
+    color: #718096;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    width: 100%; /* Prend toute la largeur pour alignement à gauche */
+    text-decoration: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    margin-right: auto; /* Pousse le reste des éléments à droite */
+  }
+
+  .btn-link-back svg {
+    width: 1.2rem;
+    height: 1.2rem;
+    margin-right: 0.5rem;
+  }
+
+  .progress-bar-container {
+    width: 30%; /* Occupe une partie de la largeur */
+    display: flex;
+    align-items: center;
+    height: 0.5rem;
+    background-color: #e0e0e0;
+    border-radius: 0.25rem;
+    overflow: hidden;
+    margin-left: auto; /* Pousse la barre de progression à droite */
+  }
+
+  .progress-bar {
+    background-color: var(--primary-color);
+    height: 100%;
+    width: 0%; /* Initialement à 0 */
+    border-radius: 0.25rem;
+    transition: width 0.3s ease-in-out;
+  }
+
+  .step {
+    transition: opacity 0.3s ease-in-out, transform 0.3s ease;
+    opacity: 0;
+    transform: translateX(10px);
+    display: none;
+  }
+
+  .step.active {
+    display: block;
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  :root {
+    --primary-color: #fc9d1b;
+  }
+
+  .btn-primaire {
+    background-color: var(--primary-color);
+    color:white;
+    border-color: var(--primary-color);
+  }
+
+  .btn-primaire:hover {
+    background-color: #e68c16;
+    color:white;
+    border-color: #e68c16;
+  }
+
+  .accordion-button {
+    background-color: white;
+    color: #000;
+  }
+
+  .accordion-button:not(.collapsed) {
+    background-color: white; /* Conserve le fond blanc même déroulé */
+    color: #000;
+  }
+
+  .accordion-button:focus {
+    box-shadow: 0 0 0 0.25rem rgba(252, 157, 27, 0.25);
+  }
+
+  .form-check-input:checked {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+  }
+
+  .text-orange {
+    color: var(--primary-color);
+  }
+  .accordion-button::after {
+    display: none !important;
+  }
+  .accordion-item {
+    border: 1px solid #dee2e6 !important;
+    border-radius: .375rem !important;
+  }
+  
+  .accordion-button {
+    border-top-left-radius: .375rem !important;
+    border-top-right-radius: .375rem !important;
+  }
+  .detail-link {
+    color: #616161;
+    text-decoration: underline;
+    transition: color 0.3s ease;
+  }
+  .detail-link:hover {
+    color: var(--primary-color);
+  }
+  
+</style>
+<div class="d-flex justify-content-end mb-4">
+  <button
+    type="button"
+    class="btn btn-mw rounded-3 shadow-sm text-white"
+    data-bs-toggle="modal"
+    data-bs-target="#loanRequestModal"
+  >
+    <i class="fas fa-hand-holding-dollar me-2"></i> Demander un prêt
+  </button>
+</div>
+
+<div
+  class="modal fade"
+  id="loanRequestModal"
+  tabindex="-1"
+  aria-labelledby="loanRequestModalLabel"
+  aria-hidden="true"
+>
+  <div
+    class="modal-dialog modal-dialog-centered modal-md modal-fullscreen-sm-down"
+  >
+    <div class="modal-content">
+      <form
+        method="post"
+        action="{% url 'membres:demande_pret' %}"
+        id="loan-form"
+      >
+        {% csrf_token %}
+
+        <div class="modal-body">
+          <div id="loanStepsContainer">
+            <div class="step active" data-step="1">
+              <div class="step-header">
+                <div class="progress-bar-container">
+                  <div class="progress-bar" style="width: 0%"></div>
+                </div>
+              </div>
+              <h6 class="mb-3 fw-semibold text-secondary">
+                <i class="fas fa-list-alt me-2"></i>
+                Quel type de prêt souhaitez-vous ?
+              </h6>
+
+              <div class="accordion" id="loanTypeAccordion">
+                <!-- Prêt Express -->
+                <div class="accordion-item mb-3 border rounded">
+                  <h2 class="accordion-header" id="headingExpress">
+                    <div
+                      class="accordion-button collapsed d-flex justify-content-between align-items-center"
+                      style="cursor: default"
+                    >
+                      <div
+                        class="d-flex gap-2 w-100 justify-content-between align-items-center"
+                      >
+                        <label class="d-flex align-items-center gap-2 w-100">
+                          <input
+                            class="form-check-input mt-0"
+                            type="radio"
+                            name="type_pret_detail"
+                            value="express"
+                            required
+                          />
+                          <span class="fw-semibold mb-0">Prêt Express</span>
+                        </label>
+                        <a
+                          class="detail-link fw-light"
+                          style="font-size: 0.8rem"
+                          data-bs-toggle="collapse"
+                          href="#collapseExpress"
+                          role="button"
+                          aria-expanded="false"
+                          aria-controls="collapseExpress"
+                        >
+                          Détail
+                        </a>
+                      </div>
+                    </div>
+                  </h2>
+                  <div
+                    id="collapseExpress"
+                    class="accordion-collapse collapse"
+                    aria-labelledby="headingExpress"
+                    data-bs-parent="#loanTypeAccordion"
+                  >
+                    <div class="accordion-body">
+                      <ul class="mb-0 text-muted">
+                        <li><strong>Traitement :</strong> 24h</li>
+                        <li>
+                          <strong>Montant :</strong> Jusqu’à 100% de
+                          l’investissement
+                        </li>
+                        <li><strong>Intérêt :</strong> 10%</li>
+                        <li><strong>Durée :</strong> 4 mois</li>
+                        <li>
+                          <strong>Remboursement :</strong> Hebdomadaire ou
+                          Mensuel
+                        </li>
+                        <li>
+                          <strong>En cas de retard :</strong> prélèvement sur
+                          l’investissement
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Prêt Commercial Starter -->
+                <div class="accordion-item mb-3 border rounded">
+                  <h2 class="accordion-header" id="headingStarter">
+                    <div
+                      class="accordion-button collapsed d-flex justify-content-between align-items-center"
+                      style="cursor: default"
+                    >
+                      <div
+                        class="d-flex gap-2 w-100 justify-content-between align-items-center"
+                      >
+                        <label class="d-flex align-items-center gap-2 w-100">
+                          <input
+                            class="form-check-input mt-0"
+                            type="radio"
+                            name="type_pret_detail"
+                            value="starter"
+                            required
+                          />
+                          <span class="fw-semibold mb-0"
+                            >Prêt Commercial Starter</span
+                          >
+                        </label>
+                        <a
+                          class="detail-link fw-light"
+                          style="font-size: 0.8rem"
+                          data-bs-toggle="collapse"
+                          href="#collapseStarter"
+                          role="button"
+                          aria-expanded="false"
+                          aria-controls="collapseStarter"
+                        >
+                          Détail
+                        </a>
+                      </div>
+                    </div>
+                  </h2>
+                  <div
+                    id="collapseStarter"
+                    class="accordion-collapse collapse"
+                    aria-labelledby="headingStarter"
+                    data-bs-parent="#loanTypeAccordion"
+                  >
+                    <div class="accordion-body">
+                      <ul class="mb-0 text-muted">
+                        <li><strong>Traitement :</strong> Moins de 72h</li>
+                        <li><strong>Montant :</strong> 100$ à 300$</li>
+                        <li><strong>Intérêt :</strong> 5%</li>
+                        <li><strong>Durée :</strong> 6 mois</li>
+                        <li><strong>Remboursement :</strong> Hebdomadaire</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Prêt Commercial Pro -->
+                <div class="accordion-item mb-3 border rounded">
+                  <h2 class="accordion-header" id="headingPro">
+                    <div
+                      class="accordion-button collapsed d-flex justify-content-between align-items-center"
+                      style="cursor: default"
+                    >
+                      <div
+                        class="d-flex gap-2 w-100 justify-content-between align-items-center"
+                      >
+                        <label class="d-flex align-items-center gap-2 w-100">
+                          <input
+                            class="form-check-input mt-0"
+                            type="radio"
+                            name="type_pret_detail"
+                            value="pro"
+                            required
+                          />
+                          <span class="fw-semibold mb-0"
+                            >Prêt Commercial Pro</span
+                          >
+                        </label>
+                        <a
+                          class="detail-link fw-light"
+                          style="font-size: 0.8rem"
+                          data-bs-toggle="collapse"
+                          href="#collapsePro"
+                          role="button"
+                          aria-expanded="false"
+                          aria-controls="collapsePro"
+                        >
+                          Détail
+                        </a>
+                      </div>
+                    </div>
+                  </h2>
+                  <div
+                    id="collapsePro"
+                    class="accordion-collapse collapse"
+                    aria-labelledby="headingPro"
+                    data-bs-parent="#loanTypeAccordion"
+                  >
+                    <div class="accordion-body">
+                      <ul class="mb-0 text-muted">
+                        <li><strong>Traitement :</strong> Moins de 72h</li>
+                        <li><strong>Montant :</strong> 1500$ à 4000$</li>
+                        <li><strong>Intérêt :</strong> 3%</li>
+                        <li><strong>Durée :</strong> 12 mois</li>
+                        <li><strong>Remboursement :</strong> Hebdomadaire</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-4 d-flex justify-content-end">
+                <button
+                  type="button"
+                  class="btn btn-primaire rounded-3 next-btn"
+                  disabled
+                >
+                  Suivant
+                </button>
+              </div>
+            </div>
+
+            <div class="step" data-step="2">
+              <div class="step-header">
+                <button
+                  type="button"
+                  class="btn-link-back"
+                  onclick="goToStep(1)"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="feather feather-arrow-left"
+                  >
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                  </svg>
+                  Retour
+                </button>
+                <div class="progress-bar-container">
+                  <div class="progress-bar" style="width: 50%"></div>
+                </div>
+              </div>
+              <h6 class="mb-3 fw-semibold text-secondary">
+                <i class="fas fa-money-bill-wave me-2"></i>
+                Informations sur le prêt
+              </h6>
+              <div class="mb-3">
+                <label for="montant" class="form-label fw-semibold text-muted"
+                  >Montant</label
+                >
+                <input
+                  type="number"
+                  class="form-control"
+                  id="montant"
+                  name="montant"
+                  required
+                />
+              </div>
+              <div class="mb-3">
+                <label for="devise" class="form-label fw-semibold text-muted"
+                  >Devise</label
+                >
+                <select name="devise" class="form-select" id="devise">
+                  <option value="CDF">CDF</option>
+                  <option value="USD">USD</option>
+                </select>
+              </div>
+              <div class="mb-3">
+                <label
+                  for="mode_payement"
+                  class="form-label fw-semibold text-muted"
+                  >mode de payement</label
+                >
+                <select name="mode_payement" class="form-select" id="devise">
+                  <option value="hebdomadaire">Hebdomadaire</option>
+                  <option value="mensuel">Mensuel</option>
+                </select>
+              </div>
+              <div class="mt-4 d-flex justify-content-end">
+                <button
+                  type="button"
+                  class="btn btn-primaire rounded-3 next-btn"
+                >
+                  Suivant
+                </button>
+              </div>
+            </div>
+
+            <div class="step" data-step="3">
+              <div class="step-header">
+                <button
+                  type="button"
+                  class="btn-link-back"
+                  onclick="goToStep(2)"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="feather feather-arrow-left"
+                  >
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                  </svg>
+                  Retour
+                </button>
+                <div class="progress-bar-container">
+                  <div class="progress-bar" style="width: 100%"></div>
+                </div>
+              </div>
+              <h6 class="mb-3 fw-semibold text-secondary">
+                <i class="fas fa-key me-2 text-info"></i> Confirmation avec
+                votre mot de passe
+              </h6>
+              <div class="mb-3">
+                <label
+                  for="mot_de_passe"
+                  class="form-label fw-semibold text-muted"
+                  >Mot de passe</label
+                >
+                <input
+                  type="password"
+                  class="form-control"
+                  id="mot_de_passe"
+                  name="mot_de_passe"
+                  placeholder="Votre mot de passe"
+                  required
+                />
+              </div>
+              <div class="mt-4 d-flex justify-content-end">
+                <button type="submit" class="btn btn-primaire rounded-3">
+                  Soumettre la demande
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const steps = document.querySelectorAll(".step");
+    const nextButtons = document.querySelectorAll(".next-btn");
+    const prevButtons = document.querySelectorAll(".prev-btn");
+    const progressBar = document.querySelector(
+      "#loanRequestModal .progress-bar"
+    );
+    const accordionButtons = document.querySelectorAll(
+      "#loanTypeAccordion .accordion-button"
+    );
+    const loanTypeRadios = document.querySelectorAll(
+      'input[name="type_pret_detail"]'
+    );
+    const firstNextButton = document.querySelector(
+      '.step[data-step="1"] .next-btn'
+    );
+
+    let currentStep = 0;
+
+    function showStep(index) {
+      steps.forEach((step, i) => {
+        step.classList.remove("active");
+        if (i === index) {
+          step.classList.add("active");
+        }
+      });
+
+      // Mettre à jour la barre de progression
+      if (progressBar) {
+        progressBar.style.width = `${(index / (steps.length - 1)) * 100}%`;
+      }
+      currentStep = index;
+    }
+
+    nextButtons.forEach((btn, i) => {
+      btn.addEventListener("click", function () {
+        if (currentStep < steps.length - 1) {
+          showStep(currentStep + 1);
+        }
+      });
+    });
+
+    prevButtons.forEach((btn) => {
+      btn.addEventListener("click", function () {
+        if (currentStep > 0) {
+          showStep(currentStep - 1);
+        }
+      });
+    });
+
+    window.goToStep = function (stepNumber) {
+      showStep(stepNumber - 1); // Parce que l’index commence à 0
+    };
+
+    // Activer le bouton "Suivant" de l'étape 1 seulement si un type de prêt est sélectionné
+    loanTypeRadios.forEach((radio) => {
+      radio.addEventListener("change", function () {
+        firstNextButton.disabled = false;
+      });
+    });
+
+    showStep(currentStep);
+  });
+</script>
+
