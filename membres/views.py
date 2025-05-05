@@ -374,11 +374,14 @@ def demande_pret(request):
     solde_contribution_CDF = Transactions.objects.filter(membre=membre, devise="CDF", statut="Approuvé", type="contribution").aggregate(total=Sum('montant'))['total'] or 0
     solde_contribution_USD = Transactions.objects.filter(membre=membre, devise="USD", statut="Approuvé", type="contribution").aggregate(total=Sum('montant'))['total'] or 0
 
+    max_possible_cdf = solde_contribution_CDF + (solde_contribution_USD * taux_de_change)
+    max_possible_usd = solde_contribution_USD + (solde_contribution_CDF / taux_de_change)
+
     if request.method == "POST":
         form = PretsForm(request.POST)
 
         if form.is_valid():
-            mot_de_passe = request.POST.get('password')
+            mot_de_passe = request.POST.get('mot_de_passe')
             mode_payement = request.POST.get('mode_payement', 'hebdomadaire')
 
             if check_password(mot_de_passe, request.user.password):
@@ -394,8 +397,8 @@ def demande_pret(request):
                         return redirect("membres:demande_pret")
 
                     montant_cdf = pret.montant if pret.devise == "CDF" else pret.montant * taux_de_change
-                    max_possible = solde_contribution_CDF + (solde_contribution_USD * taux_de_change)
-                    if montant_cdf > max_possible:
+
+                    if montant_cdf > max_possible_cdf:
                         messages.error(request, "Le montant demandé dépasse vos contributions.")
                         return redirect("membres:demande_pret")
 
@@ -408,9 +411,9 @@ def demande_pret(request):
 
                             pret.mode_payement = mode_payement
                             pret.devise = pret.devise
-
+                            
                             montant_payer = montant + (montant * taux * delai)
-                            if mode_payement == "mensuelle":
+                            if mode_payement == "mensuel":
                                 montant_rembourse_par_tranche = montant_payer / delai
                                 pret.date_remboursement = timezone.now() + timedelta(days=30 * delai)
                             elif mode_payement == "hebdomadaire":
@@ -457,6 +460,8 @@ def demande_pret(request):
         "types_pret": types_pret,
         "demandes_pret": demandes_pret,
         "taux_change": taux_de_change,
+        "max_possible_cdf":max_possible_cdf,
+        "max_possible_usd":max_possible_usd,        
     }
     return render(request, "membres/demande_pret.html", context)
 
@@ -993,7 +998,7 @@ def parametres(request):
 def retirer_tout(request):
     membre = request.user.membre
     
-    montant_contributions = float(Transactions.objects.filter(membre=membre, devise=membre.contribution_mensuelle.devise, type="contribution", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0)
+    montant_contributions = float(Transactions.objects.filter(membre=membre, devise=membre.contribution_mensuel.devise, type="contribution", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0)
     montant_objectifs = (float(Objectifs.objects.filter(membre=membre, devise="CDF", statut__in=["En cours", "Atteint", "Epuisé"]).aggregate(Sum('montant'))['montant__sum'] or 0) + float(Objectifs.objects.filter(membre=membre, devise="USD", statut__in=["En cours", "Atteint", "Epuisé"]).aggregate(Sum('montant'))['montant__sum'] or 0) * 2800) * (1/2800 if membre.contribution_mensuelle.devise == "USD" else 1)
     montant_benefices = float(Benefices.objects.filter(membre=membre, devise=membre.contribution_mensuelle.devise, statut=True).aggregate(Sum('montant'))['montant__sum'] or 0) - float(Retraits.objects.filter(membre=membre, devise=membre.contribution_mensuelle.devise, statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0)
 

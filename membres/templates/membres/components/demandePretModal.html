@@ -187,182 +187,83 @@
               </h6>
 
               <div class="accordion" id="loanTypeAccordion">
-                <!-- Prêt Express -->
-                <div class="accordion-item mb-3 border rounded">
-                  <h2 class="accordion-header" id="headingExpress">
-                    <div
-                      class="accordion-button collapsed d-flex justify-content-between align-items-center"
-                      style="cursor: default"
-                    >
+                {% for type in types_pret %}
+                  {% with type.nom|slugify as slug %}
+                  <div class="accordion-item mb-3 border rounded">
+                    <h2 class="accordion-header" id="heading{{ slug }}">
                       <div
-                        class="d-flex gap-2 w-100 justify-content-between align-items-center"
+                        class="accordion-button collapsed d-flex justify-content-between align-items-center"
+                        style="cursor: default"
                       >
-                        <label class="d-flex align-items-center gap-2 w-100">
-                          <input
-                            class="form-check-input mt-0"
-                            type="radio"
-                            name="type_pret_detail"
-                            value="express"
-                            required
-                          />
-                          <span class="fw-semibold mb-0">Prêt Express</span>
-                        </label>
-                        <a
-                          class="detail-link fw-light"
-                          style="font-size: 0.8rem"
-                          data-bs-toggle="collapse"
-                          href="#collapseExpress"
-                          role="button"
-                          aria-expanded="false"
-                          aria-controls="collapseExpress"
-                        >
-                          Détail
-                        </a>
-                      </div>
-                    </div>
-                  </h2>
-                  <div
-                    id="collapseExpress"
-                    class="accordion-collapse collapse"
-                    aria-labelledby="headingExpress"
-                    data-bs-parent="#loanTypeAccordion"
-                  >
-                    <div class="accordion-body">
-                      <ul class="mb-0 text-muted">
-                        <li><strong>Traitement :</strong> 24h</li>
-                        <li>
-                          <strong>Montant :</strong> Jusqu’à 100% de
-                          l’investissement
-                        </li>
-                        <li><strong>Intérêt :</strong> 10%</li>
-                        <li><strong>Durée :</strong> 4 mois</li>
-                        <li>
-                          <strong>Remboursement :</strong> Hebdomadaire ou
-                          Mensuel
-                        </li>
-                        <li>
-                          <strong>En cas de retard :</strong> prélèvement sur
-                          l’investissement
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Prêt Commercial Starter -->
-                <div class="accordion-item mb-3 border rounded">
-                  <h2 class="accordion-header" id="headingStarter">
-                    <div
-                      class="accordion-button collapsed d-flex justify-content-between align-items-center"
-                      style="cursor: default"
-                    >
-                      <div
-                        class="d-flex gap-2 w-100 justify-content-between align-items-center"
-                      >
-                        <label class="d-flex align-items-center gap-2 w-100">
-                          <input
-                            class="form-check-input mt-0"
-                            type="radio"
-                            name="type_pret_detail"
-                            value="starter"
-                            required
-                          />
-                          <span class="fw-semibold mb-0"
-                            >Prêt Commercial Starter</span
+                        <div class="d-flex gap-2 w-100 justify-content-between align-items-center">
+                          <label class="d-flex align-items-center gap-2 w-100">
+                            <input
+                              class="form-check-input mt-0"
+                              type="radio"
+                              name="type_pret"
+                              value="{{ type.id }}"
+                              required
+                            />
+                            <span class="fw-semibold mb-0">{{ type.nom }}</span>
+                          </label>
+                          <a
+                            class="detail-link fw-light"
+                            style="font-size: 0.8rem"
+                            data-bs-toggle="collapse"
+                            href="#collapse{{ slug }}"
+                            role="button"
+                            aria-expanded="false"
+                            aria-controls="collapse{{ slug }}"
                           >
-                        </label>
-                        <a
-                          class="detail-link fw-light"
-                          style="font-size: 0.8rem"
-                          data-bs-toggle="collapse"
-                          href="#collapseStarter"
-                          role="button"
-                          aria-expanded="false"
-                          aria-controls="collapseStarter"
-                        >
-                          Détail
-                        </a>
+                            Détail
+                          </a>
+                        </div>
                       </div>
-                    </div>
-                  </h2>
-                  <div
-                    id="collapseStarter"
-                    class="accordion-collapse collapse"
-                    aria-labelledby="headingStarter"
-                    data-bs-parent="#loanTypeAccordion"
-                  >
-                    <div class="accordion-body">
-                      <ul class="mb-0 text-muted">
-                        <li><strong>Traitement :</strong> Moins de 72h</li>
-                        <li><strong>Montant :</strong> 100$ à 300$</li>
-                        <li><strong>Intérêt :</strong> 5%</li>
-                        <li><strong>Durée :</strong> 6 mois</li>
-                        <li><strong>Remboursement :</strong> Hebdomadaire</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Prêt Commercial Pro -->
-                <div class="accordion-item mb-3 border rounded">
-                  <h2 class="accordion-header" id="headingPro">
+                    </h2>
                     <div
-                      class="accordion-button collapsed d-flex justify-content-between align-items-center"
-                      style="cursor: default"
+                      id="collapse{{ slug }}"
+                      class="accordion-collapse collapse"
+                      aria-labelledby="heading{{ slug }}"
+                      data-bs-parent="#loanTypeAccordion"
                     >
-                      <div
-                        class="d-flex gap-2 w-100 justify-content-between align-items-center"
-                      >
-                        <label class="d-flex align-items-center gap-2 w-100">
-                          <input
-                            class="form-check-input mt-0"
-                            type="radio"
-                            name="type_pret_detail"
-                            value="pro"
-                            required
-                          />
-                          <span class="fw-semibold mb-0"
-                            >Prêt Commercial Pro</span
-                          >
-                        </label>
-                        <a
-                          class="detail-link fw-light"
-                          style="font-size: 0.8rem"
-                          data-bs-toggle="collapse"
-                          href="#collapsePro"
-                          role="button"
-                          aria-expanded="false"
-                          aria-controls="collapsePro"
-                        >
-                          Détail
-                        </a>
+                      <div class="accordion-body">
+                        <ul class="mb-0 text-muted">
+                          <li><strong>Traitement :</strong> {{ type.delais_traitement }}h</li>
+                        
+                          {% if type.nom|lower == "prêt express" or type.nom|lower == "pres express" %}
+                            <li><strong>Montant max :</strong> {{max_possible_cdf|floatformat:0}}fc  ou bien  {{max_possible_usd|floatformat:0}}$  </li>
+                          {% else %}
+                            <li>
+                              <strong>Montant :</strong>
+                              {% if type.montant_min and type.montant_max %}
+                                {{ type.montant_min|floatformat:0 }}$ à {{ type.montant_max|floatformat:0 }}$
+                              {% elif type.montant_max %}
+                                Jusqu’à {{ type.montant_max|floatformat:0 }}$
+                              {% endif %}
+                            </li>
+                          {% endif %}
+                        
+                          <li><strong>Intérêt :</strong> {{ type.taux_interet }}%</li>
+                          <li><strong>Durée :</strong> {{ type.delai_remboursement }} mois</li>
+                        
+                          {% if type.description %}
+                            <li><strong>Description :</strong> {{ type.description }}</li>
+                          {% endif %}
+                        </ul>                        
                       </div>
                     </div>
-                  </h2>
-                  <div
-                    id="collapsePro"
-                    class="accordion-collapse collapse"
-                    aria-labelledby="headingPro"
-                    data-bs-parent="#loanTypeAccordion"
-                  >
-                    <div class="accordion-body">
-                      <ul class="mb-0 text-muted">
-                        <li><strong>Traitement :</strong> Moins de 72h</li>
-                        <li><strong>Montant :</strong> 1500$ à 4000$</li>
-                        <li><strong>Intérêt :</strong> 3%</li>
-                        <li><strong>Durée :</strong> 12 mois</li>
-                        <li><strong>Remboursement :</strong> Hebdomadaire</li>
-                      </ul>
-                    </div>
                   </div>
-                </div>
+                  {% endwith %}
+                {% empty %}
+                  <p>Aucun type de prêt disponible pour le moment.</p>
+                {% endfor %}
               </div>
+              
 
               <div class="mt-4 d-flex justify-content-end">
                 <button
                   type="button"
                   class="btn btn-primaire rounded-3 next-btn"
-                  disabled
                 >
                   Suivant
                 </button>
@@ -398,37 +299,21 @@
                 <i class="fas fa-money-bill-wave me-2"></i>
                 Informations sur le prêt
               </h6>
+              <div class="alert alert-secondary fs-6" style="padding: .5rem !important; font-size: .9rem !important;" role="alert">
+                <strong>Montant max :</strong> {{max_possible_cdf|floatformat:0}}fc  ou bien  {{max_possible_usd|floatformat:0}}$
+              </div>
+
               <div class="mb-3">
-                <label for="montant" class="form-label fw-semibold text-muted"
-                  >Montant</label
-                >
-                <input
-                  type="number"
-                  class="form-control"
-                  id="montant"
-                  name="montant"
-                  required
-                />
+                <label for="{{ form.montant.id_for_label }}">Montant</label>
+                {{ form.montant }}
               </div>
               <div class="mb-3">
-                <label for="devise" class="form-label fw-semibold text-muted"
-                  >Devise</label
-                >
-                <select name="devise" class="form-select" id="devise">
-                  <option value="CDF">CDF</option>
-                  <option value="USD">USD</option>
-                </select>
+                <label for="{{ form.devise.id_for_label }}">Device</label>
+                {{ form.devise }}
               </div>
               <div class="mb-3">
-                <label
-                  for="mode_payement"
-                  class="form-label fw-semibold text-muted"
-                  >mode de payement</label
-                >
-                <select name="mode_payement" class="form-select" id="devise">
-                  <option value="hebdomadaire">Hebdomadaire</option>
-                  <option value="mensuel">Mensuel</option>
-                </select>
+                <label for="{{ form.mode_payement.id_for_label }}">Mode de paiement</label>
+                {{ form.mode_payement }}
               </div>
               <div class="mt-4 d-flex justify-content-end">
                 <button

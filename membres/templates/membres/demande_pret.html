@@ -4,56 +4,94 @@
 {% block content %}
 
 <div class="container-fluid p-3 p-md-4 rounded-3" style="background-color: #fff; min-height: 100%;">
-    {% if messages %}
+
+  {% if messages %}
     {% for message in messages %}
-    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{message.tags}}{% endif %} alert-dismissible fade show" role="alert">
+      <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
         {{ message }}
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
+      </div>
     {% endfor %}
-    {% endif %}
+  {% endif %}
 
-    {% include "membres/components/demandePretModal.html" %}
+  {% include "membres/components/demandePretModal.html" %}
 
-    <div class="mt-4">
-        <div class="card border-0 rounded-3 shadow-sm">
-            <div class="card-header bg-white p-3 border">
-                <h6 class="mb-0 fw-semibold" style="color: #616161;"><i class="fas fa-history me-2"></i> Historique de vos demandes</h6>
+  <div class="mt-4">
+    <div class="card border-0 rounded-3 shadow-sm">
+      <div class="card-header bg-white p-3 border">
+        <h6 class="mb-0 fw-semibold text-secondary">
+          <i class="fas fa-history me-2"></i> Historique de vos demandes
+        </h6>
+      </div>
+
+      <div class="card-body p-3">
+        {% for pret in demandes_pret %}
+          <div 
+            class="list-group-item list-group-item-action rounded-3 p-3 mb-2 border-0 shadow-sm"  
+            onclick="location.href='{% url 'membres:transaction' pret.transaction.pk %}'" 
+            style="cursor: pointer; background-color: #fff;"
+          >
+            <div class="d-flex w-100 flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2">
+
+              <!-- Colonne gauche : Infos du prêt -->
+              <div>
+                <h6 class="mb-1 fw-normal">
+                  <i class="fas fa-arrow-right me-1"></i>
+                  Prêt de <span>{{ pret.montant|stringformat:".2f" }} {{ pret.devise }}</span>
+                </h6>
+                
+                <small class="text-muted d-block mb-1">
+                  <i class="fas fa-calendar-alt me-1"></i> Demandé le : {{ pret.date_demande|date:"d/m/Y à H:i" }}
+                </small>
+
+                <small class="text-muted d-block">Montant à rembourser : {{ pret.montant_payer|stringformat:".0f" }} {{ pret.devise }}</small>
+                
+                <small class="text-muted d-block">
+                  Un retrait de : {{ pret.montant_remboursé|stringformat:".0f" }}{{ pret.devise }} sera retiré après chaque 
+                  {% if pret.mode_payement == 'hebdomadaire' %}semaine{% elif pret.mode_payement == 'mensuel' %}mois{% endif %}
+                </small>
+
+                {% if pret.statut == 'Approuvé' %}
+                  <small class="text-success fw-semibold d-block mt-1">
+                    <i class="fas fa-hourglass-half me-1"></i> Remboursement limite : {{ pret.date_remboursement|date:"d/m/Y" }}
+                  </small>
+                {% endif %}
+              </div>
+
+              <!-- Colonne droite : Statut et action -->
+              <div class="text-start text-md-end">
+                <span class="badge rounded-pill"
+                      style="background-color: 
+                        {% if pret.transaction.statut == 'Approuvé' %}#d4edda; color: #155724;
+                        {% elif pret.statut in 'Rejeté Depassé' %}#f8d7da; color: #721c24;
+                        {% elif pret.statut == 'Remboursé' %}#e0f7fa; color: #00838f;
+                        {% else %}#fff3cd; color: #85640a;
+                        {% endif %}">
+                  {% if pret.statut == 'Approuvé' and pret.transaction.statut == 'En attente' %}
+                    En attente
+                  {% else %}
+                    {{ pret.statut }}
+                  {% endif %}
+                </span>
+
+                {% if pret.transaction.statut == 'Approuvé' %}
+                  <a href="{% url 'membres:rembourser_pret' pret.transaction.pk %}" class="btn btn-sm btn-outline-success rounded-pill mt-1 mt-md-0 ms-md-2 d-inline-block">
+                    <i class="fas fa-reply me-1"></i> Rembourser
+                  </a>
+                {% endif %}
+              </div>
+
             </div>
-            <div class="card-body p-3">
-                {% for demande in demandes_pret %}
-                <div class="list-group-item list-group-item-action rounded-3 p-3 mb-2 border-0 shadow-sm"  onclick="location.href='{% url 'membres:transaction' demande.transaction.pk %}'" style="cursor: pointer; background-color: #fff;">
-                    <div class="d-flex w-100 flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2">
-                        <div>
-                            <h6 class="mb-1 fw-normal">
-                                <i class="fas fa-arrow-right me-1 "></i> Prêt de <span>{{ demande.montant_remboursé|stringformat:".2f" }} {{ demande.devise }}</span>
-                                {% if demande.statut == 'Depassé' %}
-                                    <span class="badge bg-danger ms-2">+{% if demande.devise == "USD" %}5{% else %}14 000{% endif %} {{ demande.devise }}</span>
-                                {% endif %}
-                            </h6>
-                            <small class="text-muted"><i class="fas fa-calendar-alt me-1"></i> Demandé le : {{ demande.date_demande|date:"d/m/Y à H:i" }}</small><br>
-                            {% if demande.statut == 'Approuvé' %}
-                                <small class="text-success fw-semibold"><i class="fas fa-hourglass-half me-1 "></i> Remboursement limite : {{ demande.date_remboursement|date:"d/m/Y" }}</small>
-                            {% endif %}
-                        </div>
-                        <div class="text-start text-md-end">
-                            <span class="badge rounded-pill" style="background-color: {% if demande.transaction.statut == 'Approuvé' %}#d4edda; color: #155724;{% elif demande.statut in 'Rejeté Depassé' %}#f8d7da; color: #721c24;{% elif demande.statut == 'Remboursé' %}#e0f7fa; color: #00838f;{% else %}#fff3cd; color: #85640a;{% endif %}">
-                                {% if demande.statut == 'Approuvé' and demande.transaction.statut == 'En attente' %}En attente{% else %}{{ demande.statut }}{% endif %}
-                            </span>
-                            {% if demande.transaction.statut == 'Approuvé' %}
-                                <a class="btn btn-sm btn-outline-success rounded-pill mt-1 mt-md-0 ms-md-2 d-inline-block" href="{% url 'membres:rembourser_pret' demande.transaction.pk %}"><i class="fas fa-reply me-1"></i> Rembourser</a>
-                            {% endif %}
-                        </div>
-                    </div>
-                    
-                </div>
-                {% empty %}
-                <p class="text-center text-muted"><i class="fas fa-exclamation-triangle me-1 text-warning"></i> Aucune demande de prêt n'a été effectuée pour le moment.</p>
-                {% endfor %}
-            </div>
-        </div>
+          </div>
+        {% empty %}
+          <p class="text-center text-muted">
+            <i class="fas fa-exclamation-triangle me-1 text-warning"></i>
+            Aucune demande de prêt n'a été effectuée pour le moment.
+          </p>
+        {% endfor %}
+      </div>
     </div>
-    
+  </div>
 </div>
 
 {% endblock %}

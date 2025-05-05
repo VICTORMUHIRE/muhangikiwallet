@@ -3,10 +3,9 @@ from django import forms
 
 from .models import Solde, Transactions, Contributions, Retraits, DepotsObjectif, Transferts, Prets, TypesPret, DepotsInscription, Fidelites
 
-MODE_PAYEMENT_CHOICES = [
+MODE_PAYEMENT_EXPRES = [
     ('hebdomadaire', 'Hebdomadaire'),
     ('mensuel', 'Mensuel'),
-    ('annuel', 'annuel'),
 ]
 
 # Formulaire de transaction
@@ -22,13 +21,30 @@ class TransactionsForm(forms.ModelForm):
 
 # forms.py
 class PretsForm(forms.ModelForm):
-    mode_payement = forms.ChoiceField(choices=MODE_PAYEMENT_CHOICES, label="Mode de paiement")
+    mode_payement = forms.ChoiceField(
+        choices=MODE_PAYEMENT_EXPRES, 
+        label="Mode de paiement", 
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
 
     class Meta:
         model = Prets
         fields = ["type_pret", "montant", "devise", "mode_payement"]
 
-    
+    def __init__(self, *args, **kwargs):
+        super(PretsForm, self).__init__(*args, **kwargs)
+
+        self.fields['type_pret'].widget.attrs.update({
+            'class': 'form-select'  # ou 'form-control' selon le widget
+        })
+        self.fields['montant'].widget.attrs.update({
+            'class': 'form-control',
+            'placeholder': 'Montant du prêt'
+        })
+        self.fields['devise'].widget.attrs.update({
+            'class': 'form-select'
+        })
+
 # Formulaire de type de pret
 class TypesPretForm(forms.ModelForm):
     class Meta:
