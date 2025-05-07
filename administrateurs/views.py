@@ -675,8 +675,8 @@ def voir_pret(request, pret_id):
                 #      Enregistrement du credit - (le pourcentage liee au taux d'interet)
                 #     # Dans le solde utilisateur
 
-                #     compteMembre = pret.membre.compte_USD if pret.devise == "USD" else pret.membre.compte_CDF
-                #     compteMembre.solde += pret.montant_remboursé
+                compteMembre = pret.membre.compte_USD if pret.devise == "USD" else pret.membre.compte_CDF
+                compteMembre.solde += pret.montant_remboursé
                 pret.save()
                 transaction.save()
                 messages.success(request, "Le prêt a été approuvé avec succès.")
