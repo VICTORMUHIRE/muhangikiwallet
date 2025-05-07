@@ -362,12 +362,6 @@ def demande_pret(request):
     types_pret = TypesPret.objects.all()
     demandes_pret = Prets.objects.filter(membre=request.user.membre).order_by("-date_demande")
 
-    # for pret in demandes_pret:
-    #     if pret.statut == "Approuvé" and timezone.now() > pret.date_remboursement:
-    #         pret.montant_remboursé += 5 * (2800 if pret.devise == "CDF" else 1)
-    #         pret.statut = "Depassé"
-    #         pret.save()
-
     taux_de_change = 2800
     membre = request.user.membre
 
@@ -388,66 +382,102 @@ def demande_pret(request):
                 pret = form.save(commit=False)
                 pret.membre = membre
                 type_pret = pret.type_pret
+                nom_pret = type_pret.nom.lower()
 
-                # Vérification spéciale pour "Prêt Express"
-                if type_pret.nom.lower() == "pret express":
-                    anciennete = (timezone.now().date() - membre.date_creation).days
+                montant = float(pret.montant)
+                montant_cdf = montant if pret.devise == "CDF" else montant * taux_de_change
+                solde_total_contribution = solde_contribution_CDF + (solde_contribution_USD * taux_de_change)
+                anciennete = (timezone.now().date() - membre.date_creation.date()).days
+
+                # Vérification spécifique pour chaque type de prêt
+                if nom_pret == "prêts express":
                     if anciennete < 60:
                         messages.error(request, "Vous devez avoir au moins 2 mois dans le système pour ce type de prêt.")
                         return redirect("membres:demande_pret")
-
-                    montant_cdf = pret.montant if pret.devise == "CDF" else pret.montant * taux_de_change
 
                     if montant_cdf > max_possible_cdf:
                         messages.error(request, "Le montant demandé dépasse vos contributions.")
                         return redirect("membres:demande_pret")
 
-                if not Transactions.objects.filter(membre=membre, type="retrait_tout", statut__in=["En attente", "Demande"]).exists():
-                    if not Prets.objects.filter(membre=membre, statut="En attente").exists():
-                        if not Prets.objects.filter(membre=membre, statut__in=["Approuvé", "Depassé"]).exists():
-                            montant = float(pret.montant)
-                            taux = float(type_pret.taux_interet) / 100
-                            delai = int(type_pret.delai_remboursement)
+                elif nom_pret == "prêts commercial starter":
+                    if solde_total_contribution < type_pret.investissement_min * taux_de_change:
+                        messages.error(request, f"Vous devez avoir au moins {type_pret.investissement_min}$ de contributions totales.")
+                        return redirect("membres:demande_pret")
 
-                            pret.mode_payement = mode_payement
-                            pret.devise = pret.devise
-                            
-                            montant_payer = montant + (montant * taux * delai)
-                            if mode_payement == "mensuel":
-                                montant_rembourse_par_tranche = montant_payer / delai
-                                pret.date_remboursement = timezone.now() + timedelta(days=30 * delai)
-                            elif mode_payement == "hebdomadaire":
-                                montant_rembourse_par_tranche = montant_payer / (delai * 4)
-                                pret.date_remboursement = timezone.now() + timedelta(days=7 * delai * 4)
-                            else:
-                                messages.error(request, "Mode de paiement invalide.")
-                                return redirect("membres:demande_pret")
+                    if montant < type_pret.montant_min or montant > type_pret.montant_max:
+                        messages.error(request, "Le montant demandé doit être entre les limites définies pour ce type de prêt.")
+                        return redirect("membres:demande_pret")
 
-                            # Vérification finale du plafond
-                            montant_cdf = montant if pret.devise == "CDF" else montant * taux_de_change
-                            solde_total_contribution = (solde_contribution_CDF + (solde_contribution_USD * taux_de_change))
-                            if montant_cdf <= solde_total_contribution:
-                                pret.montant_payer = montant_payer
-                                pret.montant_remboursé = montant_rembourse_par_tranche
+                elif nom_pret == "prêts commercial pro":
+                    nombre_contributions = Transactions.objects.filter(membre=membre, statut="Approuvé", type="contribution").count()
 
-                                transaction = Transactions.objects.create(
-                                    membre=membre,
-                                    montant=montant,
-                                    devise=pret.devise,
-                                    type="pret"
-                                )
-                                pret.transaction = transaction
-                                pret.save()
-                                messages.success(request, 'Votre demande de prêt a été soumise avec succès.')
-                                return redirect("membres:demande_pret")
-                            else:
-                                messages.error(request, "Montant du prêt supérieur à votre plafond de contribution.")
-                        else:
-                            messages.error(request, "Vous avez déjà un prêt approuvé ou dépassé.")
-                    else:
-                        messages.error(request, "Vous avez déjà une demande de prêt en attente.")
+                    if anciennete < 90:
+                        messages.error(request, "Vous devez avoir au moins 3 mois dans le système pour ce prêt.")
+                        return redirect("membres:demande_pret")
+
+                    if nombre_contributions < 5:
+                        messages.error(request, "Vous devez avoir au moins 5 contributions approuvées.")
+                        return redirect("membres:demande_pret")
+
+                    if solde_total_contribution < type_pret.investissement_min * taux_de_change:
+                        messages.error(request, "Vous devez avoir au moins 200$ de contributions totales.")
+                        return redirect("membres:demande_pret")
+
+                    if montant < type_pret.montant_min or montant > type_pret.montant_max:
+                        messages.error(request, "Le montant demandé doit respecter les limites définies pour ce type de prêt.")
+                        return redirect("membres:demande_pret")
+
                 else:
+                    messages.error(request, "Type de prêt invalide ou non pris en charge.")
+                    return redirect("membres:demande_pret")
+
+                # Vérifications globales communes
+                if Transactions.objects.filter(membre=membre, type="retrait_tout", statut__in=["En attente", "Demande"]).exists():
                     messages.error(request, "Vous avez une demande de retrait total en cours.")
+                    return redirect("membres:demande_pret")
+
+                if Prets.objects.filter(membre=membre, statut="En attente").exists():
+                    messages.error(request, "Vous avez déjà une demande de prêt en attente.")
+                    return redirect("membres:demande_pret")
+
+                if Prets.objects.filter(membre=membre, statut__in=["Approuvé", "Depassé"]).exists():
+                    messages.error(request, "Vous avez déjà un prêt approuvé ou dépassé.")
+                    return redirect("membres:demande_pret")
+
+                # Calcul du montant à rembourser
+                taux = float(type_pret.taux_interet) / 100
+                delai = int(type_pret.delai_remboursement)
+                montant_payer = montant + (montant * taux * delai)
+
+                if mode_payement == "mensuel":
+                    montant_remboursé_tranche = montant_payer / delai
+                    pret.date_remboursement = timezone.now() + timedelta(days=30 * delai)
+                elif mode_payement == "hebdomadaire":
+                    montant_remboursé_tranche = montant_payer / (delai * 4)
+                    pret.date_remboursement = timezone.now() + timedelta(days=7 * delai * 4)
+                else:
+                    messages.error(request, "Mode de paiement invalide.")
+                    return redirect("membres:demande_pret")
+
+
+                # Sauvegarde finale
+                pret.mode_payement = mode_payement
+                pret.devise = pret.devise
+                pret.montant_payer = montant_payer
+                pret.montant_remboursé = montant_remboursé_tranche
+
+                transaction = Transactions.objects.create(
+                    membre=membre,
+                    montant=montant,
+                    devise=pret.devise,
+                    type="pret"
+                )
+                pret.transaction = transaction
+                pret.save()
+
+                messages.success(request, 'Votre demande de prêt a été soumise avec succès.')
+                return redirect("membres:demande_pret")
+
             else:
                 messages.error(request, 'Mot de passe incorrect.')
         else:
@@ -460,9 +490,10 @@ def demande_pret(request):
         "types_pret": types_pret,
         "demandes_pret": demandes_pret,
         "taux_change": taux_de_change,
-        "max_possible_cdf":max_possible_cdf,
-        "max_possible_usd":max_possible_usd,        
+        "max_possible_cdf": max_possible_cdf,
+        "max_possible_usd": max_possible_usd,
     }
+
     return render(request, "membres/demande_pret.html", context)
 
 # Vue pour la page de remboursement du pret du membre

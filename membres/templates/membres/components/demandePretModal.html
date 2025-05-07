@@ -70,6 +70,17 @@
     --primary-color: #fc9d1b;
   }
 
+  .btn-outline-hover {
+    background-color: transparent;
+    border: 1px solid var(--primary-color); /* couleur de la bordure, ici vert bootstrap */
+    color: var(--primary-color);
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  .btn-outline-hover:hover {
+    background-color: var(--primary-color);
+    color: #fff;
+  }
   .btn-primaire {
     background-color: var(--primary-color);
     color:white;
@@ -129,7 +140,7 @@
 <div class="d-flex justify-content-end mb-4">
   <button
     type="button"
-    class="btn btn-mw rounded-3 shadow-sm text-white"
+    class="btn btn-outline-hover shadow-sm"
     data-bs-toggle="modal"
     data-bs-target="#loanRequestModal"
   >
@@ -144,6 +155,16 @@
   aria-labelledby="loanRequestModalLabel"
   aria-hidden="true"
 >
+  {% if form.errors %}
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      var myModal = new bootstrap.Modal(document.getElementById('loanRequestModal'));
+      myModal.show();
+    });
+  </script>
+  {% endif %}
+
+
   <div
     class="modal-dialog modal-dialog-centered modal-md modal-fullscreen-sm-down"
   >
@@ -226,30 +247,35 @@
                       aria-labelledby="heading{{ slug }}"
                       data-bs-parent="#loanTypeAccordion"
                     >
-                      <div class="accordion-body">
+                      <div class="accordion-body" style="padding-top: 0 !important;">
                         <ul class="mb-0 text-muted">
-                          <li><strong>Traitement :</strong> {{ type.delais_traitement }}h</li>
+                          <li><small><strong>Traitement :</strong> {{ type.delais_traitement }}h</small></li>
                         
-                          {% if type.nom|lower == "prêt express" or type.nom|lower == "pres express" %}
-                            <li><strong>Montant max :</strong> {{max_possible_cdf|floatformat:0}}fc  ou bien  {{max_possible_usd|floatformat:0}}$  </li>
+                          {% if type.nom|lower == "prêts express" or type.nom|lower == "prets express" %}
+                            <li>
+                              <small><strong>Montant max :</strong> soit {{max_possible_cdf|floatformat:0}}fc, soit {{max_possible_usd|floatformat:0}}$</small>
+                            </li>
                           {% else %}
                             <li>
-                              <strong>Montant :</strong>
-                              {% if type.montant_min and type.montant_max %}
-                                {{ type.montant_min|floatformat:0 }}$ à {{ type.montant_max|floatformat:0 }}$
-                              {% elif type.montant_max %}
-                                Jusqu’à {{ type.montant_max|floatformat:0 }}$
-                              {% endif %}
+                              <small>
+                                <strong>Montant :</strong>
+                                {% if type.montant_min and type.montant_max %}
+                                  {{ type.montant_min|floatformat:0 }}$ à {{ type.montant_max|floatformat:0 }}$
+                                {% elif type.montant_max %}
+                                  Jusqu’à {{ type.montant_max|floatformat:0 }}$
+                                {% endif %}
+                              </small>
                             </li>
                           {% endif %}
                         
-                          <li><strong>Intérêt :</strong> {{ type.taux_interet }}%</li>
-                          <li><strong>Durée :</strong> {{ type.delai_remboursement }} mois</li>
+                          <li><small><strong>Intérêt :</strong> {{ type.taux_interet| floatformat:0 }}%</small></li>
+                          <li><small><strong>Durée :</strong> {{ type.delai_remboursement }} mois</small></li>
                         
                           {% if type.description %}
-                            <li><strong>Description :</strong> {{ type.description }}</li>
+                            <li><small><strong>Description :</strong> {{ type.description }}</small></li>
                           {% endif %}
-                        </ul>                        
+                        </ul>
+                                            
                       </div>
                     </div>
                   </div>
@@ -299,10 +325,7 @@
                 <i class="fas fa-money-bill-wave me-2"></i>
                 Informations sur le prêt
               </h6>
-              <div class="alert alert-secondary fs-6" style="padding: .5rem !important; font-size: .9rem !important;" role="alert">
-                <strong>Montant max :</strong> {{max_possible_cdf|floatformat:0}}fc  ou bien  {{max_possible_usd|floatformat:0}}$
-              </div>
-
+              
               <div class="mb-3">
                 <label for="{{ form.montant.id_for_label }}">Montant</label>
                 {{ form.montant }}
@@ -445,5 +468,6 @@
 
     showStep(currentStep);
   });
+  
 </script>
 

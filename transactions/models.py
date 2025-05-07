@@ -117,6 +117,7 @@ class TypesPret(models.Model):
     taux_interet = models.DecimalField(max_digits=5, decimal_places=2, verbose_name="Taux d'intérêt (%)")
     delais_traitement = models.IntegerField(default=24, verbose_name="Délai de traitement (heures)")
     delai_remboursement = models.IntegerField(verbose_name="Delai de remboursement(en mois)")
+    investissement_min = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name="Investissement minimum")
     montant_min = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name="Montant minimum")
     montant_max = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name="Montant maximum")
 

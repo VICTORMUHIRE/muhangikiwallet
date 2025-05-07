@@ -10,3 +10,4 @@ def pourcentage(montant, montant_cible):
         return (montant / montant_cible) * 100 if montant_cible > 0 else 0
     except (TypeError, ValueError, ZeroDivisionError):
         return 0
+

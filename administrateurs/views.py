@@ -617,7 +617,7 @@ def voir_pret(request, pret_id):
                 pret.date_approbation = timezone.now()
                 pret.administrateur = request.user.admin
                 pret.statut = "Approuvé"
-                pret.save()
+                
 
                 transaction = transaction_form.save(commit=False)
                 transaction.date_approbation = timezone.now()
@@ -626,58 +626,58 @@ def voir_pret(request, pret_id):
                 transaction.montant = pret.montant
                 transaction.devise = pret.devise
 
-                # Calcul du bénéfice
-                taux_change = 2800
-                facteur = taux_change if pret.devise == "USD" else 1
-                montant_benefice = (float(pret.montant_remboursé) - float(pret.montant)) * 0.5 * facteur
+                # # Calcul du bénéfice
+                # taux_change = 2800
+                # facteur = taux_change if pret.devise == "USD" else 1
+                # montant_benefice = (float(pret.montant_remboursé) - float(pret.montant)) * 0.5 * facteur
 
-                # Total des contributions (en CDF)
-                total_contributions_CDF = Transactions.objects.filter(
-                    devise="CDF", statut="Approuvé", type="contribution"
-                ).aggregate(total=Sum('montant'))['total'] or 0
+                # # Total des contributions (en CDF)
+                # total_contributions_CDF = Transactions.objects.filter(
+                #     devise="CDF", statut="Approuvé", type="contribution"
+                # ).aggregate(total=Sum('montant'))['total'] or 0
 
-                total_contributions_USD = Transactions.objects.filter(
-                    devise="USD", statut="Approuvé", type="contribution"
-                ).aggregate(total=Sum('montant'))['total'] or 0
+                # total_contributions_USD = Transactions.objects.filter(
+                #     devise="USD", statut="Approuvé", type="contribution"
+                # ).aggregate(total=Sum('montant'))['total'] or 0
 
-                total_contributions_CDF += total_contributions_USD * taux_change
+                # total_contributions_CDF += total_contributions_USD * taux_change
 
-                if total_contributions_CDF > 0:
-                    membres_actifs = Membres.objects.filter(status=True)
+                # if total_contributions_CDF > 0:
+                #     membres_actifs = Membres.objects.filter(status=True)
 
-                    for membre in membres_actifs:
-                        # Contributions du membre (en CDF)
-                        contrib_CDF = Transactions.objects.filter(
-                            membre=membre, devise="CDF", statut="Approuvé", type="contribution"
-                        ).aggregate(total=Sum('montant'))['total'] or 0
+                #     for membre in membres_actifs:
+                #         # Contributions du membre (en CDF)
+                #         contrib_CDF = Transactions.objects.filter(
+                #             membre=membre, devise="CDF", statut="Approuvé", type="contribution"
+                #         ).aggregate(total=Sum('montant'))['total'] or 0
 
-                        contrib_USD = Transactions.objects.filter(
-                            membre=membre, devise="USD", statut="Approuvé", type="contribution"
-                        ).aggregate(total=Sum('montant'))['total'] or 0
+                #         contrib_USD = Transactions.objects.filter(
+                #             membre=membre, devise="USD", statut="Approuvé", type="contribution"
+                #         ).aggregate(total=Sum('montant'))['total'] or 0
 
-                        total_membre_CDF = contrib_CDF + (contrib_USD * taux_change)
-                        proportion = float(total_membre_CDF / total_contributions_CDF)
-                        benefice_membre = montant_benefice * proportion
+                #         total_membre_CDF = contrib_CDF + (contrib_USD * taux_change)
+                #         proportion = float(total_membre_CDF / total_contributions_CDF)
+                #         benefice_membre = montant_benefice * proportion
 
-                        Benefices.objects.create(
-                            pret=pret,
-                            membre=membre,
-                            montant=benefice_membre / facteur,
-                            devise=pret.devise
-                        )
+                #         Benefices.objects.create(
+                #             pret=pret,
+                #             membre=membre,
+                #             montant=benefice_membre / facteur,
+                #             devise=pret.devise
+                #         )
 
-                    # Enregistrement du bénéfice pour l'administration (une seule fois)
-                    BalanceAdmin.objects.create(
-                        montant=montant_benefice / facteur,
-                        devise=pret.devise,
-                        type="pret"
-                    )
-                    # Enregistrement du credit - (le pourcentage liee au taux d'interet)
-                    # Dans le solde utilisateur
+                #     # Enregistrement du bénéfice pour l'administration (une seule fois)
+                #     BalanceAdmin.objects.create(
+                #         montant=montant_benefice / facteur,
+                #         devise=pret.devise,
+                #         type="pret"
+                #     )
+                #      Enregistrement du credit - (le pourcentage liee au taux d'interet)
+                #     # Dans le solde utilisateur
 
-                    compteMembre = pret.membre.compte_USD if pret.devise == "USD" else pret.membre.compte_CDF
-                    compteMembre.solde += pret.montant_remboursé
-
+                #     compteMembre = pret.membre.compte_USD if pret.devise == "USD" else pret.membre.compte_CDF
+                #     compteMembre.solde += pret.montant_remboursé
+                pret.save()
                 transaction.save()
                 messages.success(request, "Le prêt a été approuvé avec succès.")
                 return redirect("administrateurs:home")
