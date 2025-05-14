@@ -39,6 +39,7 @@ TRANSACTION_CHOICES = [
     ('pret', 'Prêt'),
     ('remboursement_pret', 'Remboursement pret'),
     ('recharger_compte', 'Recharger compte'),
+    ('retrait_investissement','retrait investissement'),
 ]
 MODE_PAYEMENT_CHOICES = [
     ('hebdomadaire', 'Hebdomadaire'),
@@ -65,7 +66,7 @@ class Transactions(models.Model):
     date_approbation = models.DateTimeField(blank=True, null=True, verbose_name="Date d'approbation")
 
     description = models.TextField(blank=True, null=True, verbose_name="Description")
-    type = models.CharField(max_length=20, choices=TRANSACTION_CHOICES, verbose_name="Type de transaction")
+    type = models.CharField(max_length=30, choices=TRANSACTION_CHOICES, verbose_name="Type de transaction")
 
     statut = models.CharField(max_length=20, choices=STATUS_CHOICES, default="Demande", verbose_name="Statut")
 
@@ -81,7 +82,7 @@ class BalanceAdmin(models.Model):
     devise = models.CharField(max_length=3, choices=DEVISE_CHOICES, verbose_name="Devise")
 
     date = models.DateTimeField(auto_now_add=True, verbose_name="Date")
-    type = models.CharField(max_length=20, choices=[('pret', 'Pret'), ('depot_inscription', 'Dépôt inscription'), ('retrait', 'Retrait'), ('retrait_tout', 'Retrait tout'), ('annulation_objectif', 'Annulation objectif'), ('remboursement_pret', 'Remboursement pret')], verbose_name="Type de balance")
+    type = models.CharField(max_length=30, choices=[('pret', 'Pret'), ('depot_inscription', 'Dépôt inscription'), ('retrait', 'Retrait'), ('retrait_investissement', 'Retrait investissement'), ('annulation_objectif', 'Annulation objectif'), ('remboursement_pret', 'Remboursement pret')], verbose_name="Type de balance")
     statut = models.BooleanField(default=True, verbose_name="Statut")
     
     def __str__(self):
@@ -277,11 +278,32 @@ class Retraits(models.Model):
     montant = models.FloatField(verbose_name="Montant")
     devise = models.CharField(max_length=3, choices=DEVISE_CHOICES, verbose_name="Devise")
     frais = models.FloatField(verbose_name="Frais")
-
     date = models.DateTimeField(auto_now_add=True, verbose_name="Date")
     date_approbation = models.DateTimeField(blank=True, null=True, verbose_name="Date d'approbation")
 
     transaction = models.ForeignKey(Transactions, on_delete=models.CASCADE, blank=True, related_name="retrait", verbose_name="Transaction")
+
+    description = models.TextField(blank=True, null=True, verbose_name="Description")
+    statut = models.CharField(max_length=20, choices=(("En attente", "En attente"), ("Approuvé", "Approuvé"), ("Rejeté", "Rejeté"),  ("Annulé", "Annulé")), default="En attente", verbose_name="Statut")
+
+
+
+    def __str__(self):
+        return f"Retrait de {self.montant} - {self.date}"
+
+    class Meta:
+        verbose_name = "Retraits"
+        verbose_name_plural = "Retraits"
+
+class RetraitContributions(models.Model):
+    membre = models.ForeignKey(Membres, on_delete=models.CASCADE, verbose_name="Membres")
+    montant = models.FloatField(verbose_name="Montant")
+    devise = models.CharField(max_length=3, choices=DEVISE_CHOICES, verbose_name="Devise")
+    frais = models.FloatField(verbose_name="Frais")
+    date = models.DateTimeField(auto_now_add=True, verbose_name="Date")
+    date_approbation = models.DateTimeField(blank=True, null=True, verbose_name="Date d'approbation")
+
+    transaction = models.ForeignKey(Transactions, on_delete=models.CASCADE, blank=True, related_name="retrait_investissement", verbose_name="Transaction")
 
     description = models.TextField(blank=True, null=True, verbose_name="Description")
     statut = models.CharField(max_length=20, choices=(("En attente", "En attente"), ("Approuvé", "Approuvé"), ("Rejeté", "Rejeté"),  ("Annulé", "Annulé")), default="En attente", verbose_name="Statut")

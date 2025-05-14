@@ -19,7 +19,7 @@ from objectifs.models import Objectifs
 from objectifs.forms import ObjectifsForm
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import login, update_session_auth_hash
-from transactions.models import BalanceAdmin, Solde, Transactions, Prets, RemboursementsPret, TypesPret, Contributions, DepotsObjectif, Retraits, Transferts, DepotsInscription, Benefices, RetraitsObjectif, AnnulationObjectif
+from transactions.models import BalanceAdmin, RetraitContributions, Solde, Transactions, Prets, RemboursementsPret, TypesPret, Contributions, DepotsObjectif, Retraits, Transferts, DepotsInscription, Benefices, RetraitsObjectif, AnnulationObjectif
 from transactions.forms import ContributionsForm, PretsForm, SoldeForm, TransfertsForm, RetraitsForm, DepotsInscriptionForm, TypesPretForm, TransactionsForm, DepotsObjectifForm
 from datetime import datetime, timedelta
 from django.utils import timezone
@@ -286,17 +286,12 @@ def contributions(request):
     solde_contribution_USD = Transactions.objects.filter(membre=membre, devise="USD", statut="Approuvé", type="contribution").aggregate(total=Sum('montant'))['total'] or 0
 
     contributions = Contributions.objects.filter(transaction__membre=request.user.membre)
-    contribution_actuelle = Contributions.objects.filter(transaction__membre=membre, mois=membre.mois_contribution, statut="Approuvé").aggregate(total=Sum('montant'))['total'] or 0
 
     context = {
         "membre": membre,
-        "contribution_mensuelle": membre.contribution_mensuelle,
-        "contribution_actuelle": contribution_actuelle,
-        "montant_restant": float(membre.contribution_mensuelle.montant) - contribution_actuelle,
         "contributions": contributions,
         "solde_contribution_CDF": solde_contribution_CDF,
         "solde_contribution_USD": solde_contribution_USD,
-        "objectifs": Objectifs.objects.filter(membre=membre, statut__in=["En cours", "Atteint", "Epuisé"])
     }
     return render(request, "membres/contributions.html", context)
 
@@ -1026,41 +1021,80 @@ def parametres(request):
 
 @login_required
 @verifier_membre
-def retirer_tout(request):
+def retirer_investissement(request):
     membre = request.user.membre
+    solde_contribution_CDF = Transactions.objects.filter(membre=membre, devise="CDF", statut="Approuvé", type="contribution").aggregate(total=Sum('montant'))['total'] or 0
+    solde_contribution_USD = Transactions.objects.filter(membre=membre, devise="USD", statut="Approuvé", type="contribution").aggregate(total=Sum('montant'))['total'] or 0
+
+    Retraitcontrubution = RetraitContributions.objects.filter(transaction__membre=request.user.membre)
+    frais = 0.1
     
-    montant_contributions = float(Transactions.objects.filter(membre=membre, devise=membre.contribution_mensuel.devise, type="contribution", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0)
-    montant_objectifs = (float(Objectifs.objects.filter(membre=membre, devise="CDF", statut__in=["En cours", "Atteint", "Epuisé"]).aggregate(Sum('montant'))['montant__sum'] or 0) + float(Objectifs.objects.filter(membre=membre, devise="USD", statut__in=["En cours", "Atteint", "Epuisé"]).aggregate(Sum('montant'))['montant__sum'] or 0) * 2800) * (1/2800 if membre.contribution_mensuelle.devise == "USD" else 1)
-    montant_benefices = float(Benefices.objects.filter(membre=membre, devise=membre.contribution_mensuelle.devise, statut=True).aggregate(Sum('montant'))['montant__sum'] or 0) - float(Retraits.objects.filter(membre=membre, devise=membre.contribution_mensuelle.devise, statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0)
-
-    montant_total = montant_contributions + montant_objectifs + montant_benefices
-
-    if request.method == "POST":
+    if request.method == 'POST':
+        form = TransactionsForm(request.POST)
         mot_de_passe = request.POST.get('mot_de_passe')
-        
+
         if check_password(mot_de_passe, request.user.password):
-            if not Transactions.objects.filter(membre=membre, type="retrait_tout", statut__in=["En attente", "Demande"]).exists():
-                if not Prets.objects.filter(membre=request.user.membre, statut="Approuvé").exists():
-                    if montant_total > 0:
-                        Transactions.objects.create(
+            if form.is_valid():
+                montant = form.cleaned_data['montant']
+                devise = form.cleaned_data['devise']
+                compte = membre.compte_USD if devise == "USD" else membre.compte_CDF
+                solde_contribution = Transactions.objects.filter(membre=membre, devise=devise, statut="Approuvé", type="contribution").aggregate(total=Sum('montant'))['total'] or 0
+
+                if Prets.objects.filter(membre=membre, statut__in=["En attente","Approuvé", "Depassé"]).exists():
+                    messages.error(request, "veiller d'abord payer le pret.")
+                    return redirect("membres:contributions")
+
+                if montant <= solde_contribution and montant > 0:
+                    with db_transaction.atomic(): 
+
+                        montant_admin = frais * float(montant)
+                        montant_membre = montant - montant_admin
+
+                        RetraitContributions.objects.create(
                             membre=membre,
-                            montant=montant_total * 0.9,
-                            devise=membre.contribution_mensuelle.devise,
-                            description=f"Retrait total du solde",
-                            type="retrait_tout"
+                            montant=montant,
+                            frais=frais,
+                            devise=devise,
+                            statut="Approuvé",
+                            transaction=Transactions.objects.create(
+                                membre=membre,
+                                montant=montant_membre,
+                                devise=devise,
+                                type="retrait investissement",
+                                statut="Approuvé"
+                            )
                         )
-                        messages.success(request, "Votre demande de retrait a été soumise avec succès ! Veuillez attendre l'approbation de l'administrateur")
-                    else:
-                        messages.error(request, "Vous n'avez pas de solde à retirer")
+
+                        # Enregistrement du bénéfice pour l'administration (une seule fois)
+                        BalanceAdmin.objects.create(
+                            montant=montant_admin,
+                            devise=devise,
+                            type="Retrait investissement"
+                        )
+
+                        # Débit du compte
+                        compte.solde += montant_membre
+                        compte.save()
+
+                        messages.success(request, "Investissement Retire avec succès.")
+                        return redirect("membres:retirer_investissement")
                 else:
-                    messages.error(request, "Vous devez rembourser vos prêts avant de pouvoir retirer votre solde")
-            
+                    messages.error(request, "Solde insuffisant ou montant invalide.")
             else:
-                messages.error(request, "Vous avez déjà une demande de retrait totale en attente")
+                messages.error(request, "Formulaire invalide.")
         else:
-            messages.error(request, "Mot de passe incorrect")
-    
-    return redirect('membres:contributions')
+            messages.error(request, "Mot de passe incorrect.")
+    else:
+        form = TransactionsForm()
+
+    return render(request, "membres/retirer_contribution.html", {
+        "form": form,
+        "membre": membre,
+        "Retraitcontrubution": Retraitcontrubution,
+        "solde_contribution_CDF": solde_contribution_CDF,
+        "solde_contribution_USD": solde_contribution_USD,
+    })
+
 
 # Vue pour la page de gestion des notifications du membre
 @login_required
