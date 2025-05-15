@@ -302,7 +302,7 @@ class RetraitContributions(models.Model):
     frais = models.FloatField(verbose_name="Frais")
     date = models.DateTimeField(auto_now_add=True, verbose_name="Date")
     date_approbation = models.DateTimeField(blank=True, null=True, verbose_name="Date d'approbation")
-
+    
     transaction = models.ForeignKey(Transactions, on_delete=models.CASCADE, blank=True, related_name="retrait_investissement", verbose_name="Transaction")
 
     description = models.TextField(blank=True, null=True, verbose_name="Description")

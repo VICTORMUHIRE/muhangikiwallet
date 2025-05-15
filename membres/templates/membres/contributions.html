@@ -1,82 +1,211 @@
 {% extends 'membres/base.html' %}
-
+{% load static %}
+{% load humanize %}
 {% block title %}Mes Contributions{% endblock %}
 
 {% block content %}
+<style>
+.table thead th {
+  background-color: #fdfdfd;
+  color: #495057;
+  font-weight: 600;
+  vertical-align: middle;
+  text-align: center;
+}
 
-    <div class="row justify-content-center mt-5 mt-sm-0 mb-3 mb-md-5">
-        {% for message in messages %}  <!-- Messages display -->
-        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{message.tags}}{% endif %} alert-dismissible fade show" role="alert">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-        {% endfor %}
-        
-        <div class="col-md-8 text-center">
-            <div class="">
-                <div class="card-header bg-white">
-                    <h3 class=""> Investissements</h3>
-                </div>
-                <div class="card-body">
-                    <div class="mt-4 d-flex gap-3">
-                        <p class="fs-6 mb-0">Total Investissements</p>
-                        <div>
-                            <p class="fs-6 mb-0"><span class="mb-3 fw-bolder fs-5">{{ solde_contribution_CDF }} CDF</span></p>
-                            <p class="fs-6 mb-0"><span class="mb-3 fw-bolder fs-5">{{solde_contribution_USD }} USD</span></p>
-                        </div>
-                    </div>             
-                        
-                    <div class="mt-4">
-                        <a href="{% url 'membres:contribuer' %}" class="btn btn-sm btn-success text-white">Investir</a>
-                        <a href="{% url 'membres:retirer_investissement' %}" class="btn btn-sm btn-outline-danger text-danger " >Retirer</a>
-                    </div>
-                </div>
+.table tbody td {
+  vertical-align: middle;
+  text-align: center;
+}
+
+.badge {
+  font-size: 0.85rem;
+  padding: 0.4em 0.65em;
+}
+
+.table-sm-custom {
+  font-size: 0.9rem;
+}
+
+.table-sm-custom thead th {
+  padding: 0.65rem;
+}
+
+.table-sm-custom tbody td {
+  padding: 0.5rem;
+}
+.step {
+  display: none;
+}
+.step.active {
+  display: block;
+}
+
+
+  .modal-content {
+    border-radius: 0.5rem;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+    min-height: 50vh;
+    max-height: 70vh; 
+    overflow-y: auto;
+    padding: 1.5rem;
+  }
+
+  .step-header {
+    display: flex !important;
+    align-items: center !important;
+    margin-bottom: 1.5rem; /* Plus d'espace comme dans le paiement */
+  }
+
+  .btn-link-back {
+    color: #718096;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    width: 100%; /* Prend toute la largeur pour alignement à gauche */
+    text-decoration: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    margin-right: auto; /* Pousse le reste des éléments à droite */
+  }
+
+  .btn-link-back svg {
+    width: 1.2rem;
+    height: 1.2rem;
+    margin-right: 0.5rem;
+  }
+
+  .progress-bar-container {
+    width: 30%; /* Occupe une partie de la largeur */
+    display: flex;
+    align-items: center;
+    height: 0.5rem;
+    background-color: #e0e0e0;
+    border-radius: 0.25rem;
+    overflow: hidden;
+    margin-left: auto; /* Pousse la barre de progression à droite */
+  }
+
+  .progress-bar {
+    background-color: var(--primary-color);
+    height: 100%;
+    width: 0%; /* Initialement à 0 */
+    border-radius: 0.25rem;
+    transition: width 0.3s ease-in-out;
+  }
+
+  .step {
+    transition: opacity 0.3s ease-in-out, transform 0.3s ease;
+    opacity: 0;
+    transform: translateX(10px);
+    display: none;
+  }
+
+  .step.active {
+    display: block;
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  :root {
+    --primary-color: #fc9d1b;
+  }
+
+  .btn-outline-hover {
+    background-color: transparent;
+    border: 1px solid var(--primary-color); /* couleur de la bordure, ici vert bootstrap */
+    color: var(--primary-color);
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  .btn-outline-hover:hover {
+    background-color: var(--primary-color);
+    color: #fff;
+  }
+  .btn-primaire {
+    background-color: var(--primary-color);
+    color:white;
+    border-color: var(--primary-color);
+  }
+
+  .btn-primaire:hover {
+    background-color: #e68c16;
+    color:white;
+    border-color: #e68c16;
+  }
+
+  .form-check-input:checked {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+  }
+
+</style>
+
+<div class="container-fluid p-3 p-md-4 rounded-3" style="background-color: #fff; min-height: 100%;">
+
+    {% for message in messages %}
+    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+
+    <div class="mb-4">
+        <div class="card rounded p-4 border">
+            <div class="row align-items-end">
+            <div class="col-md-8">
+                <h5 class="mb-2 fw-semibold text-dark">Aperçu de mes investissements</h5>
+                <p class="mb-1 fs-6 text-muted">
+                Total investi (CDF) : <strong>{{ solde_contribution_CDF|intcomma }} fc</strong>
+                </p>
+                <p class="mb-0 fs-6 text-muted">
+                Total investi (USD) : <strong>{{ solde_contribution_USD|intcomma }} $</strong>
+                </p>
+            </div>
+            <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                <a href="#" class="btn btn-success btn-sm rounded py-2 px-3 me-2 shadow-sm" data-bs-toggle="modal" data-bs-target="#investModal">
+                    <i class="fas fa-coins me-2"></i>Investir
+                </a>
+
+                <a href="{% url 'membres:retirer_investissement' %}" class="btn btn-outline-dark btn-sm rounded py-2 px-3 shadow-sm">
+                    <i class="fas fa-hand-holding-usd me-2"></i>Faire un retrait
+                </a>
+            </div>
             </div>
         </div>
-        
-        <div class="mt-4">
-            <div class="card shadow-sm">
-                <div class="card-body p-0 table-responsive">
-                    <table class="table table-hover table-striped mb-0">
-                        <thead class="table-success">
-                            <tr>
-                                <th>Montant</th>
-                                <th>Devise</th>
-                                <th>Mois</th>
-                                <th>Date</th>
-                                <th>Etat</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for contribution in contributions %}
-                            <tr style="cursor: pointer;" onclick="location.href='{% url 'membres:transaction' contribution.transaction.pk %}'">
-                                <td>{{ contribution.montant }}</td>
-                                <td>{{ contribution.devise }}</td>
-                                <td>{{ contribution.mois|date:"E" }}</td>
-                                <td>
-                                    <small class="d-none d-md-inline">{{ contribution.date|date:"d E Y" }}</small>
-                                    <small class="d-md-none">{{ contribution.date|date:"d/m/Y" }}</small>
-                                    <small class="d-none d-md-inline">{{ contribution.date|date:"H:i" }}</small>
-                                </td>
-                                <td>
-                                    <span class="badge {% if contribution.statut == 'Approuvé' %}bg-success{% elif contribution.statut == 'Rejeté' %}bg-danger{% else %}bg-warning{% endif %}">
-                                    {{ contribution.statut }}
-                                    </span>
-                                </td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="4" class="text-center">Aucune contribution effectuée.</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+    </div>
+
+
+    <div class="mt-4">
+        <div class="card border-0 rounded-3 shadow-sm">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle table-bordered mb-0 table-sm-custom my-table-hover">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>Montant</th>                           
+                            <th class="d-none d-md-table-cell">Devise</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for contribution in contributions %}
+                        <tr>
+                            <td>{{ contribution.montant|intcomma }} {% if contribution.devise == "USD" %} $ {% else %} FC {% endif %}</td>
+                            <td class="d-none d-md-table-cell">{{ contribution.devise }}</td>
+                            <td>{{ contribution.date|date:"d/m/Y" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="7" class="text-center">Aucune contribution enregistrée.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
-
+    </div>
 </div>
 
+{% include "membres/components/investissement_modal.html" with modal="investModal" titre="investir" %}
 
 {% endblock %}
-

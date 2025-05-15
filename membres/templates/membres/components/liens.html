@@ -59,8 +59,8 @@
               </div>
               <div>
                 <div class="title">Investissement</div>
-                <div class="value">CDF: {{ solde_CDF|stringformat:".2f" }}</div>
-                <div class="value">USD: {{ solde_USD|stringformat:".2f" }}</div>
+                <div class="value">CDF: {{ solde_CDF|floatformat:0 }}</div>
+                <div class="value">USD: {{ solde_USD|floatformat:0 }}</div>
               </div>
             </div>
           </a>
@@ -72,8 +72,8 @@
               </div>
               <div>
                 <div class="title">Crédits</div>
-                <div class="value">CDF: {{ total_prets_CDF|stringformat:".2f" }}</div>
-                <div class="value">USD: {{ total_prets_USD|stringformat:".2f" }}</div>
+                <div class="value">CDF: {{ total_prets_CDF|floatformat:0 }}</div>
+                <div class="value">USD: {{ total_prets_USD|floatformat:0 }}</div>
               </div>
             </div>
           </a>
@@ -85,8 +85,8 @@
               </div>
               <div>
                 <div class="title">Bénéfices</div>
-                <div class="value">CDF: {{ benefices_CDF|stringformat:".2f" }}</div>
-                <div class="value">USD: {{ benefices_USD|stringformat:".2f" }}</div>
+                <div class="value">CDF: {{ benefices_CDF|floatformat:0 }}</div>
+                <div class="value">USD: {{ benefices_USD|floatformat:0 }}</div>
               </div>
             </div>
           </a>
@@ -98,8 +98,8 @@
               </div>
               <div>
                 <div class="title">Objectifs ({{ objectifs.count }})</div>
-                <div class="value small">CDF: {{ total_depot_objectif_CDF|stringformat:".2f" }}</div>
-                <div class="value small">USD: {{ total_depot_objectif_USD|stringformat:".2f" }}</div>
+                <div class="value small">CDF: {{ total_depot_objectif_CDF|floatformat:0 }}</div>
+                <div class="value small">USD: {{ total_depot_objectif_USD|floatformat:0 }}</div>
               </div>
             </div>
           </a>

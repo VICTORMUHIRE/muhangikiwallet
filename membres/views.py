@@ -9,7 +9,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum
 
-from membres.service import rechargerCompteService
+from membres.service import investissement_actuelle, rechargerCompteService
 from .models import Membres
 from .forms import MembresForm, ModifierMembresForm
 from agents.models import Agents, NumerosAgent
@@ -204,8 +204,8 @@ def home(request):
 
     objectifs = Objectifs.objects.filter(membre=membre)
 
-    solde_CDF = Transactions.objects.filter(membre=membre, devise="CDF", statut="Approuvé", type="contribution").aggregate(total=Sum('montant'))['total'] or 0
-    solde_USD = Transactions.objects.filter(membre=membre, devise="USD", statut="Approuvé", type="contribution").aggregate(total=Sum('montant'))['total'] or 0
+    solde_CDF = investissement_actuelle(membre, "CDF")
+    solde_USD = investissement_actuelle(membre, "USD")
 
     total_prets_CDF = Prets.objects.filter(transaction__membre=membre, devise="CDF", transaction__statut="Approuvé").aggregate(total=Sum('montant_remboursé'))['total'] or 0
     total_prets_USD = Prets.objects.filter(transaction__membre=membre, devise="USD", transaction__statut="Approuvé").aggregate(total=Sum('montant_remboursé'))['total'] or 0
@@ -282,23 +282,10 @@ def profile(request):
 @verifier_membre
 def contributions(request):
     membre = request.user.membre
-    solde_contribution_CDF = Transactions.objects.filter(membre=membre, devise="CDF", statut="Approuvé", type="contribution").aggregate(total=Sum('montant'))['total'] or 0
-    solde_contribution_USD = Transactions.objects.filter(membre=membre, devise="USD", statut="Approuvé", type="contribution").aggregate(total=Sum('montant'))['total'] or 0
+    solde_contribution_CDF = investissement_actuelle(membre, "CDF")
+    solde_contribution_USD = investissement_actuelle(membre, "USD")
 
-    contributions = Contributions.objects.filter(transaction__membre=request.user.membre)
-
-    context = {
-        "membre": membre,
-        "contributions": contributions,
-        "solde_contribution_CDF": solde_contribution_CDF,
-        "solde_contribution_USD": solde_contribution_USD,
-    }
-    return render(request, "membres/contributions.html", context)
-
-@login_required
-@verifier_membre
-def contribuer(request):
-    membre = request.user.membre
+    contributions = Contributions.objects.filter(transaction__membre=request.user.membre).order_by('-date')
 
     if request.method == 'POST':
         form = TransactionsForm(request.POST)
@@ -316,7 +303,6 @@ def contribuer(request):
                     with db_transaction.atomic(): 
                         # Débit du compte
                         compte.solde -= montant
-                        compte.save()
 
                         # Création de la transaction
                         transaction = form.save(commit=False)
@@ -334,6 +320,7 @@ def contribuer(request):
                             mois=membre.mois_contribution,
                             statut="Approuvé"  # ou "En attente"
                         )
+                        compte.save()
 
                         messages.success(request, "Contribution enregistrée avec succès.")
                         return redirect("membres:contributions")
@@ -346,10 +333,17 @@ def contribuer(request):
     else:
         form = TransactionsForm()
 
-    return render(request, "membres/contribuer.html", {
-        "form": form,
+
+
+    context = {
         "membre": membre,
-    })
+        "form": form,
+        "contributions": contributions,
+        "solde_contribution_CDF": solde_contribution_CDF,
+        "solde_contribution_USD": solde_contribution_USD,
+    }
+    return render(request, "membres/contributions.html", context)
+
 
 @login_required
 @verifier_membre
@@ -360,8 +354,8 @@ def demande_pret(request):
     taux_de_change = 2800
     membre = request.user.membre
 
-    solde_contribution_CDF = Transactions.objects.filter(membre=membre, devise="CDF", statut="Approuvé", type="contribution").aggregate(total=Sum('montant'))['total'] or 0
-    solde_contribution_USD = Transactions.objects.filter(membre=membre, devise="USD", statut="Approuvé", type="contribution").aggregate(total=Sum('montant'))['total'] or 0
+    solde_contribution_CDF = investissement_actuelle(membre, "CDF")
+    solde_contribution_USD = investissement_actuelle(membre, "USD")
 
     max_possible_cdf = solde_contribution_CDF + (solde_contribution_USD * taux_de_change)
     max_possible_usd = solde_contribution_USD + (solde_contribution_CDF / taux_de_change)
@@ -1023,11 +1017,11 @@ def parametres(request):
 @verifier_membre
 def retirer_investissement(request):
     membre = request.user.membre
-    solde_contribution_CDF = Transactions.objects.filter(membre=membre, devise="CDF", statut="Approuvé", type="contribution").aggregate(total=Sum('montant'))['total'] or 0
-    solde_contribution_USD = Transactions.objects.filter(membre=membre, devise="USD", statut="Approuvé", type="contribution").aggregate(total=Sum('montant'))['total'] or 0
+    solde_contribution_CDF = investissement_actuelle(membre,"CDF")
+    solde_contribution_USD = investissement_actuelle(membre,"USD")
 
     Retraitcontrubution = RetraitContributions.objects.filter(transaction__membre=request.user.membre)
-    frais = 0.1
+    frais = Decimal(0.1)
     
     if request.method == 'POST':
         form = TransactionsForm(request.POST)
@@ -1047,8 +1041,8 @@ def retirer_investissement(request):
                 if montant <= solde_contribution and montant > 0:
                     with db_transaction.atomic(): 
 
-                        montant_admin = frais * float(montant)
-                        montant_membre = montant - montant_admin
+                        montant_admin = frais * Decimal(montant)
+                        montant_membre = Decimal(montant) - montant_admin
 
                         RetraitContributions.objects.create(
                             membre=membre,

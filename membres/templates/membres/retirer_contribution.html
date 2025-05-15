@@ -1,105 +1,128 @@
 {% extends 'membres/base.html' %}
-
-{% block title %}Mes Contributions{% endblock %}
+{% load static %}
+{% load humanize %}
+{% block title %}Mes Retraits{% endblock %}
 
 {% block content %}
+<style>
+.table thead th {
+  background-color: #fdfdfd;
+  color: #495057;
+  font-weight: 600;
+  vertical-align: middle;
+  text-align: center;
+}
 
-    <div class="row justify-content-center mt-5 mt-sm-0 mb-3 mb-md-5">
-        {% for message in messages %}  <!-- Messages display -->
-        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{message.tags}}{% endif %} alert-dismissible fade show" role="alert">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-        {% endfor %}
-        
-        <div class="col-md-8 text-center">
-            <div class="">
-                <div class="card-header bg-white">
-                    <h3 class=""> Investissements</h3>
-                </div>
-                <div class="card-body">
-                    <div class="mt-4 d-flex gap-3">
-                        <p class="fs-6 mb-0">Total Investissements</p>
-                        <div>
-                            <p class="fs-6 mb-0"><span class="mb-3 fw-bolder fs-5">{{ solde_contribution_CDF }} CDF</span></p>
-                            <p class="fs-6 mb-0"><span class="mb-3 fw-bolder fs-5">{{solde_contribution_USD }} USD</span></p>
-                        </div>
-                    </div>             
-                        
-                    <div class="mt-4">
-                        <a href="#" class="btn btn-sm btn-danger text-white" data-bs-toggle="modal" data-bs-target="#confirmWithdrawModal">Retirer tout</a>
-                        <a href="{% url 'membres:contribuer' %}" class="btn btn-sm btn-success text-white">Investir</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Modal pour confirmation de retrait -->
-        <div class="modal fade" id="confirmWithdrawModal" tabindex="-1" aria-labelledby="confirmWithdrawModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="confirmWithdrawModalLabel">Confirmation de Retrait</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">                        
-                        Êtes-vous sûr de vouloir retirer tout votre Investissement ?
-                        <form method="post" action="{% url 'membres:retirer_investissement' %}">
-                            {% csrf_token %}
-                            <input type="password" name="mot_de_passe" class="form-control my-2" placeholder="Entrez votre mot de passe" required>
-                            <div class="text-center">
-                                <button type="button" class="btn btn-sm btn-secondary text-white" data-bs-dismiss="modal">Annuler</button>
-                                <button type="submit" class="btn btn-sm btn-danger text-white">Confirmer</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
+.table tbody td {
+  vertical-align: middle;
+  text-align: center;
+}
 
-        <div class="mt-4">
-            <div class="card shadow-sm">
-                <div class="card-body p-0 table-responsive">
-                    <table class="table table-hover table-striped mb-0">
-                        <thead class="table-success">
-                            <tr>
-                                <th>Montant</th>
-                                <th>Devise</th>
-                                <th>Mois</th>
-                                <th>Date</th>
-                                <th>Etat</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for retrait in Retraitcontrubution %}
-                            <tr style="cursor: pointer;" onclick="location.href='{% url 'membres:transaction' retrait.transaction.pk %}'">
-                                <td>{{ retrait.montant }}</td>
-                                <td>{{ retrait.devise }}</td>
-                                <td>{{ retrait.mois|date:"E" }}</td>
-                                <td>
-                                    <small class="d-none d-md-inline">{{ retrait.date|date:"d E Y" }}</small>
-                                    <small class="d-md-none">{{ retrait.date|date:"d/m/Y" }}</small>
-                                    <small class="d-none d-md-inline">{{ retrait.date|date:"H:i" }}</small>
-                                </td>
-                                <td>
-                                    <span class="badge {% if retrait.statut == 'Approuvé' %}bg-success{% elif retrait.statut == 'Rejeté' %}bg-danger{% else %}bg-warning{% endif %}">
-                                    {{ retrait.statut }}
-                                    </span>
-                                </td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="4" class="text-center">Aucune retrait effectuée.</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+.badge {
+  font-size: 0.85rem;
+  padding: 0.4em 0.65em;
+}
 
+.table-sm-custom {
+  font-size: 0.9rem;
+}
+
+.table-sm-custom thead th {
+  padding: 0.65rem;
+}
+
+.table-sm-custom tbody td {
+  padding: 0.5rem;
+}
+
+:root {
+  --primary-color: #fc9d1b;
+}
+
+.btn-primaire {
+  background-color: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.btn-primaire:hover {
+  background-color: #e68c16;
+  color: white;
+  border-color: #e68c16;
+}
+.step {
+  display: none;
+}
+.step.active {
+  display: block;
+}
+</style>
+
+<div class="container-fluid p-3 p-md-4 rounded-3" style="background-color: #fff; min-height: 100%;">
+
+  {% for message in messages %}
+  <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+    {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+  {% endfor %}
+
+  <div class="mb-4">
+    <div class="card rounded p-4 border">
+      <div class="row align-items-end">
+        <div class="col-md-8">
+          <h5 class="mb-2 fw-semibold text-dark">Aperçu de mes investissements</h5>
+          <p class="mb-1 fs-6 text-muted">
+            Total disponible (CDF) : <strong>{{ solde_contribution_CDF|intcomma }} FC</strong>
+          </p>
+          <p class="mb-0 fs-6 text-muted">
+            Total disponible (USD) : <strong>{{ solde_contribution_USD|intcomma }} $</strong>
+          </p>
+        </div>
+        <div class="col-md-4 text-md-end mt-3 mt-md-0">
+          <a href="#" class="btn btn-danger btn-sm rounded py-2 px-3 shadow-sm text-white" data-bs-toggle="modal" data-bs-target="#confirmWithdrawModal">
+            <i class="fas fa-hand-holding-usd me-2"></i>Retirer
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mt-4">
+    <div class="card border-0 rounded-3 shadow-sm">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle table-bordered mb-0 table-sm-custom my-table-hover">
+          <thead class="thead-light">
+            <tr>
+              <th>Montant</th>
+              <th>Devise</th>
+              <th>Frais</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for retrait in Retraitcontrubution %}
+            <tr onclick="location.href='{% url 'membres:transaction' retrait.transaction.pk %}'" style="cursor: pointer;">
+              <td>{{ retrait.montant|intcomma }} {% if retrait.devise == "USD" %} $ {% else %} FC {% endif %}</td>
+              <td>{{ retrait.devise }}</td>
+              <td>{{retrait.frais}} </td>
+              <td>
+                <small class="d-none d-md-inline">{{ retrait.date|date:"d E Y H:i" }}</small>
+                <small class="d-md-none">{{ retrait.date|date:"d/m/Y" }}</small>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="5" class="text-center">Aucun retrait effectué.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 </div>
 
+{% include "membres/components/investissement_modal.html" with modal="confirmWithdrawModal" titre="retirer" %}
 
 {% endblock %}
-

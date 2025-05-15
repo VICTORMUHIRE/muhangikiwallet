@@ -12,7 +12,6 @@ urlpatterns = [
     path("retrait/", views.retrait, name="retrait"),
     path("transfert/", views.transfert, name="transfert"),
     path("contributions/", views.contributions, name="contributions"),
-    path("contributions/depot", views.contribuer, name="contribuer"),
     path("transaction/<int:transaction_id>", views.transaction, name="transaction"),
     path("transactions/", views.transactions, name="transactions"),
     path("demande_pret/", views.demande_pret, name="demande_pret"),

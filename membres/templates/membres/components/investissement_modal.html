@@ -1,0 +1,134 @@
+<div class="modal fade" id="{{modal}}" tabindex="-1" aria-labelledby="{{moda}}" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-md modal-fullscreen-sm-down">
+    <div class="modal-content">
+      <form method="post" id="investForm">
+        {% csrf_token %}
+
+        <div class="modal-body">
+          <div id="investStepsContainer">
+
+            <!-- Étape 1 : Montant et solde -->
+            <div class="step active" data-step="1">
+              <div class="step-header">
+                <div class="progress-bar-container">
+                  <div class="progress-bar" style="width: 50%"></div>
+                </div>
+              </div>
+
+              <h6 class="mb-3 fw-semibold text-secondary">
+                <i class="fas fa-wallet me-2"></i>
+                Montant à {{titre}}
+              </h6>
+
+              <div class="card border mb-4">
+                <div class="card-body">
+                  <p class="mb-2">
+                    <strong>Solde USD :</strong> {{ solde_contribution_USD|stringformat:".2f" }} $
+                  </p>
+                  <p class="mb-0">
+                    <strong>Solde CDF :</strong> {{ solde_contribution_CDF|stringformat:".2f" }} FC
+                  </p>
+                </div>
+              </div>
+
+              <div class="">
+                <div class="mb-3">
+                  <label class="form-label">Montant</label>
+                  <input type="number" name="montant" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">Devise</label>
+                  {{ form.devise }}
+                </div>
+              </div>
+
+              <div class="text-end">
+                <button type="button" class="btn btn-primaire btn-sm rounded py-2 px-3 me-2 shadow-sm" onclick="goToInvestStep(2)">Suivant</button>
+              </div>
+            </div>
+
+            <!-- Étape 2 : Mot de passe -->
+            <div class="step" data-step="2">
+              <div class="step-header">
+                <button type="button" class="btn-link-back" onclick="goToInvestStep(1)">
+                  <i class="fas fa-arrow-left me-2"></i> Retour
+                </button>
+                <div class="progress-bar-container">
+                  <div class="progress-bar" style="width: 100%"></div>
+                </div>
+              </div>
+
+              <h6 class="mb-3 fw-semibold text-secondary">
+                Confirmer votre investissement
+              </h6>
+
+              <div class="card border mb-3">
+                <div class="card-body">
+                    <p class="mb-2">
+                        <strong>Montant à retirer :</strong>
+                        <span id="previewMontant">0</span>
+                        <span id="previewDevise">USD</span>
+                    </p>
+                </div>
+              </div>
+
+              <div class="mb-3">
+                    <label class="form-label">Mot de passe</label>
+                    <input type="password" id="investPassword" class="form-control" required>
+            </div>
+
+              <div class="text-end">
+                <button type="submit" class="btn btn-primaire btn-sm rounded py-2 px-3 me-2 shadow-sm">Valider l’investissement</button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  function goToInvestStep(step) {
+    const steps = document.querySelectorAll('#investStepsContainer .step');
+    steps.forEach(s => s.classList.remove('active'));
+    document.querySelector(`#investStepsContainer .step[data-step="${step}"]`).classList.add('active');
+
+    const progressBars = document.querySelectorAll('.progress-bar');
+    progressBars.forEach(bar => {
+      bar.style.width = step === 2 ? '100%' : '50%';
+    });
+
+  
+    const montant = document.querySelector('input[name="montant"]').value;
+    const deviseSelect = document.querySelector('select[name="devise"]');
+    const devise = deviseSelect.options[deviseSelect.selectedIndex].text
+
+    document.getElementById('previewMontant').textContent = montant;
+    document.getElementById('previewDevise').textContent = devise;
+
+
+  }
+
+ 
+  document.getElementById('investForm').addEventListener('submit', function(event) {
+    event.preventDefault();
+
+    const password = document.getElementById('investPassword').value;
+    const form = document.getElementById('investForm');
+
+    const hiddenInput = document.createElement('input');
+    hiddenInput.type = 'hidden';
+    hiddenInput.name = 'mot_de_passe';
+    hiddenInput.value = password;
+
+    form.appendChild(hiddenInput);
+    if (form.checkValidity()) {
+      form.submit();
+    } else {
+      form.reportValidity();
+    }
+  });
+</script>
