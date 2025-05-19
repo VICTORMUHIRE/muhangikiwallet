@@ -9,7 +9,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum
 
-from membres.service import investissement_actuelle, rechargerCompteService
+from membres.service import benefices_actuelle, investissement_actuelle, rechargerCompteService
 from .models import Membres
 from .forms import MembresForm, ModifierMembresForm
 from agents.models import Agents, NumerosAgent
@@ -202,7 +202,7 @@ def home(request):
     compte_usd = membre.compte_USD
     compte_cdf = membre.compte_CDF
 
-    objectifs = Objectifs.objects.filter(membre=membre)
+    objectifs = Objectifs.objects.filter(membre=membre).order_by("-date_creation")
 
     solde_CDF = investissement_actuelle(membre, "CDF")
     solde_USD = investissement_actuelle(membre, "USD")
@@ -215,12 +215,9 @@ def home(request):
 
     total_depot_objectif_CDF = Objectifs.objects.filter(membre=membre, devise="CDF", statut__in=["En cours", "Atteint", "Epuisé"]).aggregate(total=Sum('montant'))['total'] or 0
     total_depot_objectif_USD = Objectifs.objects.filter(membre=membre, devise="USD", statut__in=["En cours", "Atteint", "Epuisé"]).aggregate(total=Sum('montant'))['total'] or 0
-
-    total_retraits_CDF = Retraits.objects.filter(membre=membre, devise="CDF", transaction__statut="Approuvé", statut="Approuvé").aggregate(total=Sum('montant'))['total'] or 0
-    total_retraits_USD = Retraits.objects.filter(membre=membre, devise="USD", transaction__statut="Approuvé", statut="Approuvé").aggregate(total=Sum('montant'))['total'] or 0
-
-    benefices_CDF = Benefices.objects.filter(membre=membre, devise="CDF", statut=True).aggregate(total=Sum('montant'))['total'] or 0
-    benefices_USD = Benefices.objects.filter(membre=membre, devise="USD", statut=True).aggregate(total=Sum('montant'))['total'] or 0
+    
+    benefices_CDF = benefices_actuelle(membre, "CDF")
+    benefices_USD = benefices_actuelle(membre, "USD")
 
     transactions = Transactions.objects.filter(membre=membre).order_by("-date")
 
@@ -238,8 +235,8 @@ def home(request):
         "solde_CDF": solde_CDF,
         "solde_USD": solde_USD,
         "transactions": transactions,
-        "benefices_CDF": float(benefices_CDF) - float(total_retraits_CDF),
-        "benefices_USD": float(benefices_USD) - float(total_retraits_USD),
+        "benefices_CDF": benefices_CDF,
+        "benefices_USD": benefices_USD,
         "form":form,
     }
 
@@ -820,71 +817,56 @@ def objectif(request, objectif_id):
 @verifier_membre
 def retrait(request):
     membre = get_object_or_404(Membres, user=request.user)
+    frais_retrais_benefice = 0.025
 
     #verfication s'il y a deja eu un retrait
-    montant_retraits_cdf = float(Transactions.objects.filter(membre=membre, devise="CDF", statut="Approuvé", type="retrait").aggregate(total=Sum('montant'))['total'] or 0)
-    montant_retraits_usd = float(Transactions.objects.filter(membre=membre, devise="USD", statut="Approuvé", type="retrait").aggregate(total=Sum('montant'))['total'] or 0)
+    retraits = Retraits.objects.filter(membre=membre, statut="Approuvé")
 
-    montant_benefices_cdf = float(Benefices.objects.filter(membre=membre, devise="CDF", statut=True).aggregate(total=Sum('montant'))['total'] or 0) - montant_retraits_cdf
-    montant_benefices_usd = float(Benefices.objects.filter(membre=membre, devise="USD", statut=True).aggregate(total=Sum('montant'))['total'] or 0) - montant_retraits_usd
+    montant_benefices_cdf = benefices_actuelle(membre, "CDF")
+    montant_benefices_usd = benefices_actuelle(membre, "USD")
 
     if request.method == "POST":
         form = TransactionsForm(request.POST)
-        if timezone.now().month >= 1:
 
-            if form.is_valid():
-                transaction = form.save(commit=False)
+        if form.is_valid():
+            transaction = form.save(commit=False)
 
-                montant_retraits = float(Transactions.objects.filter(membre=membre, devise = transaction.devise, statut="Approuvé", type="retrait").aggregate(total=Sum('montant'))['total'] or 0)
-                montant_benefices = float(Benefices.objects.filter(membre=membre, devise = transaction.devise, statut=True).aggregate(total=Sum('montant'))['total'] or 0) - montant_retraits
+            montant_benefices = montant_benefices_cdf if transaction.devise == "CDF" else montant_benefices_usd
+            montant_recu = float(transaction.montant) * (1 - frais_retrais_benefice),
 
-                print(transaction.montant, montant_benefices)
+            if transaction.montant > 0 and transaction.montant <= montant_benefices:                    
+                Retraits.objects.create(
+                    membre=membre,
+                    montant=transaction.montant,
+                    montant_recu = montant_recu,
+                    frais=frais_retrais_benefice,
+                    devise=transaction.devise,
+                    transaction=Transactions.objects.create(
+                        membre=membre,
+                        montant=montant_recu,
+                        devise=transaction.devise,
+                        type="retrait"
+                    )
+                )
 
-                if not Transactions.objects.filter(membre=membre, type="retrait_tout", statut__in=["En attente", "Demande"]).exists():
-                    if not Retraits.objects.filter(membre=membre, transaction__statut__in=["Demande", "En attente"], statut__in=["En attente", "Approuvé"]).exists():
-                        if transaction.montant > 0 and transaction.montant <= montant_benefices:
-                            montant = transaction.montant if transaction.devise == "USD" else transaction.montant / 2800
+                # Crédit du compte
+                compte = membre.compte_USD if transaction.devise == "USD" else membre.compte_CDF
+                compte.solde += montant_recu
+                compte.save()
 
-                            # montant selon les frais de retrait
-                            if montant > 0 and montant <= 10: frais = 0.085
-                            elif montant > 10 and montant <= 20: frais = 0.058
-                            elif montant > 20 and montant <= 50: frais = 0.0295
-                            elif montant > 50 and montant <= 400: frais = 0.0175
-                            elif montant > 400: frais = 0.01
-                            
-                            Retraits.objects.create(
-                                membre=membre,
-                                montant=transaction.montant,
-                                frais=frais,
-                                devise=transaction.devise,
-                                transaction=Transactions.objects.create(
-                                    membre=membre,
-                                    montant=float(transaction.montant) * (1 - frais),
-                                    devise=transaction.devise,
-                                    type="retrait"
-                                )
-                            )
-
-                            messages.success(request, "Votre demande de retrait a été soumise avec succès !")
-                            return redirect('membres:home')
-                        else:
-                            messages.error(request, "Montant insuffisant")
-                    else:
-                        messages.error(request, "Vous avez déjà une demande de retrait en attente")
-
-                else:
-                    messages.error(request, "Vous avez déjà une demande de retrait totale en attente")
-            
+                messages.success(request, "Votre demande de retrait a été effectue avec avec succès !")
+                return redirect('membres:home')
             else:
-                messages.error(request, "Veuillez corriger les erreurs dans le formulaire")
-        
+                messages.error(request, "Montant insuffisant")
         else:
-            messages.error(request, "Les retraits ne sont possibles qu'en Décembre")
+            messages.error(request, "Veuillez corriger les erreurs dans le formulaire")
+
     else:
         form = TransactionsForm()
 
     context = {
         "form": form,
+        "retraits":retraits,
         "membre": membre,
         "montant_benefices_cdf": montant_benefices_cdf,
         "montant_benefices_usd": montant_benefices_usd,

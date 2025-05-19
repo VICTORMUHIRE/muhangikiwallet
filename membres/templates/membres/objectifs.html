@@ -1,165 +1,220 @@
 {% extends 'membres/base.html' %}
-
+{% load humanize %}
+{% load objectifFilter %}
 {% block title %}Mes Objectifs{% endblock %}
-
 {% block content %}
 
-    <div class="row justify-content-center mt-5 mt-sm-0 mb-5">
-        {% for message in messages %}
-            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{message.tags}}{% endif %} alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        {% endfor %}
+<style>
+  .accordion-button::after {
+      display: none !important;
+  }
 
-        <div class="col-md-8 text-center">
-            <div class="mb-4">
-                <div class="card-header bg-white">
-                    <h3 class="">Mes Objectifs</h3>
-                </div>
-                <div class="card-body text-enter">
-                    <p class="fs-5 mb-0">Solde total</p>
-                    <h4 class="mb-3 fw-bolder fs-5">{{ solde_objectifs_CDF|stringformat:".2f" }} FC - {{ solde_objectifs_USD|stringformat:".2f" }} $</h4>
-                    
-                    <button type="button" class="btn btn-sm  btn-mw text-white" data-bs-toggle="modal" data-bs-target="#ajouterObjectifModal">
-                        Ajouter un objectif
-                    </button>
-                </div>
-            </div>
-        </div>
+  .progress-circle-container {
+    width: 50px; 
+    height: 50px; 
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+.progress-circle {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: conic-gradient(
+    #feaf3d var(--progress-percentage),
+    #d3d3d3 var(--progress-percentage) 100%
+  );
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 0.8rem;
+  font-weight: bold;
+  color: #6c757d; 
+  z-index: 10;
+}
+  .progress-circle::before {
+    content: '';
+    position: absolute;
+    top: 5px; 
+    left: 5px; 
+    width: calc(100% - 10px); 
+    height: calc(100% - 10px); 
+    border-radius: 50%;
+    background-color: #fafbfc; 
+    z-index: -1;
+  }
 
+  .objectif-item {
+    border: 1px solid #dee2e6;
+    border-radius: 0.25rem;
+    margin-bottom: 0.5rem;
+    overflow: hidden;
+  }
 
+  .objectif-header {
+    background-color: #fafbfc;
+    padding: 0.75rem 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+  }
+
+  .objectif-header:hover {
+    background-color: #e9ecef;
+  }
+
+  .objectif-actions a, .objectif-actions button {
+    margin-left: 0.5rem;
+  }
+
+  .objectif-details {
+    padding: 1rem;
+    background-color: #fff;
+  }
+
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .col-md-8, .col-md-4 {
+      flex-basis: 100%;
+      max-width: 100%;
+      text-align: center !important;
+      margin-bottom: 0.5rem;
+    }
+    .objectif-header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .objectif-actions {
+      margin-top: 0.5rem;
+    }
+    .objectif-actions a, .objectif-actions button {
+      margin-left: 0;
+      margin-right: 0.5rem;
+    }
+  }
+</style>
+
+<div class="container-fluid p-3 p-md-4 rounded-3" style="background-color: #fff; min-height: 100%;">
+
+  <div class="mb-4">
+    <div class="card rounded p-4 border">
+      <div class="row align-items-end">
         <div class="col-md-8">
-            {% for objectif in objectifs %}
-            <div class="card shadow-sm mb-3 {% if objectif.statut == 'Epuisé' %}border-danger{% endif %}">  <!-- Card for each goal -->
-                <div class="card-header bg-white text-center">
-                    <h5 class="card-title mb-0">{{ objectif.type }}</h5>
-                </div>
-                <div class="card-body">
-                    <div class="progress position-relative mb-3" style="height: 25px;">  <!-- Enhanced progress bar -->
-                        <div class="progress-bar progress-bar-animated bg-{% if  objectif.statut == 'Annulé' %}danger{% elif  objectif.pourcentage < 85 and objectif.pourcentage >= 70 %}info{% elif  objectif.pourcentage < 70 and objectif.pourcentage >= 50 %}mw btn-mw{% elif  objectif.pourcentage < 50 and objectif.pourcentage >= 30 %}warning{% elif  objectif.pourcentage < 30 %}danger{% else %}success{% endif %}"
-                            role="progressbar" style="width: {{ objectif.pourcentage|stringformat:'.2f' }}%" aria-valuenow="{{ objectif.montant }}" aria-valuemin="0" aria-valuemax="{{ objectif.montant_cible }}"></div>
-                        <span class="position-absolute top-50 start-50 translate-middle fw-bold text-white">{{ objectif.pourcentage|stringformat:".2f" }}%</span>
-                    </div>
-
-                    <!-- Clearer display of amounts and date -->
-                    <p class="card-text">Montant cible : <span class="fw-bold">{{ objectif.montant_cible|stringformat:".2f" }} {{ objectif.devise }}</span></p>
-                    <p class="card-text">Montant déposé : <span class="fw-bold">{{ objectif.montant|stringformat:".2f" }} {{ objectif.devise }}</span></p>
-                    <p class="card-text">Date de création : <span class="fw-bold">{{ objectif.date_creation|date:"d/m/Y" }}</span></p>
-                    <p class="card-text">Date d'échéance : <span class="fw-bold">{{ objectif.date_fin|date:"d/m/Y" }}</span></p>
-                    <p class="card-text">Statut : <span class="badge {% if objectif.statut == 'Atteint' %}bg-success{% elif objectif.statut == 'En cours' %}bg-warning{% else %}bg-danger{% endif %}">{{ objectif.statut }}</span></p>
-                    
-
-                    <div class="text-center mt-2"> <!-- Centered Deposit button -->
-                        <!-- <a href="{% url 'membres:objectif' objectif.id %}" class="btn btn-secondary btn-sm">Détails</a> -->
-                        {% if objectif.statut not in 'Atteint Retiré Annulé' %}
-                            <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#AnnulereObjectifModalLabel{{ objectif.id }}">
-                                Annuler
-                            </button>
-                            
-                            <!-- Modal retrait objectif -->
-                            <div class="modal fade" id="AnnulereObjectifModalLabel{{ objectif.id }}" tabindex="-1" aria-labelledby="AnnulereObjectifModalLabel{{ objectif.id }}" aria-hidden="true">
-                                <div class="modal-dialog">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title" id="retraitObjectifModalLabel{{ objectif.id }}">Retrait de l'objectif "{{ objectif.type }}"</h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                        </div>
-                                        <div class="modal-body">
-                                            <p>Êtes-vous sûr de vouloir annuler l'objectif <strong>{{ objectif.type }}</strong> de <strong>{{ objectif.montant_cible|stringformat:".2f" }} {{ objectif.devise }}</strong> ? Un frais de retrait de 10% sera appliqué sur votre solde</p>
-                                            <form method="post" action="{% url 'membres:annulation_objectif' objectif.id %}">
-                                                {% csrf_token %}
-                                                <div class="mb-3">
-                                                    <input type="password" class="form-control" id="password{{ objectif.id }}" name="password" placeholder="Entrez votre mot de passe" required>
-                                                </div>
-                                                <button type="submit" class="btn btn-sm btn-danger">Confirmer</button>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        {% endif %}
-                        {% if objectif.statut == 'En cours' %}
-                        <a href="{% url 'membres:depot_objectif' objectif.id %}" class="btn btn-primary btn-sm">Déposer</a>
-                        {% elif objectif.statut == 'Atteint' %}
-                            <button type="button" class="btn btn-mw btn-sm" data-bs-toggle="modal" data-bs-target="#retraitObjectifModal{{ objectif.id }}">
-                                Retirer
-                            </button>
-                            
-                            <!-- Modal retrait objectif -->
-                            <div class="modal fade" id="retraitObjectifModal{{ objectif.id }}" tabindex="-1" aria-labelledby="retraitObjectifModalLabel{{ objectif.id }}" aria-hidden="true">
-                                <div class="modal-dialog">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title" id="retraitObjectifModalLabel{{ objectif.id }}">Retrait de l'objectif "{{ objectif.type }}"</h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                        </div>
-                                        <div class="modal-body">
-                                            <p>Êtes-vous sûr de vouloir retirer le montant de <strong>{{ objectif.montant_cible|stringformat:".2f" }} {{ objectif.devise }}</strong> pour l'objectif <strong>{{ objectif.type }}</strong>?</p>
-                                            <form method="post" action="{% url 'membres:retrait_objectif' objectif.id %}">
-                                                {% csrf_token %}
-                                                <div class="mb-3">
-                                                    <input type="password" class="form-control" id="password{{ objectif.id }}" name="password" placeholder="Entrez votre mot de passe" required>
-                                                </div>
-                                                <button type="submit" class="btn btn-sm btn-success">Confirmer le retrait</button>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            {% empty %}
-                <div class="card shadow-sm">
-                    <div class="card-body text-center">
-                        <p>Aucun objectif pour le moment</p>
-                    </div>
-                </div>
-            {% endfor %}
-
-        </div> <!-- End of goals display column -->
-    </div> <!-- End of outer row -->
-
-
-    <!-- Modal d'ajout d'objectif -->
-    <div class="modal fade" id="ajouterObjectifModal" tabindex="-1" aria-labelledby="ajouterObjectifModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="ajouterObjectifModalLabel">Ajouter un nouvel objectif</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form method="post" action="{% url 'membres:objectifs' %}">
-                        {% csrf_token %}
-                        {% for field in form %}
-                            <div class="mb-3">
-                                <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}:</label>
-                                {% if field.field.widget.input_type == 'select' %}
-                                    <select class="form-select {% if field.errors %}is-invalid{% endif %}" id="{{ field.id_for_label }}" name="{{ field.name }}">
-                                        {% for option in field.field.choices %}
-                                            {% if option.0 %}<option value="{{ option.0 }}" {% if field.value|lower == option.0|lower %}selected{% endif %}>{{ option.1 }}</option>{% endif %}
-                                        {% endfor %}
-                                    </select>
-                                {% elif field.name == "description" %}
-                                    <textarea class="form-control {% if field.errors %}is-invalid{% endif %}" id="{{ field.id_for_label }}" name="{{ field.name }}"></textarea>
-                                {% else %}
-                                    <input type="{{ field.field.widget.input_type }}" class="form-control {% if field.errors %}is-invalid{% endif %}" id="{{ field.id_for_label }}" name="{{ field.name }}" value="{% if field.field.widget.input_type == 'date' %}{{ field.value|date:'Y-m-d' }}{% else %}{{ field.value|default:'' }}{% endif %}" placeholder="{{ field.field.widget.attrs.placeholder|default:'' }}">
-                                {% endif %}
-                                {% if field.errors %}
-                                    <div class="invalid-feedback">
-                                        {{ field.errors }}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        {% endfor %}
-                        <button type="submit" class="btn btn-primary w-100">Ajouter</button>
-                    </form>
-                </div>
-            </div>
+          <h5 class="mb-2 fw-semibold text-dark"> Aperçu de mes Objectifs</h5>
+          <p class="mb-1 fs-6 text-muted">
+            Total disponible (CDF) : <strong class="fw-bold">{{ solde_objectifs_CDF|intcomma }} FC</strong>
+          </p>
+          <p class="mb-0 fs-6 text-muted">
+            Total disponible (USD) : <strong class="fw-bold">{{ solde_objectifs_USD|intcomma }} $</strong>
+          </p>
+          <p class="mb-0 mt-2 fs-6 text-muted">
+            Objectifs : <strong class="fw-bold">{{ objectifs|length }}</strong> actifs,
+            <strong class="fw-bold">{{ objectifs|objectif_statut_count:'Atteint' }}</strong> atteints,
+            <strong class="fw-bold">{{ objectifs|objectif_statut_count:'Annulé' }}</strong> annulés,
+            <strong class="fw-bold">{{ objectifs|objectif_statut_count:'Epuisé' }}</strong> épuisés
+          </p>
+          </div>
+        <div class="col-md-4 text-md-end mt-3 mt-md-0">
+          <button type="button" class="btn btn-success btn-sm rounded py-2 px-3 shadow-sm text-white" data-bs-toggle="modal" data-bs-target="#ajouterObjectifModal">
+            <i class="fas fa-plus me-2"></i>Nouveau objectif
+          </button>
         </div>
+      </div>
     </div>
+  </div>
+
+  <div id="objectifsList">
+    <h6 class="mb-3 fw-semibold"><i class="fas fa-list-ul me-2 text-dark"></i> Liste des Objectifs</h6>
+    {% for objectif in objectifs %}
+    {% with progress_percentage=objectif.montant|pourcentage:objectif.montant_cible|stringformat:".0f" %}
+    {% with objectif.nom|slugify as objectif_slug %}
+    <div class="objectif-item mb-3">
+      <div class="objectif-header d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#collapse{{ objectif_slug }}" role="button" aria-expanded="false" aria-controls="collapse{{ objectif_slug }}" style="cursor: pointer;">
+        <div class="d-flex align-items-center gap-2">
+          {% if objectif.statut == 'Atteint' %}
+          <i class="fas fa-check-circle text-success"></i>
+          {% elif objectif.statut == 'En cours' %}
+          <i class="fas fa-hourglass-half text-warning"></i>
+          {% elif objectif.statut == 'Annulé' or objectif.statut == 'Epuisé' %}
+          <i class="fas fa-times-circle text-danger"></i>
+          {% else %}
+          <i class="fas fa-flag-checkered text-primary"></i>
+          {% endif %}
+          <span class="fw-semibold">{{ objectif.nom }}</span>
+          <small class="text-muted">({{ objectif.montant|intcomma }} / {{ objectif.montant_cible|intcomma }} {{ objectif.devise }})</small>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+          <div class="progress-circle-container">
+            <div class="progress-circle" style="--progress-percentage: {{ progress_percentage }}%; --progress-color: {% if progress_percentage|floatformat:0 >= 100 %}green{% elif progress_percentage|floatformat:0 > 50 %}orange{% else %}red{% endif %};">
+              {{ progress_percentage }}%
+            </div>
+          </div>
+          <i class="fas fa-chevron-down text-muted"></i>
+        </div>
+      </div>
+      <div class="collapse" id="collapse{{ objectif_slug }}" data-bs-parent="#objectifsList">
+        <div class="objectif-details">
+          <ul class="mb-0 text-muted">
+            <li><small><strong>Montant cible :</strong> {{ objectif.montant_cible|intcomma }} {{ objectif.devise }}</small></li>
+            <li><small><strong>Montant déposé :</strong> {{ objectif.montant|intcomma }} {{ objectif.devise }}</small></li>
+            <li><small><strong>Date de création :</strong> {{ objectif.date_creation|date:"d/m/Y" }}</small></li>
+            <li><small><strong>Date d'échéance :</strong> {{ objectif.date_fin|date:"d/m/Y" }}</small></li>
+            {% if objectif.description %}
+            <li><small><strong>Description :</strong> {{ objectif.description }}</small></li>
+            {% endif %}
+            <li>
+              <small><strong>Statut :</strong>
+                <span class="badge {% if objectif.statut == 'Atteint' %}bg-success{% elif objectif.statut == 'En cours' %}bg-warning{% elif objectif.statut == 'Annulé' or objectif.statut == 'Epuisé' %}bg-danger{% else %}bg-info{% endif %} rounded-pill">
+                  {{ objectif.statut }}
+                </span>
+              </small>
+            </li>
+          </ul>
+
+          <div class="d-flex justify-content-end gap-2 mt-3 objectif-actions">
+            {% if objectif.statut not in 'Atteint Retiré Annulé Epuisé' %}
+            <button type="button" class="btn btn-danger btn-sm rounded-pill"
+                    data-bs-toggle="modal"
+                    data-bs-target="#AnnulereObjectifModalLabel{{ objectif.id }}">
+              <i class="fas fa-ban me-1"></i>Annuler
+            </button>
+            {% endif %}
+            {% if objectif.statut == 'En cours' %}
+            <a href="{% url 'membres:depot_objectif' objectif.id %}" class="btn btn-primary btn-sm rounded-pill">
+              <i class="fas fa-upload me-1"></i>Déposer
+            </a>
+            {% elif objectif.statut == 'Atteint' %}
+            <button type="button" class="btn btn-success btn-sm rounded-pill"
+                    data-bs-toggle="modal"
+                    data-bs-target="#retraitObjectifModal{{ objectif.id }}">
+              <i class="fas fa-download me-1"></i>Retirer
+            </button>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endwith %}
+    {% endwith %}
+    {% empty %}
+    <div class="alert alert-info" role="alert">
+      Vous n'avez pas encore d'objectifs définis. Cliquez sur "Nouveau objectif" pour en créer un.
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+{%  comment %}
+
+{% include "membres/components/modal_ajouter_objectif.html" with form=form %}
+{% for objectif in objectifs %}
+{% include "membres/components/modal_annuler_objectif.html" with objectif=objectif %}
+{% include "membres/components/modal_retrait_objectif.html" with objectif=objectif %}
+{% endfor %}
+
+{% endcomment %}
+
 
 {% endblock %}

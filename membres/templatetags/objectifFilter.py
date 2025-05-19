@@ -11,3 +11,6 @@ def pourcentage(montant, montant_cible):
     except (TypeError, ValueError, ZeroDivisionError):
         return 0
 
+@register.filter
+def objectif_statut_count(objectifs, statut):
+    return sum(1 for objectif in objectifs if objectif.statut == statut)

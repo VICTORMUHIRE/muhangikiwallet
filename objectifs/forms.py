@@ -5,7 +5,7 @@ from .models import Objectifs, TypesObjectif
 class ObjectifsForm(forms.ModelForm):
     class Meta:
         model = Objectifs
-        fields = ["type", "montant_cible", "devise",  "date_debut", "date_fin", "description"]
+        fields = ["nom", "montant_cible", "devise",  "date_debut", "date_fin", "description"]
 
         widgets = {
             "date_debut": forms.DateInput(attrs={"type": "date", "value": "today"}),

@@ -276,6 +276,7 @@ class AnnulationObjectif(models.Model):
 class Retraits(models.Model):
     membre = models.ForeignKey(Membres, on_delete=models.CASCADE, verbose_name="Membres")
     montant = models.FloatField(verbose_name="Montant")
+    montant_recu = models.FloatField(blank=True, null=True, verbose_name="Montant recus",)
     devise = models.CharField(max_length=3, choices=DEVISE_CHOICES, verbose_name="Devise")
     frais = models.FloatField(verbose_name="Frais")
     date = models.DateTimeField(auto_now_add=True, verbose_name="Date")

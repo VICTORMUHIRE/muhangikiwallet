@@ -35,7 +35,7 @@
                                     {{ transaction.date|date:"d/m/Y" }}
                                 </div>
                             </div>
-                            <span class="badge bg-secondary-subtle text-secondary rounded-pill">{{ transaction.montant|stringformat:0 }} {{ transaction.devise }}</span>
+                            <span class="badge bg-secondary-subtle text-secondary rounded-pill">{{ transaction.montant|stringformat:".2f" }} {{ transaction.devise }}</span>
                         </li>
                         {% empty %}
                         <li class="list-group-item p-2 text-muted small">Aucune activité récente</li>
@@ -58,10 +58,10 @@
                     {% if objectifs %}
                     <ul class="list-group list-group-flush">
                         {% for objectif in objectifs %}
-                        <li class="list-group-item p-2 rounded-3 mb-2">
+                        <li class="list-group-item p-2 rounded-3 mt-2">
                             <div class="d-flex align-items-center justify-content-between">
                                 <div>
-                                    <h6 class="fw-semibold small mb-1">{{ objectif.type }}</h6>
+                                    <h6 class="fw-semibold small mb-2">{{ objectif.nom }}</h6>
                                     <div class="progress" style="height: 5px;">
                                         <div class="progress-bar bg-primary" role="progressbar"
                                             style="width: {{ objectif.montant|pourcentage:objectif.montant_cible|stringformat:".0f" }}%;"
@@ -69,7 +69,7 @@
                                             aria-valuemin="0" aria-valuemax="100">
                                         </div>
                                     </div>
-                                    <p class="text-muted x-small mt-1">{{ objectif.montant|stringformat:0 }} / {{ objectif.montant_cible|stringformat:0 }} {{ objectif.devise }}</p>
+                                    <p class="text-muted x-small mt-1" style="margin-bottom: 0 !important;">{{ objectif.montant}} / {{ objectif.montant_cible}} {{ objectif.devise }}</p>
                                 </div>
                                 <span class="badge {% if objectif.statut == 'Atteint' %}bg-success{% elif objectif.statut == 'En cours' %}bg-warning{% else %}bg-danger{% endif %} rounded-pill">{{ objectif.statut }}</span>
                             </div>
