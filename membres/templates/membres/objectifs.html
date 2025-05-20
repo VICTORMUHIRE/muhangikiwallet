@@ -10,8 +10,8 @@
   }
 
   .progress-circle-container {
-    width: 50px;
-    height: 50px;
+    width: 40px;
+    height: 40px;
     position: relative;
     display: flex;
     justify-content: center;
@@ -28,7 +28,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 0.8rem;
+  font-size: 0.6rem;
   font-weight: bold;
   color: #6c757d;
   z-index: 10;
@@ -76,7 +76,7 @@
 
   /* Style spécifique pour les objectifs retirés */
   .objectif-item.retire {
-    opacity: 0.7; /* Diminue l'opacité pour indiquer qu'il est retiré */
+    opacity: 0.6; /* Diminue l'opacité pour indiquer qu'il est retiré */
     border-color: #6c757d; /* Change la couleur de la bordure */
   }
 
@@ -86,12 +86,25 @@
     text-decoration: line-through; /* Barre le nom de l'objectif */
   }
 
-  .progress-circle-container.retire {
-    display: none; /* Cache le cercle de progression */
-  }
 
   .fa-chevron-down.retire {
-    opacity: 0.5; /* Diminue l'opacité de la flèche */
+    opacity: 0.8; 
+  }
+  
+  .objectif-item.annule {
+    opacity: 0.5; 
+    border-color: #dc3545; 
+  }
+
+  .objectif-header.annule {
+    background-color: #f8d7da; /* Arrière-plan rouge clair */
+    color: #dc3545; /* Texte rouge */
+    text-decoration: line-through; /* Barrer le nom */
+  }
+
+
+  .fa-chevron-down.annule {
+    opacity: 0.8;
   }
 
   /* Responsive adjustments */
@@ -157,15 +170,17 @@
     {% for objectif in objectifs %}
     {% with progress_percentage=objectif.montant|pourcentage:objectif.montant_cible|stringformat:".0f" %}
     {% with objectif.nom|slugify as objectif_slug %}
-    <div class="objectif-item mb-3 {% if objectif.statut == 'Retiré' %}retire{% endif %}">
-      <div class="objectif-header d-flex justify-content-between align-items-center {% if objectif.statut == 'Retiré' %}retire{% endif %}" data-bs-toggle="collapse" href="#collapse{{ objectif_slug }}" role="button" aria-expanded="false" aria-controls="collapse{{ objectif_slug }}" style="cursor: pointer;">
+    
+    {% include "membres/components/depot_objectif.html" with objectif=objectif %}
+      <div class="objectif-item mb-3 {% if objectif.statut == 'Retiré' %}retire{% elif objectif.statut == 'Annulé' or objectif.statut == 'Epuisé' %}annule{% endif %}">
+      <div class="objectif-header d-flex justify-content-between align-items-center {% if objectif.statut == 'Retiré' %}retire{% elif objectif.statut == 'Annulé' or objectif.statut == 'Epuisé' %}annule{% endif %}" data-bs-toggle="collapse" href="#collapse{{ objectif_slug }}" role="button" aria-expanded="false" aria-controls="collapse{{ objectif_slug }}" style="cursor: pointer;">
         <div class="d-flex align-items-center gap-2">
           {% if objectif.statut == 'Atteint' %}
           <i class="fas fa-check-circle text-success"></i>
           {% elif objectif.statut == 'En cours' %}
           <i class="fas fa-hourglass-half text-warning"></i>
           {% elif objectif.statut == 'Annulé' or objectif.statut == 'Epuisé' %}
-          <i class="fas fa-times-circle text-danger"></i>
+          <i class="fas fa-times-circle text-danger fa-lg"></i> <span class="ms-1">(Annulé)</span>
           {% elif objectif.statut == 'Retiré' %}
           <i class="fas fa-box-open text-secondary"></i>
           {% else %}
@@ -174,15 +189,21 @@
           <span class="fw-semibold">{{ objectif.nom }}</span>
           <small class="text-muted">({{ objectif.montant|intcomma }} / {{ objectif.montant_cible|intcomma }} {{ objectif.devise }})</small>
         </div>
-        <div class="d-flex align-items-center gap-3 {% if objectif.statut == 'Retiré' %}retire{% endif %}">
-          {% if objectif.statut != 'Retiré' %}
-              <div class="progress-circle-container">
+        <div class="d-flex align-items-center gap-3 {% if objectif.statut == 'Retiré' %}retire{% elif objectif.statut == 'Annulé' or objectif.statut == 'Epuisé' %}annule{% endif %}">
+          {% if objectif.statut != 'Retiré' and objectif.statut != 'Annulé' and objectif.statut != 'Epuisé' %}
+              <div class="progress-circle-container {% if objectif.statut == 'Annulé' or objectif.statut == 'Epuisé' %}annule{% endif %}">
                   <div class="progress-circle" style="--progress-percentage: {{ progress_percentage }}%; --progress-color: {% if progress_percentage|floatformat:0 >= 100 %}green{% elif progress_percentage|floatformat:0 > 50 %}orange{% else %}red{% endif %};">
                       {{ progress_percentage }}%
                   </div>
               </div>
+          {% else %}
+              <div class="progress-circle-container annule">
+                  <div class="progress-circle" style="opacity: 0.3;">
+                      {{ progress_percentage }}%
+                  </div>
+              </div>
           {% endif %}
-          <i class="fas fa-chevron-down text-muted {% if objectif.statut == 'Retiré' %}retire{% endif %}"></i>
+          <i class="fas fa-chevron-down text-muted {% if objectif.statut == 'Retiré' %}retire{% elif objectif.statut == 'Annulé' or objectif.statut == 'Epuisé' %}annule{% endif %}"></i>
         </div>
       </div>
       <div class="collapse" id="collapse{{ objectif_slug }}" data-bs-parent="#objectifsList">
@@ -197,7 +218,7 @@
             {% endif %}
             <li>
               <small><strong>Statut :</strong>
-                <span class="badge {% if objectif.statut == 'Atteint' %}bg-success{% elif objectif.statut == 'En cours' %}bg-warning{% elif objectif.statut == 'Annulé' or objectif.statut == 'Epuisé' %}bg-danger{% elif objectif.statut == 'Retiré' %}bg-secondary{% else %}bg-info{% endif %} rounded-pill">
+                <span class="badge bg-danger rounded-pill">
                   {{ objectif.statut }}
                 </span>
               </small>
@@ -205,36 +226,11 @@
           </ul>
 
           <div class="d-flex justify-content-end gap-2 mt-3 objectif-actions">
-            {% if objectif.statut not in 'Atteint Retiré Annulé Epuisé' %}
-            <button type="button" class="btn btn-danger btn-sm rounded-pill"
-                    data-bs-toggle="modal"
-                    data-bs-target="#AnnulereObjectifModalLabel{{ objectif.id }}">
-              <i class="fas fa-ban me-1"></i>Annuler
-            </button>
-            {% endif %}
-            {% if objectif.statut == 'En cours' %}
-                <button type="button" class="btn btn-primary btn-sm rounded-pill"
-                        data-bs-toggle="modal"
-                        data-bs-target="#depotObjectifModal{{ objectif.id }}"
-                        data-objectif-id="{{ objectif.id }}"
-                        data-objectif-nom="{{ objectif.nom }}"
-                        data-objectif-devise="{{ objectif.devise }}">
-                    <i class="fas fa-upload me-1"></i>Déposer
-                </button>
-            {% elif objectif.statut == 'Atteint' %}
-            <button type="button" class="btn btn-success btn-sm rounded-pill"
-                    data-bs-toggle="modal"
-                    data-bs-target="#retraitObjectifModal{{ objectif.id }}">
-              <i class="fas fa-download me-1"></i>Retirer
-            </button>
-            {% endif %}
+            {# Les actions pour les objectifs annulés ne sont probablement plus pertinentes #}
           </div>
         </div>
       </div>
     </div>
-    {% include "membres/components/depot_objectif.html" with objectif=objectif %}
-
-
     {% endwith %}
     {% endwith %}
     {% empty %}
