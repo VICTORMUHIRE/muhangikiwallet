@@ -764,63 +764,53 @@ def retrait_objectif(request, objectif_id):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
-# Vue pour retrait d'objectif
 @login_required
 @verifier_membre
 def annulation_objectif(request, objectif_id):
     objectif = get_object_or_404(Objectifs, membre=request.user.membre, pk=objectif_id, statut__in=['En cours', 'Epuisé'])
     membre = request.user.membre
     compte = membre.compte_USD if objectif.devise == "USD" else membre.compte_CDF
-    if request.method == 'POST':
-        password = request.POST.get('password')
 
-        if check_password(password, request.user.password):
-            if not Transactions.objects.filter(membre=membre, type="retrait_tout", statut__in=["En attente", "Demande"]).exists():
-                if not Transactions.objects.filter(membre=membre, type="annulation_objectif", statut="Demande").exists():
+    try:
+        data = json.loads(request.body)
+        password = data.get('password')
 
-                    # retransferer l'agent qui ete deja affecte a l'objecitf dans le compte prisipal
-                    compte.solde += Decimal(str(objectif.montant))
-                    compte.save()
+        if not check_password(password, request.user.password):
+            return JsonResponse({'success': False, 'error': 'Mot de passe incorrect.'}, status=400)
 
-                    AnnulationObjectif.objects.create(
+        AnnulationObjectif.objects.create(
+            membre=membre,
+            objectif=objectif,
+            montant=objectif.montant,
+            devise=objectif.devise,
+            date_approbation=timezone.now(),
+            statut="Approuvé",
+            transaction=Transactions.objects.create(
+                membre=membre,
+                montant=objectif.montant,
+                devise=objectif.devise,
+                statut="Approuvé",
+                type="annulation_objectif"
+            )
+        )
 
-                        membre=membre,
-                        objectif=objectif,
-                        montant=objectif.montant,
-                        devise=objectif.devise,
-                        date_approbation = timezone.now(),
-                        statut="Approuvé",
-                        transaction=Transactions.objects.create(
-                            membre=membre,
-                            montant=objectif.montant,
-                            devise=objectif.devise,
-                            statut="Approuvé",
-                            type="annulation_objectif"
-                        )
-                    )
-                    objectif.statut = "Annulé"
-                    objectif.save()
-                    
-                    
-                    messages.success(request, f"Objectif '{objectif.nom}' annulé avec succès")
+        # Retransférer l'argent qui était déjà affecté à l'objectif dans le compte principal
+        compte.solde += Decimal(str(objectif.montant))
+        compte.save()
 
-                else:
-                    messages.error(request, "Vous avez une demande d'annulation en attente, patientez svp !")
+        objectif.statut = "Annulé"
+        objectif.montant = 0
+        objectif.save()
 
-            else:
-                messages.error(request, "Vous avez déjà une demande de retrait totale en attente")
+        return JsonResponse({'success': True, 'message': f"Objectif '{objectif.nom}' annulé avec succès"})
 
-        else:
-            messages.error(request, "Mot de passe incorrect")
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': "Données JSON invalides"}, status=400)
+    except Objectifs.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Objectif introuvable.'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
-    return redirect('membres:objectifs')
-
-# Vue pour voir un objectif en details
-@login_required
-@verifier_membre
-def objectif(request, objectif_id):
-    objectif = Objectifs.objects.get(pk=objectif_id)
-    return render(request, "membres/objectif_details.html", {"objectif": objectif})
 
 # Vue pour la page de retrait du membre
 @login_required

@@ -61,7 +61,7 @@
         const modalElement = document.getElementById(`retraitObjectifModal${objectifId}`);
         const modal = bootstrap.Modal.getInstance(modalElement);
 
-        fetch(`/membres/objectifs/retrait/${objectifId}/`, {
+        fetch(`/membres/objectifs/retrait/${objectifId}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
