@@ -1,0 +1,114 @@
+<div
+    class="modal fade"
+    id="retraitObjectifModal{{ objectif.id }}"
+    tabindex="-1"
+    aria-labelledby="retraitObjectifModalLabel{{ objectif.id }}"
+    aria-hidden="true"
+>
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="retraitObjectifModalLabel{{ objectif.id }}">
+                    Retrait de l'objectif "{{ objectif.nom }}"
+                </h5>
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                    aria-label="Close"
+                ></button>
+            </div>
+            <div class="modal-body">
+                <p>
+                    Êtes-vous sûr de vouloir retirer le montant de
+                    <strong>{{ objectif.montant_cible|stringformat:".2f" }} {{ objectif.devise }}</strong>pour l'objectif
+                    <strong>{{ objectif.nom }}</strong>?
+                </p>
+                <form
+                    method="post"
+                    id="retraitObjectifForm{{ objectif.id }}" >
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <input
+                            type="password"
+                            class="form-control"
+                            id="mot_de_passe_retrait{{ objectif.id }}"
+                            name="password"
+                            placeholder="Entrez votre mot de passe"
+                            required
+                        />
+                    </div>
+                    <div class="alert alert-danger mt-3 d-none" id="retrait-error-message{{ objectif.id }}"></div>
+                    <div class="alert alert-success mt-3 d-none" id="retrait-success-message{{ objectif.id }}"></div>
+                    <button
+                        type="button" class="btn btn-sm btn-success"
+                        onclick="effectuerRetrait('{{ objectif.id }}')" >
+                        Confirmer le retrait
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function effectuerRetrait(objectifId) {
+        const form = document.getElementById(`retraitObjectifForm${objectifId}`);
+        const passwordInput = document.getElementById(`mot_de_passe_retrait${objectifId}`);
+        const csrfToken = form.querySelector('[name=csrfmiddlewaretoken]').value;
+        const errorDiv = document.getElementById(`retrait-error-message${objectifId}`);
+        const successDiv = document.getElementById(`retrait-success-message${objectifId}`);
+        const modalElement = document.getElementById(`retraitObjectifModal${objectifId}`);
+        const modal = bootstrap.Modal.getInstance(modalElement);
+
+        fetch(`/membres/objectifs/retrait/${objectifId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
+            },
+            body: JSON.stringify({
+                password: passwordInput.value,
+            }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            errorDiv.classList.add('d-none');
+            successDiv.classList.add('d-none');
+
+            if (data.success) {
+                successDiv.textContent = data.message;
+                successDiv.classList.remove('d-none');
+                setTimeout(() => {
+                    modal.hide();
+                    window.location.reload(); 
+                }, 1500);
+            } else {
+                errorDiv.textContent = data.error;
+                errorDiv.classList.remove('d-none');
+            }
+        })
+        .catch(error => {
+            errorDiv.textContent = 'Une erreur s\'est produite lors du retrait.';
+            errorDiv.classList.remove('d-none');
+            console.error('Erreur lors du retrait:', error);
+        });
+    }
+
+    // Réinitialiser les messages à la fermeture du modal
+    const retraitObjectifModalElement = document.getElementById(`retraitObjectifModal{{ objectif.id }}`);
+    if (retraitObjectifModalElement) {
+        retraitObjectifModalElement.addEventListener('hidden.bs.modal', () => {
+            const errorDiv = document.getElementById(`retrait-error-message{{ objectif.id }}`);
+            const successDiv = document.getElementById(`retrait-success-message{{ objectif.id }}`);
+            if (errorDiv) {
+                errorDiv.classList.add('d-none');
+                errorDiv.textContent = '';
+            }
+            if (successDiv) {
+                successDiv.classList.add('d-none');
+                successDiv.textContent = '';
+            }
+        });
+    }
+</script>

@@ -1,4 +1,5 @@
 from decimal import Decimal
+import json
 from django.contrib import messages
 from django.core.files.storage import FileSystemStorage
 from django.conf import settings
@@ -8,8 +9,11 @@ from django.contrib.auth import update_session_auth_hash
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum
-
+from django.template.defaultfilters import slugify
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
 from membres.service import benefices_actuelle, investissement_actuelle, rechargerCompteService
+
 from .models import Membres
 from .forms import MembresForm, ModifierMembresForm
 from agents.models import Agents, NumerosAgent
@@ -591,7 +595,7 @@ def objectifs(request):
         if form.is_valid():
             objectif = form.save(commit=False)
 
-            if True or not Objectifs.objects.filter(membre=request.user.membre, type=objectif.type, statut__in=["En cours", "Atteint", "Epuisé"]).exists():
+            if True or not Objectifs.objects.filter(membre=request.user.membre, nom=objectif.nom, statut__in=["En cours", "Atteint", "Epuisé"]).exists():
                 if objectif.montant_cible > 0:
                     if objectif.date_debut < objectif.date_fin:
                         objectif.membre = request.user.membre
@@ -630,79 +634,89 @@ def objectifs(request):
     }
     return render(request, "membres/objectifs.html", context)
 
-# Vue pour la page de dépôt sur objectif du membre
 @login_required
-@verifier_membre
+@require_POST
+@csrf_exempt
 def depot_objectif(request, objectif_id):
-    membre = request.user.membre
-    objectif = get_object_or_404(Objectifs, membre=membre, pk=objectif_id, statut="En cours")
+    try:
+        data = json.loads(request.body)
+        montant = data.get('montant')
+        mot_de_passe = data.get('mot_de_passe')
 
-    if request.method == "POST":
-        depot_objectif_form = DepotsObjectifForm(request.POST)
-        form = TransactionsForm(request.POST, request.FILES)
-        mot_de_passe = request.POST.get('mot_de_passe')
-        
-        if check_password(mot_de_passe, request.user.password):
-            if form.is_valid() and depot_objectif_form.is_valid():
-                try:
-                    depot_objectif = depot_objectif_form.save(commit=False)
-                    depot_objectif.objectif = objectif
+        if not montant or not mot_de_passe:
+            return JsonResponse({'error': 'Le montant et le mot de passe sont requis.'}, status=400)
 
-                    transaction = form.save(commit=False)
+        objectif = get_object_or_404(Objectifs, membre=request.user.membre, pk=objectif_id, statut="En cours")
 
-                    transaction.membre = request.user.membre
-                    transaction.devise = depot_objectif.devise = depot_objectif.objectif.devise
-                    transaction.type = "depot_objectif"                    
+        if not check_password(mot_de_passe, request.user.password):
+            return JsonResponse({'error': 'Mot de passe incorrect.'}, status=400)
 
-                    compte = membre.compte_USD if transaction.devise == "USD" else membre.compte_CDF
+        try:
+            montant_depot = float(montant)
+            if montant_depot <= 0 or montant_depot > (objectif.montant_cible - objectif.montant):
+                return JsonResponse({'error': 'Montant de dépôt invalide.'}, status=400)
+        except ValueError:
+            return JsonResponse({'error': 'Montant de dépôt invalide.'}, status=400)
 
-                    if not Transactions.objects.filter(membre=request.user.membre, type="depot_objectif", statut="En attente").exists():
-                        if transaction.montant > 0 and transaction.montant <= float(objectif.montant_cible) - float(objectif.montant) and  compte.solde >= transaction.montant:
-                            transaction.statut = "Approuvé"
-                            transaction.save()
+        # Vérification du solde du compte
+        membre = request.user.membre
+        compte = membre.compte_USD if objectif.devise == "USD" else membre.compte_CDF
 
-                            #retrait de l'argent de l'objectif dans le compte principal du membre
-                            compte.solde -= transaction.montant
-                            compte.save()
+        if compte.solde < montant_depot:
+            return JsonResponse({'error': f'Solde insuffisant sur votre compte {objectif.devise}.'}, status=400)
 
-                            depot_objectif.transaction = transaction                           
-                            depot_objectif.statut = "Approuvé"
-                            depot_objectif.date_approbation = timezone.now()
-                            objectif.montant = float(objectif.montant) + float(transaction.montant)
-                            
-                            if objectif.montant >= objectif.montant_cible: objectif.statut = "Atteint"
-                            
-                            depot_objectif.objectif.save()
-                            depot_objectif.save()
+        # Créer la transaction
+        transaction = Transactions.objects.create(
+            membre=membre,
+            montant=montant_depot,
+            devise=objectif.devise,
+            type="depot_objectif",
+            statut="Approuvé",
+            date_approbation=timezone.now()
+        )
 
-                            messages.success(request, "Votre dépôt sur objectif a été soumis avec succès !")
-                            return redirect('membres:objectifs')
-                        else:
-                            messages.error(request, "Le montant doit être supérieur à zéro et inférieur ou égal au montant cible de l'objectif")
-                    
-                    else:
-                        messages.error(request, "Vous avez déjà un dépôt en attente pour cet objectif")
+        # Créer l'enregistrement de dépôt sur objectif
+        DepotsObjectif.objects.create(
+            objectif=objectif,
+            transaction=transaction,
+            montant=montant_depot,
+            devise=objectif.devise,
+            statut="Approuvé",
+            date_approbation=timezone.now()
+        )
 
-                except Agents.DoesNotExist:
-                    messages.error(request, "Numéro d'agent invalide")
-            else:
-                messages.error(request, "Veuillez corriger les erreurs du formulaire")
+        # Mettre à jour le montant de l'objectif
+        objectif.montant += montant_depot
+        if objectif.montant >= objectif.montant_cible:
+            objectif.statut = "Atteint"
+        objectif.save()
 
-        else:
-            messages.error(request, "Mot de passe incorrect")
+        # Retirer l'argent du compte principal
+        compte.solde -= Decimal(str(montant_depot))
+        compte.save()
 
-    else:
-        form = TransactionsForm()
-        depot_objectif_form = DepotsObjectifForm(initial={"objectif": objectif_id, "devise": objectif.devise})
+        try:
+            progress_percentage = float(objectif.montant / objectif.montant_cible) * 100
+        except (TypeError, ZeroDivisionError):
+            progress_percentage = 0
+        progress_color = "green" if progress_percentage >= 100 else "orange" if progress_percentage > 50 else "red"
 
-    context = {
-        "form": form,
-        "depot_objectif_form": depot_objectif_form,
-        "objectif": objectif,
-        "montant_restant": objectif.montant_cible - objectif.montant
-    }
+        return JsonResponse({
+            'success': True,
+            'message': 'Dépôt effectué avec succès !',
+            'nouveau_montant_depose': objectif.montant,
+            'montant_cible': objectif.montant_cible,
+            'devise': objectif.devise,
+            'nouveau_pourcentage': progress_percentage,
+            'progress_color': progress_color,
+            'objectif_slug': slugify(objectif.nom)
+        })
 
-    return render(request, "membres/depot_objectif.html", context)
+    except Objectifs.DoesNotExist:
+        return JsonResponse({'error': 'Objectif introuvable.'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
 
 # Vue pour retrait d'objectif
 @login_required
@@ -710,49 +724,45 @@ def depot_objectif(request, objectif_id):
 def retrait_objectif(request, objectif_id):
     objectif = get_object_or_404(Objectifs, membre=request.user.membre, pk=objectif_id, statut="Atteint")
     membre = request.user.membre
+    try:
+        data = json.loads(request.body)
+        password = data.get('password')
 
-    if request.method == 'POST':
-        password = request.POST.get('password')
+        if not check_password(password, request.user.password):
+            return JsonResponse({'error': 'Mot de passe incorrect.'}, status=400)
 
-        if check_password(password, request.user.password):
-            if not Transactions.objects.filter(membre=membre, type="retrait_tout", statut__in=["En attente", "Demande"]).exists():
-                if not RetraitsObjectif.objects.filter(membre=membre, transaction__statut__in=["Demande", "En attente"], statut__in=["En attente", "Approuvé"]).exists():
-                    montant_total_USD = objectif.montant_cible / 2800 if objectif.devise == "CDF" else objectif.montant_cible
-    
-                    if montant_total_USD > 0 and montant_total_USD <= 10: frais = 0.085
-                    elif montant_total_USD > 10 and montant_total_USD <= 20: frais = 0.058
-                    elif montant_total_USD > 20 and montant_total_USD <= 50: frais = 0.0295
-                    elif montant_total_USD > 50 and montant_total_USD <= 400: frais = 0.0175
-                    elif montant_total_USD > 400: frais = 0.01
+        membre = request.user.membre
+        compte = membre.compte_USD if objectif.devise == "USD" else membre.compte_CDF
 
-                    frais = 0
+        RetraitsObjectif.objects.create(
+            membre=membre,
+            objectif=objectif,
+            montant=objectif.montant_cible,
+            devise=objectif.devise,
+            statut="Approuvé",
+            transaction=Transactions.objects.create(
+                membre=membre,
+                montant=objectif.montant_cible,
+                devise=objectif.devise,
+                type="retrait_objectif",
+                statut="Approuvé",
+            )
+        )
 
-                    RetraitsObjectif.objects.create(
-                        membre=membre,
-                        objectif=objectif,
-                        montant=objectif.montant_cible,
-                        devise=objectif.devise,
-                        frais=frais,
-                        transaction=Transactions.objects.create(
-                            membre=membre,
-                            montant=objectif.montant_cible * (1 - frais),
-                            devise=objectif.devise,
-                            type="retrait_objectif"
-                        )
-                    )
+        #changement du statut de l'objectif
+        objectif.statut = "Retiré"
+        objectif.save()
 
-                    messages.success(request, f"Retrait de {objectif.montant_cible} {objectif.devise} pour l'objectif '{objectif.nom}' envoyé avec succès")
+        # Retirer l'argent du compte principal
+        compte.solde += Decimal(str(objectif.montant_cible))
+        compte.save()
 
-                else:
-                    messages.error(request, "Vous avez une demande de retrait en attente, patientez svp !")
+        return JsonResponse({'success': True, 'message': f"Retrait de {objectif.montant_cible} {objectif.devise} pour l'objectif '{objectif.type}' effectué avec succès."})
 
-            else:
-                messages.error(request, "Vous avez déjà une demande de retrait totale en attente")
-
-        else:
-            messages.error(request, "Mot de passe incorrect")
-
-    return redirect('membres:objectifs')
+    except Objectifs.DoesNotExist:
+        return JsonResponse({'error': 'Objectif introuvable.'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
 
 # Vue pour retrait d'objectif
 @login_required

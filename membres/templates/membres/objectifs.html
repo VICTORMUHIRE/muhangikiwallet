@@ -10,8 +10,8 @@
   }
 
   .progress-circle-container {
-    width: 50px; 
-    height: 50px; 
+    width: 50px;
+    height: 50px;
     position: relative;
     display: flex;
     justify-content: center;
@@ -30,18 +30,18 @@
   align-items: center;
   font-size: 0.8rem;
   font-weight: bold;
-  color: #6c757d; 
+  color: #6c757d;
   z-index: 10;
 }
   .progress-circle::before {
     content: '';
     position: absolute;
-    top: 5px; 
-    left: 5px; 
-    width: calc(100% - 10px); 
-    height: calc(100% - 10px); 
+    top: 5px;
+    left: 5px;
+    width: calc(100% - 10px);
+    height: calc(100% - 10px);
     border-radius: 50%;
-    background-color: #fafbfc; 
+    background-color: #fafbfc;
     z-index: -1;
   }
 
@@ -74,6 +74,26 @@
     background-color: #fff;
   }
 
+  /* Style spécifique pour les objectifs retirés */
+  .objectif-item.retire {
+    opacity: 0.7; /* Diminue l'opacité pour indiquer qu'il est retiré */
+    border-color: #6c757d; /* Change la couleur de la bordure */
+  }
+
+  .objectif-header.retire {
+    background-color: #e9ecef; /* Légèrement grisé */
+    color: #6c757d; /* Texte grisé */
+    text-decoration: line-through; /* Barre le nom de l'objectif */
+  }
+
+  .progress-circle-container.retire {
+    display: none; /* Cache le cercle de progression */
+  }
+
+  .fa-chevron-down.retire {
+    opacity: 0.5; /* Diminue l'opacité de la flèche */
+  }
+
   /* Responsive adjustments */
   @media (max-width: 768px) {
     .col-md-8, .col-md-4 {
@@ -98,6 +118,13 @@
 
 <div class="container-fluid p-3 p-md-4 rounded-3" style="background-color: #fff; min-height: 100%;">
 
+  {% for message in messages %}
+  <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+    {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+  {% endfor %}
+
   <div class="mb-4">
     <div class="card rounded p-4 border">
       <div class="row align-items-end">
@@ -113,7 +140,7 @@
             Objectifs : <strong class="fw-bold">{{ objectifs|length }}</strong> actifs,
             <strong class="fw-bold">{{ objectifs|objectif_statut_count:'Atteint' }}</strong> atteints,
             <strong class="fw-bold">{{ objectifs|objectif_statut_count:'Annulé' }}</strong> annulés,
-            <strong class="fw-bold">{{ objectifs|objectif_statut_count:'Epuisé' }}</strong> épuisés
+            <strong class="fw-bold">{{ objectifs|objectif_statut_count:'Retiré' }}</strong> retirés
           </p>
           </div>
         <div class="col-md-4 text-md-end mt-3 mt-md-0">
@@ -130,8 +157,8 @@
     {% for objectif in objectifs %}
     {% with progress_percentage=objectif.montant|pourcentage:objectif.montant_cible|stringformat:".0f" %}
     {% with objectif.nom|slugify as objectif_slug %}
-    <div class="objectif-item mb-3">
-      <div class="objectif-header d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#collapse{{ objectif_slug }}" role="button" aria-expanded="false" aria-controls="collapse{{ objectif_slug }}" style="cursor: pointer;">
+    <div class="objectif-item mb-3 {% if objectif.statut == 'Retiré' %}retire{% endif %}">
+      <div class="objectif-header d-flex justify-content-between align-items-center {% if objectif.statut == 'Retiré' %}retire{% endif %}" data-bs-toggle="collapse" href="#collapse{{ objectif_slug }}" role="button" aria-expanded="false" aria-controls="collapse{{ objectif_slug }}" style="cursor: pointer;">
         <div class="d-flex align-items-center gap-2">
           {% if objectif.statut == 'Atteint' %}
           <i class="fas fa-check-circle text-success"></i>
@@ -139,19 +166,23 @@
           <i class="fas fa-hourglass-half text-warning"></i>
           {% elif objectif.statut == 'Annulé' or objectif.statut == 'Epuisé' %}
           <i class="fas fa-times-circle text-danger"></i>
+          {% elif objectif.statut == 'Retiré' %}
+          <i class="fas fa-box-open text-secondary"></i>
           {% else %}
           <i class="fas fa-flag-checkered text-primary"></i>
           {% endif %}
           <span class="fw-semibold">{{ objectif.nom }}</span>
           <small class="text-muted">({{ objectif.montant|intcomma }} / {{ objectif.montant_cible|intcomma }} {{ objectif.devise }})</small>
         </div>
-        <div class="d-flex align-items-center gap-3">
-          <div class="progress-circle-container">
-            <div class="progress-circle" style="--progress-percentage: {{ progress_percentage }}%; --progress-color: {% if progress_percentage|floatformat:0 >= 100 %}green{% elif progress_percentage|floatformat:0 > 50 %}orange{% else %}red{% endif %};">
-              {{ progress_percentage }}%
-            </div>
-          </div>
-          <i class="fas fa-chevron-down text-muted"></i>
+        <div class="d-flex align-items-center gap-3 {% if objectif.statut == 'Retiré' %}retire{% endif %}">
+          {% if objectif.statut != 'Retiré' %}
+              <div class="progress-circle-container">
+                  <div class="progress-circle" style="--progress-percentage: {{ progress_percentage }}%; --progress-color: {% if progress_percentage|floatformat:0 >= 100 %}green{% elif progress_percentage|floatformat:0 > 50 %}orange{% else %}red{% endif %};">
+                      {{ progress_percentage }}%
+                  </div>
+              </div>
+          {% endif %}
+          <i class="fas fa-chevron-down text-muted {% if objectif.statut == 'Retiré' %}retire{% endif %}"></i>
         </div>
       </div>
       <div class="collapse" id="collapse{{ objectif_slug }}" data-bs-parent="#objectifsList">
@@ -166,7 +197,7 @@
             {% endif %}
             <li>
               <small><strong>Statut :</strong>
-                <span class="badge {% if objectif.statut == 'Atteint' %}bg-success{% elif objectif.statut == 'En cours' %}bg-warning{% elif objectif.statut == 'Annulé' or objectif.statut == 'Epuisé' %}bg-danger{% else %}bg-info{% endif %} rounded-pill">
+                <span class="badge {% if objectif.statut == 'Atteint' %}bg-success{% elif objectif.statut == 'En cours' %}bg-warning{% elif objectif.statut == 'Annulé' or objectif.statut == 'Epuisé' %}bg-danger{% elif objectif.statut == 'Retiré' %}bg-secondary{% else %}bg-info{% endif %} rounded-pill">
                   {{ objectif.statut }}
                 </span>
               </small>
@@ -182,9 +213,14 @@
             </button>
             {% endif %}
             {% if objectif.statut == 'En cours' %}
-            <a href="{% url 'membres:depot_objectif' objectif.id %}" class="btn btn-primary btn-sm rounded-pill">
-              <i class="fas fa-upload me-1"></i>Déposer
-            </a>
+                <button type="button" class="btn btn-primary btn-sm rounded-pill"
+                        data-bs-toggle="modal"
+                        data-bs-target="#depotObjectifModal{{ objectif.id }}"
+                        data-objectif-id="{{ objectif.id }}"
+                        data-objectif-nom="{{ objectif.nom }}"
+                        data-objectif-devise="{{ objectif.devise }}">
+                    <i class="fas fa-upload me-1"></i>Déposer
+                </button>
             {% elif objectif.statut == 'Atteint' %}
             <button type="button" class="btn btn-success btn-sm rounded-pill"
                     data-bs-toggle="modal"
@@ -196,6 +232,9 @@
         </div>
       </div>
     </div>
+    {% include "membres/components/depot_objectif.html" with objectif=objectif %}
+
+
     {% endwith %}
     {% endwith %}
     {% empty %}
@@ -203,18 +242,15 @@
       Vous n'avez pas encore d'objectifs définis. Cliquez sur "Nouveau objectif" pour en créer un.
     </div>
     {% endfor %}
+
+
   </div>
 </div>
 
-{%  comment %}
-
-{% include "membres/components/modal_ajouter_objectif.html" with form=form %}
+{% include "membres/components/ajouter_objectif.html" with form=form %}
 {% for objectif in objectifs %}
-{% include "membres/components/modal_annuler_objectif.html" with objectif=objectif %}
-{% include "membres/components/modal_retrait_objectif.html" with objectif=objectif %}
+{% include "membres/components/annuler_objectif.html" with objectif=objectif %}
+{% include "membres/components/retrait_objectif.html" with objectif=objectif %}
 {% endfor %}
-
-{% endcomment %}
-
 
 {% endblock %}
