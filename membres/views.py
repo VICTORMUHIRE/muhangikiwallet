@@ -225,8 +225,6 @@ def home(request):
 
     transactions = Transactions.objects.filter(membre=membre).order_by("-date")
 
-    form = SoldeForm()
-
     context = {
         "membre": membre,
         "compte_usd":compte_usd.solde,
@@ -241,10 +239,26 @@ def home(request):
         "transactions": transactions,
         "benefices_CDF": benefices_CDF,
         "benefices_USD": benefices_USD,
-        "form":form,
     }
 
     return render(request, "membres/home.html", context)
+
+@login_required
+@verifier_membre
+def balance(request):
+    membre = request.user.membre
+    balance_cdf = membre.compte_CDF.solde
+    balance_usd = membre.compte_USD.solde
+
+    form = SoldeForm()
+
+    context = {
+        "membre": membre,
+        "balance_cdf": balance_cdf,
+        "balance_usd": balance_usd,
+        "form":form
+    }
+    return render(request, "membres/balance.html",context)
 
 # Vue pour la page de profil du membre
 @login_required
@@ -1080,45 +1094,52 @@ def notifications(request):
 
 
 # Traite le payement via mobile money chez un membre
-
 @login_required
 @verifier_membre
 def recharger_compte(request):
     membre = request.user.membre
     frais_retrait = Decimal("0.035")
 
-    if request.method == 'POST':
-        form = SoldeForm(request.POST)
-        mot_de_passe = request.POST.get("password")
-        fournisseur = request.POST.get("fournisseur")
-        if check_password(mot_de_passe, request.user.password):
+    if request.method == 'POST' and request.headers.get('Content-Type') == 'application/json' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            montant = data.get('montant')
+            devise = data.get('devise')
+            mot_de_passe = data.get('password')
+            numero = data.get('account_sender')
+            fournisseur = data.get('fournisseur')
+
+            if not check_password(mot_de_passe, request.user.password):
+                return JsonResponse({'error': "Mot de passe incorrect."}, status=401)
+
+            form = SoldeForm({'montant': montant, 'devise': devise, 'account_sender': numero})
+
             if form.is_valid():
-                montant = form.cleaned_data['montant']
-                devise = form.cleaned_data['devise']
-                numero = form.cleaned_data['account_sender']
-                net_montant = montant - (frais_retrait * montant)
+                montant_decimal = form.cleaned_data['montant']
+                devise_cleaned = form.cleaned_data['devise']
+                numero_cleaned = form.cleaned_data['account_sender']
+                net_montant = montant_decimal - (frais_retrait * montant_decimal)
+
+                if montant_decimal <= 0:
+                    return JsonResponse({'error': "Montant invalide."}, status=400)
 
                 reference = f"TX-{request.user.id}-{timezone.now().strftime('%Y%m%d%H%M%S')}"
-                data = {
-                    "numero": numero,
-                    "montant": float(montant),
-                    "devise": devise,
+                paiement_data = {
+                    "numero": numero_cleaned,
+                    "montant": float(montant_decimal),
+                    "devise": devise_cleaned,
                     "reference": reference,
                     "fournisseur": fournisseur
                 }
 
-                if montant <= 0:
-                    messages.error(request, "Montant invalide.")
-                    return redirect("membres:home")
-
                 # Appel à l'API de paiement
-                if rechargerCompteService(data):
+                if rechargerCompteService(paiement_data):
                     with db_transaction.atomic():
                         transaction = Transactions.objects.create(
                             membre=membre,
                             type="Rechargement compte",
                             montant=net_montant,
-                            devise=devise,
+                            devise=devise_cleaned,
                             statut="Approuvé",
                             date_approbation=timezone.now()
                         )
@@ -1126,29 +1147,30 @@ def recharger_compte(request):
                         Solde.objects.create(
                             transaction=transaction,
                             montant=net_montant,
-                            devise=devise,
-                            account_sender=numero,
+                            devise=devise_cleaned,
+                            account_sender=numero_cleaned,
                             frais_retrait=frais_retrait
                         )
 
                         # Crédit du compte
-                        compte = membre.compte_USD if devise == "USD" else membre.compte_CDF
+                        compte = membre.compte_USD if devise_cleaned == "USD" else membre.compte_CDF
                         compte.solde += net_montant
                         compte.save()
 
-                        messages.success(request, "Rechargement effectué avec succès.")
-                        return redirect("membres:home")
+                    return JsonResponse({'success': True, 'message': "Rechargement effectué avec succès."}, status=200)
                 else:
-                    messages.error(request, "Échec du paiement. Veuillez réessayer.")
+                    return JsonResponse({'error': "Échec du paiement. Veuillez réessayer."}, status=500)
             else:
-                messages.error(request, "Formulaire invalide.")
-        else:
-            messages.error(request, "Mot de passe incorrect.")
+                return JsonResponse({'errors': form.errors.as_json()}, status=400)
+
+        except json.JSONDecodeError:
+            return JsonResponse({'error': "Données JSON invalides."}, status=400)
+        except Exception as e:
+            return JsonResponse({'error': f"Une erreur inattendue s'est produite: {str(e)}"}, status=500)
+
     else:
         form = SoldeForm()
-
-    return render(request, "membres/home.html", {
-        "form": form,
-        "membre": membre,
-    })
-
+        return render(request, "membres/balance.html", {
+            "form": form,
+            "membre": membre,
+        })

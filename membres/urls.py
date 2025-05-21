@@ -5,6 +5,7 @@ app_name = "membres"
 
 urlpatterns = [
     path("", views.home, name="home"),
+    path("balance/", views.balance, name="balance"),
     path("statut/", views.statut, name="statut"),
     path("inscription/", views.inscription, name="inscription"),
     path("password_reset/", views.password_reset, name="password_reset"),

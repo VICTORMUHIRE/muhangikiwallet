@@ -145,7 +145,7 @@
                 left: 50%;
                 top: 50%;
                 transform: translate(-50%, -50%);
-                z-index: 1000; /* Assurez-vous qu'il est au-dessus des autres éléments */
+                z-index: 1000; 
             
             }
             .bottom-app-bar {
@@ -181,11 +181,11 @@
         /* Sidebar: liens de menu */
         #sidebar .nav-link {
             color: #616161;
-            border-radius: 4px;
-            margin: 5px 0;
+            margin: 4px 0;
             letter-spacing: .5px;
             font-size: .9rem;
             transition: background-color 0.2s ease;
+            border-left: solid 3px #fff;
         }
 
         #sidebar .nav-link:hover {
@@ -194,9 +194,9 @@
         }
 
         #sidebar .nav-link.active {
-            background-color: var(--orange-active);
-            color: #fff;
-            font-weight: 500;
+            background-color: var(--orange-hover);
+            border-left: solid 3px var(--orange-active);
+            font-weight: 400;
         }
 
     </style>
@@ -270,25 +270,37 @@
                 
                 <li class="nav-item">
                 <a class="nav-link {% if request.path == '/membres/' %}active{% endif %}" href="{% url 'membres:home' %}">
-                    <i class="fa fa-chart-line me-2"></i> Accueil
+                    <i class="fa fa-home me-2"></i> Accueil
+                </a>
+                </li>
+
+                <li class="nav-item">
+                <a class="nav-link {% if '/balance/' in request.path %}active{% endif %}" href="{% url 'membres:balance' %}">
+                    <i class="fa fa-coins me-2"></i> Compte
                 </a>
                 </li>
         
                 <li class="nav-item">
                 <a class="nav-link {% if '/contributions/' in request.path %}active{% endif %}" href="{% url 'membres:contributions' %}">
-                    <i class="fa fa-piggy-bank me-2"></i> Investissements
+                    <i class="fa fa-chart-pie me-2"></i> Investissements
                 </a>
                 </li>
 
                 <li class="nav-item">
                     <a class="nav-link {% if '/demande_pret/' in request.path %}active{% endif %}" href="{% url 'membres:demande_pret' %}">
-                        <i class="fa fa-piggy-bank me-2"></i> Credits
+                        <i class="fa fa-hand-holding-usd me-2"></i> Credits
                     </a>
-                    </li>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link {% if '/retrait/' in request.path %}active{% endif %}" href="{% url 'membres:retrait' %}">
+                        <i class="fa fa-arrow-trend-up me-2"></i> Benefices
+                    </a>
+                </li>
         
                 <li class="nav-item">
                 <a class="nav-link {% if '/objectifs/' in request.path %}active{% endif %}" href="{% url 'membres:objectifs' %}">
-                    <i class="fa fa-money-check-alt me-2"></i> Objectifs
+                    <i class="fa fa-bullseye me-2"></i> Objectifs
                 </a>
                 </li>
         
