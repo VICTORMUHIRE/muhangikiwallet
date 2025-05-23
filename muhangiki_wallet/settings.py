@@ -196,3 +196,23 @@ BOOTSTRAP5 = {
     'include_jquery': True,
     'use_bootstrap_5': True,
 }
+
+
+
+
+#confugurations relative a celery
+
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+# Optionnel : Backend pour stocker les résultats des tâches
+# CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Africa/Lubumbashi'  # Ajustez votre timezone (pour Goma, pourrait être 'Africa/Lubumbashi' ou 'Africa/Kinshasa')
+
+CELERY_BEAT_SCHEDULE = {
+    'hello-world-every-2-seconds': {
+        'task': 'membres.tasks.hello_world_task',
+        'schedule': 2.0,
+    },
+}

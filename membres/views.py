@@ -12,7 +12,7 @@ from django.db.models import Sum
 from django.template.defaultfilters import slugify
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
-from membres.service import benefices_actuelle, investissement_actuelle, rechargerCompteService
+from membres.service import benefices_actuelle, generer_statut_echeances, investissement_actuelle, rechargerCompteService
 
 from .models import Membres
 from .forms import MembresForm, ModifierMembresForm
@@ -375,6 +375,19 @@ def demande_pret(request):
     max_possible_cdf = solde_contribution_CDF + (solde_contribution_USD * taux_de_change)
     max_possible_usd = solde_contribution_USD + (solde_contribution_CDF / taux_de_change)
 
+    #logique d'eecheance pour les prets
+    prets_avec_echeances = []
+
+    for pret in demandes_pret:
+        echeances = generer_statut_echeances(pret) 
+
+        pret_info = {
+            'pret': pret,
+            'echeances': echeances,
+        }
+        prets_avec_echeances.append(pret_info)
+
+
     if request.method == "POST":
         form = PretsForm(request.POST)
 
@@ -492,7 +505,7 @@ def demande_pret(request):
     context = {
         "form": form,
         "types_pret": types_pret,
-        "demandes_pret": demandes_pret,
+       'demandes_pret': prets_avec_echeances,
         "taux_change": taux_de_change,
         "max_possible_cdf": max_possible_cdf,
         "max_possible_usd": max_possible_usd,

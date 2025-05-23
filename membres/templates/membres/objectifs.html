@@ -168,13 +168,11 @@
   style="background-color: #fff; min-height: 100%"
 >
   {% for message in messages %}
-
   <div
     class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show"
     role="alert"
   >
     {{ message }}
-
     <button
       type="button"
       class="btn-close"
@@ -182,7 +180,6 @@
       aria-label="Close"
     ></button>
   </div>
-
   {% endfor %}
 
   <div class="mb-4">
@@ -190,7 +187,6 @@
       <div class="row align-items-end">
         <div class="col-md-8">
           <h5 class="mb-2 fw-semibold text-dark">Aperçu de mes Objectifs</h5>
-
           <p class="mb-1 fs-6 text-muted">
             Total disponible (CDF) :
 

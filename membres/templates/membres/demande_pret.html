@@ -2,39 +2,100 @@
 {% load static %}
 {% load humanize %}
 {% load colorFilter %}
-{% block title %}Demande de Prêt{% endblock %}
-
+{% load objectifFilter %}
+{% block title %}Mes Prêts{% endblock %}
 {% block content %}
+
 <style>
-.table thead th {
-  background-color: #fdfdfd;
-  color: #495057;
-  font-weight: 600;
-  vertical-align: middle;
-  text-align: center;
-}
+    .accordion-button::after {
+        display: none !important;
+    }
 
-.table tbody td {
-  vertical-align: middle;
-  text-align: center;
-}
+    .pret-item {
+        border: 1px solid #dee2e6;
+        border-radius: 0.25rem;
+        margin-bottom: 0.5rem;
+        overflow: hidden;
+    }
 
-.badge {
-  font-size: 0.85rem;
-  padding: 0.4em 0.65em;
-}
+    .pret-header {
+        background-color: #fafbfc;
+        padding: 0.75rem 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+    }
 
-.table-sm-custom {
-  font-size: 0.9rem;
-}
+    .pret-header:hover {
+        background-color: #e9ecef;
+    }
 
-.table-sm-custom thead th {
-  padding: 0.65rem;
-}
+    .pret-details {
+        padding: 1rem;
+        background-color: #fff;
+    }
 
-.table-sm-custom tbody td {
-  padding: 0.5rem;
-}
+    .statut-icon {
+        margin-right: 0.5rem;
+    }
+
+    .notification-erreur {
+        background-color: #fdecea;
+        border: 1px solid #e74c3c;
+        color: #e74c3c;
+        padding: 0.75rem;
+        border-radius: 0.25rem;
+        margin-bottom: 1rem;
+    }
+
+    .details-label {
+        font-weight: bold;
+        margin-right: 0.5rem;
+    }
+
+    .echeance-list {
+        list-style: none;
+        padding-left: 0;
+        margin-bottom: 0;
+    }
+
+    .echeance-item {
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #eee;
+    }
+
+    .echeance-item:last-child {
+        border-bottom: none;
+    }
+
+    .echeance-statut-indicator {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-right: 0.5rem;
+    }
+
+    .statut-paye {
+        background-color: #28a745; /* Vert */
+    }
+
+    .statut-echec {
+        background-color: #dc3545; /* Rouge */
+    }
+
+    .statut-en-attente, .statut-depasse {
+        background-color: #ffc107; /* Jaune/Orange */
+    }
+
+    .statut-rembourse {
+        background-color: #17a2b8; /* Bleu clair */
+    }
+
+    .statut-autre {
+        background-color: #6c757d; /* Gris */
+    }
 </style>
 <div class="container-fluid p-3 p-md-4 rounded-3" style="background-color: #fff; min-height: 100%;">
 
@@ -47,108 +108,168 @@
 
     {% include "membres/components/demandePretModal.html" %}
 
+    <div class="mb-4">
+        <div class="card rounded p-4 border">
+        <div class="row align-items-end">
+            <div class="col-md-8">
+            <h5 class="mb-2 fw-semibold text-dark">Aperçu de mes prets</h5>
+            
+            {% comment %}
+
+            <p class="mb-0 mt-2 fs-6 text-muted">
+                Prets :
+                <strong class="fw-bold">{{ demandes_pret|length }}</strong> <small>total</small>,
+                <strong class="fw-bold">{{ demandes_pret|filter:"pret.statut='En attente'"|length }}</strong> <small>en attentes</small>,
+                <strong class="fw-bold">{{ demandes_pret|filter:"pret.statut='Approuvé'"|length }}</strong> <small>approuvé</small>,
+                <strong class="fw-bold">{{ demandes_pret|filter:"pret.statut='Remboursé'"|length }}</strong> <small>remboursé</small>,
+                <strong class="fw-bold">{{ demandes_pret|filter:"pret.statut='Depassé'"|length }}</strong> <small>depassé</small>
+            </p>
+
+            {% endcomment %}
+            </div>
+
+            <div class="col-md-4 text-md-end mt-3 mt-md-0">
+            <button
+                type="button"
+                class="btn btn-mw btn-sm rounded py-2 px-3 shadow-sm text-white"
+                data-bs-toggle="modal"
+                data-bs-target="#loanRequestModal"
+            >
+                <i class="fas fa-hand-holding-dollar me-2"></i> Demander un prêt
+            </button>
+            </div>
+        </div>
+        </div>
+    </div>
+
+
     <div class="mt-4">
-        <div class="card border-0 rounded-3 shadow-sm">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle table-bordered mb-0 table-sm-custom my-table-hover">
-                    <thead class="thead-light">
-                        <tr>
-                            <th>Montant du Prêt</th>
-                            <th>Montant à Payer</th>
-                            <th class="d-none d-md-table-cell">Paiement Périodique</th>
-                            <th class="d-none d-md-table-cell">Date de Prise</th>
-                            <th class="d-none d-md-table-cell">Type de Prêt</th>
-                            <th>Statut</th>
-                            <th>Détails</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for pret in demandes_pret %}
-                        <tr>
-                            <td>{{ pret.montant|intcomma }}     {% if pret.devise == "USD" %} $ {% else %} FC {% endif %}</td>
-                            <td>{{ pret.montant_payer|intcomma }}     {% if pret.devise == "USD" %} $ {% else %} FC {% endif %}</td>
-                            <td class="d-none d-md-table-cell">{{ pret.montant_remboursé|intcomma }}     {% if pret.devise == "USD" %} $ {% else %} FC {% endif %} ({{ pret.mode_payement }})</td>
-                            <td class="d-none d-md-table-cell">{{ pret.date_demande|date:"d/m/Y" }}</td>
-                            <td class="d-none d-md-table-cell">{{ pret.type_pret }}</td>
-                            <td>
-                                <span class="badge {% if pret.statut == 'Approuvé' %}bg-success{% elif pret.statut == 'En attente' %}bg-warning text-dark{% elif pret.statut == 'Depassé' %}bg-danger{% elif pret.statut == 'Remboursé' %}bg-info{% else %}bg-secondary{% endif %}">{{ pret.statut }}</span>
-                            </td>
-                            <td>                              
-                                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#pretDetails{{ pret.id }}" aria-label="Afficher les détails du prêt #{{ pret.id }}">
-                                  <i class="fas fa-eye"></i> 
-                                </button>                            
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr><td colspan="7" class="text-center">Aucun prêt n'est actuellement enregistré.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+        <div id="pretsList">
+            {% for item in demandes_pret %}
+            {% with item.pret as pret %}
+            {% with item.echeances as echeances %}
+            {% with pret.id|stringformat:"%d" as pret_id_str %}
+            <div class="pret-item mb-3">
+                <div class="pret-header d-flex justify-content-between align-items-center"
+                     data-bs-toggle="collapse" href="#collapsePret{{ pret_id_str }}" role="button"
+                     aria-expanded="false" aria-controls="collapsePret{{ pret_id_str }}" style="cursor: pointer;">
+                    <div class="d-flex align-items-center gap-2">
+                        {% if pret.statut == 'Approuvé' %}
+                        <i class="fas fa-check-circle text-success statut-icon"></i>
+                        {% elif pret.statut == 'En attente' %}
+                        <i class="fas fa-hourglass-half text-warning statut-icon"></i>
+                        {% elif pret.statut == 'Depassé' %}
+                        <i class="fas fa-exclamation-triangle text-danger statut-icon"></i>
+                        {% elif pret.statut == 'Remboursé' %}
+                        <i class="fas fa-check-double text-info statut-icon"></i>
+                        {% else %}
+                        <i class="fas fa-question-circle text-secondary statut-icon"></i>
+                        {% endif %}
+                        <span class="fw-semibold">{{ pret.type_pret }}</span>
+                        <small class="text-muted">({{ pret.montant|intcomma }} {% if pret.devise == "USD" %} ${% else %} FC{% endif %})</small>
+                        {% if pret.statut == 'Approuvé' %}
+                        <span class="badge bg-success ms-2">Approuvé</span>
+                        {% elif pret.statut == 'En attente' %}
+                        <span class="badge bg-warning text-dark ms-2">En attente</span>
+                        {% elif pret.statut == 'Depassé' %}
+                        <span class="badge bg-danger ms-2">Dépassé</span>
+                        {% elif pret.statut == 'Remboursé' %}
+                        <span class="badge bg-info ms-2">Remboursé</span>
+                        {% else %}
+                        <span class="badge bg-secondary ms-2">{{ pret.statut }}</span>
+                        {% endif %}
+                    </div>
+                    <i class="fas fa-chevron-down text-muted"></i>
+                </div>
+                <div class="collapse" id="collapsePret{{ pret_id_str }}" data-bs-parent="#pretsList">
+                    <div class="pret-details">
+                        {% if pret.statut == 'En attente' %}
+                        <h6 class="mb-3">Détails de la Demande</h6>
+                        <ul class="mb-0 text-muted">
+                            <li><small><span class="details-label">Montant demandé :</span> {{ pret.montant|intcomma }} {% if pret.devise == "USD" %} ${% else %} FC{% endif %}</small></li>
+                            <li><small><span class="details-label">Montant total à payer :</span> {{ pret.montant_payer|intcomma }} {% if pret.devise == "USD" %} ${% else %} FC{% endif %}</small></li>
+                            <li><small><span class="details-label">Mode de paiement :</span> {{ pret.mode_payement|capfirst }}</small></li>
+                            <li><small><span class="details-label">Montant à rembourser par {% if pret.mode_payement == "hebdomadaire" %} semaine{% else %} mois{% endif %} :</span> {{ pret.montant_remboursé|intcomma }} {% if pret.devise == "USD" %} ${% else %} FC{% endif %} </small></li>
+                            <li><small><span class="details-label">Date de demande :</span> {{ pret.date_demande|date:"d/m/Y" }}</small></li>
+                        </ul>
+                        {% elif pret.statut == 'Approuvé' or pret.statut == 'Remboursé' or pret.statut == 'Depassé' %}
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="mb-3">Détails du Prêt</h6>
+                                <ul class="mb-0 text-muted">
+                                    <li><small><span class="details-label">Montant demandé :</span> {{ pret.montant|intcomma }} {% if pret.devise == "USD" %} ${% else %} FC{% endif %}</small></li>
+                                    <li><small><span class="details-label">Montant total à payer :</span> {{ pret.montant_payer|intcomma }} {% if pret.devise == "USD" %} ${% else %} FC{% endif %}</small></li>
+                                    <li><small><span class="details-label">Mode de paiement :</span> {{ pret.mode_payement|capfirst }}</small></li>
+                                    <li><small><span class="details-label">Montant à rembourser par {% if pret.mode_payement == 'hebdomadaire' %} semaine{% else %}mois{% endif %} :</span> {{ pret.montant_remboursé|intcomma }} {% if pret.devise == "USD" %} ${% else %} FC{% endif %} </small></li>
+                                    <li><small><span class="details-label">Date de demande :</span> {{ pret.date_demande|date:"d/m/Y" }}</small></li>
+                                    <li><small><span class="details-label">Date d'approbation :</span> {{ pret.date_approbation|date:"d/m/Y" }}</small></li>
+                                    <li><small><span class="details-label">Date limite de remboursement :</span> {{ pret.date_remboursement|date:"d/m/Y" }}</small></li>
+                                    <li><small><span class="details-label">Montant remboursé :</span> {{ pret.solde_remboursé|intcomma }} {% if pret.devise == "USD" %} ${% else %} FC{% endif %} ({{ pret.solde_remboursé|pourcentage:pret.montant_payer|floatformat:2 }}%)</small></li>
+                                    <li><small><span class="details-label">Solde restant à rembourser :</span> {{ pret.solde_remboursé|intcomma }} {% if pret.devise == "USD" %} ${% else %} FC{% endif %} ({{ pret.solde_restant|pourcentage_inverse:pret.montant_payer }}%)</small></li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="mt-3 mt-md-0 mb-2">Historique de Paiement ({{ pret.get_mode_payement_display|capfirst }})</h6>
+                                 <ul class="echeance-list">
+
+                                    {% for echeance in echeances|slice:":5"  %}
+
+                                    <li class="echeance-item">
+                                        <small>
+                                            <span class="echeance-statut-indicator {% if echeance.statut == 'Payé' %}statut-paye{% elif echeance.statut == 'Échec' %}statut-echec{% elif echeance.statut == 'Dépassé' %}statut-depasse{% elif echeance.statut == 'En attente' %}statut-en-attente{% else %}statut-autre{% endif %}"></span>
+                                            <strong>{% if pret.mode_payement == 'hebdomadaire' %} semaine{% else %}mois{% endif %}{{ echeance.numero }}</strong>
+                                            {% if pret.mode_payement == 'hebdomadaire' %}({{ echeance.date_fin|date:'d/m/Y' }}){% elif pret.mode_payement == 'mensuel' %}
+                                                Date limite: {{ echeance.date_fin|date:'d/m/Y' }}
+                                            {% else %}
+                                                Date limite: {{ echeance.date_fin|date:'d/m/Y' }}
+                                            {% endif %}
+                                            - ({{ echeance.montant_attendu|floatformat:2 }} {% if pret.devise == 'USD' %}${% else %}FC{% endif %}) -
+                                            {% if echeance.statut == 'Payé' %}
+                                                <span class="text-success">Payé</span>
+                                            {% elif echeance.statut == 'Échec' %}
+                                                <span class="text-danger">Échec</span>
+                                            {% elif echeance.statut == 'Dépassé' %}
+                                                <span class="text-warning">Dépassé</span>
+                                            {% elif echeance.statut == 'En attente' %}
+                                            <span class="text-warning">En attente</span> 
+                                            {% else %}
+                                                <span class="text-muted">{{ echeance.statut|capfirst }}</span>
+                                            {% endif %}
+                                        </small>
+                                    </li>
+
+                                    
+                                    {% endfor %}
+                                     {% if echeances|length > 5 %}
+                                        <div class="mt-2">
+                                            <button class="btn btn-sm btn-outline-secondary">Afficher les 5 suivants</button>
+                                        </div>
+                                    {% endif %}
+                                </ul>
+                            </div>
+                        </div>
+
+                        {% if pret.statut == 'Depassé' %}
+                        <div class="notification-erreur">
+                            <i class="fas fa-exclamation-circle me-2"></i> Ce prêt est en retard.
+                            Date limite : {{ pret.date_remboursement|date:"d/m/Y" }}.
+                            Solde restant dû : {{ pret.solde_restant|intcomma }} {% if pret.devise == "USD" %} ${% else %} FC{% endif %}.
+                        </div>
+                        {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
             </div>
+            {% endwith %}
+            {% endwith %}
+            {% endwith %}
+            {% empty %}
+            <div class="alert alert-dark" role="alert">
+                Aucun prêt n'est actuellement enregistré.
+            </div>
+            {% endfor %}
         </div>
     </div>
-
-    {% for pret in demandes_pret %}
-    <div class="modal fade" id="pretDetails{{ pret.id }}" tabindex="-1" aria-labelledby="pretDetailsLabel{{ pret.id }}" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="pretDetailsLabel{{ pret.id }}">Détails du Prêt #{{ pret.id }}</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <h6 class="mb-3">Informations Générales</h6>
-                    <div class="row mb-3">
-                        <div class="col-md-4"><strong>Montant du Prêt:</strong> {{ pret.montant|intcomma }}     {% if pret.devise == "USD" %} $ {% else %} FC {% endif %}</div>
-                        <div class="col-md-4"><strong>Montant à Payer:</strong> {{ pret.montant_payer|intcomma }}     {% if pret.devise == "USD" %} $ {% else %} FC {% endif %}</div>
-                        <div class="col-md-4"><strong>Type de Prêt:</strong> {{ pret.type_pret }}</div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-md-4"><strong>Date de Prise:</strong> {{ pret.date_demande|date:"d/m/Y H:i" }}</div>
-                        <div class="col-md-4"><strong>Mode de Paiement:</strong> {{ pret.mode_payement|capfirst }}</div>
-                        <div class="col-md-4"><strong>Statut:</strong> <span class="badge {% if pret.statut == 'Approuvé' %}bg-success{% elif pret.statut == 'En attente' %}bg-warning text-dark{% elif pret.statut == 'Depassé' %}bg-danger{% elif pret.statut == 'Remboursé' %}bg-info{% else %}bg-secondary{% endif %}">{{ pret.statut }}</span></div>
-                    </div>
-
-                    {% if pret.statut == 'Approuvé' or pret.statut == 'Remboursé' %}
-                    <hr class="my-4">
-                    <h6>Évolution du Paiement</h6>
-                    <div class="row mb-3">
-                        <div class="col-md-6"><strong>Montant Remboursé:</strong> {{ pret.montant_remboursé|intcomma }}     {% if pret.devise == "USD" %} $ {% else %} FC {% endif %}</div>
-                        <div class="col-md-6"><strong>Solde Restant à Rembourser:</strong> {{ pret.solde_restant|intcomma }}     {% if pret.devise == "USD" %} $ {% else %} FC {% endif %}</div>
-                    </div>
-                    <div class="progress mb-3" style="height: 20px;">
-                        <div class="progress-bar {% if pret.pourcentage_rembourse == 100 %}bg-success{% else %}bg-info{% endif %}" role="progressbar"
-                             style="width: {{ pret.montant_remboursé|floatformat:0 }}%;" aria-valuenow="{{ pret.pourcentage_rembourse|floatformat:0 }}" aria-valuemin="0" aria-valuemax="100">
-                            {{ pret.montant_remboursé|floatformat:0 }}%
-                        </div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-md-6"><strong>Date de Remboursement Prévue:</strong> {{ pret.date_remboursement|date:"d/m/Y" }}</div>
-                        <div class="col-md-6">
-                            <strong>Paiement Périodique Estimé:</strong>
-                            {{ pret.montant_remboursé|intcomma }}     {% if pret.devise == "USD" %} $ {% else %} FC {% endif %} ({{ pret.mode_payement|capfirst }})
-                        </div>
-                    </div>
-                    {% endif %}
-
-                    {% if pret.statut == 'Depassé' %}
-                    <hr class="my-4">
-                    <div class="alert alert-danger" role="alert">
-                        Ce prêt est en retard. Veuillez contacter l'utilisateur pour régularisation.
-                    </div>
-                    <p><strong>Date de Remboursement Prévue:</strong> {{ pret.date_remboursement|date:"d/m/Y" }}</p>
-                    <p><strong>Montant Restant Dû:</strong> {{ pret.solde_restant|intcomma }}     {% if pret.devise == "USD" %} $ {% else %} FC {% endif %}</p>
-                    {% endif %}
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
-                    </div>
-            </div>
-        </div>
-    </div>
-    {% empty %}
-    {% endfor %}
-
 </div>
 
 {% endblock %}

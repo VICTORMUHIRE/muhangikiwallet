@@ -170,11 +170,13 @@
 
         .ms-desktop-250 {
             margin-left: 0 !important; 
+            margin-top: 3rem !important;
           }
           
-          @media (min-width: 992px) {
+          @media (min-width: 768px) {
             .ms-desktop-250 {
               margin-left: 250px !important;
+                margin-top: 0px !important;
             }
           }
 
@@ -333,7 +335,7 @@
         </nav>
         
 
-        <main class="flex-grow-1 p-3 ms-desktop-250 ms-0" style="background-color: #f8f9fa; overflow-y: auto; ">
+        <main class="flex-grow-1 p-0 p-md-3  ms-desktop-250 ms-0 mt-md-0" style="background-color: #f8f9fa; overflow-y: auto; ">
             <!-- le loader doit se stopper apres chargement -->
             <div id="loader" style="display: none;">
                 <img src="{% static 'loader.gif' %}?v=1" alt="Loading...">
@@ -381,19 +383,7 @@
         </div>
     {% endif %}
 
-    <!-- Menu de profil (caché par défaut) -->
-    <!-- <div class="profile-menu" id="profileMenu">
-        <ul>
-            <li><a href="{% url 'membres:objectifs' %}"><i class="fa fa-trophy"></i> Objectifs</a></li>
-            <li><a href="{% url 'membres:contributions' %}"><i class="fa fa-donate"></i> Contributions</a></li>
-            <li><a href="{% url 'membres:parametres' %}"><i class="fa fa-cog"></i> Paramètres</a></li>
-            <li>
-                <a href="#" data-bs-toggle="modal" data-bs-target="#logoutModal">
-                    <i class="fa fa-sign-out-alt"></i> Déconnexion
-                </a>
-            </li>
-        </ul>
-    </div> -->
+
 
     <!-- Boîte de déconnexion -->
     <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
