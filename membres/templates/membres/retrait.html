@@ -1,7 +1,7 @@
 {% extends 'membres/base.html' %}
 {% load static %}
 {% load humanize %}
-{% block title %}Mes Retraits{% endblock %}
+{% block title %}Mes benefices{% endblock %}
 
 {% block content %}
 <style>
@@ -158,10 +158,10 @@
         <div class="col-md-8">
           <h5 class="mb-2 fw-semibold text-dark">Aperçu de mes benefices</h5>
           <p class="mb-1 fs-6 text-muted">
-            Total disponible (CDF) : <strong>{{ montant_benefices_cdf|intcomma }} FC</strong>
+            Total disponible (CDF) : <strong>{{ montant_benefices_cdf|stringformat:".2f" }} FC</strong>
           </p>
           <p class="mb-0 fs-6 text-muted">
-            Total disponible (USD) : <strong>{{ montant_benefices_usd|intcomma }} $</strong>
+            Total disponible (USD) : <strong>{{ montant_benefices_usd|stringformat:".2f" }} $</strong>
           </p>
         </div>
         <div class="col-md-4 text-md-end mt-3 mt-md-0">
@@ -188,9 +188,9 @@
           <tbody>
             {% for retrait in retraits %}
             <tr  style="cursor: pointer;">
-              <td>{{ retrait.montant|intcomma }} {% if retrait.devise == "USD" %} $ {% else %} FC {% endif %}</td>
+              <td>{{ retrait.montant|stringformat:".2f" }} {% if retrait.devise == "USD" %} $ {% else %} FC {% endif %}</td>
               <td>{{retrait.frais}} </td>
-              <td>{{retrait.montant_recu|intcomma}} {% if retrait.devise == "USD" %} $ {% else %} FC {% endif %}</td>
+              <td>{{retrait.montant_recu|stringformat:".2f"}} {% if retrait.devise == "USD" %} $ {% else %} FC {% endif %}</td>
               <td>
                 <small class="d-none d-md-inline">{{ retrait.date|date:"d E Y H:i" }}</small>
                 <small class="d-md-none">{{ retrait.date|date:"d/m/Y" }}</small>

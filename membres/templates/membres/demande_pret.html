@@ -7,9 +7,64 @@
 {% block content %}
 
 <style>
-    .accordion-button::after {
-        display: none !important;
-    }
+
+  .progress-circle-container {
+    width: 50px;
+
+    height: 50px;
+
+    position: relative;
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+  }
+
+  .progress-circle {
+    width: 100%;
+
+    height: 100%;
+
+    border-radius: 50%;
+
+    background: conic-gradient(
+      #feaf3d var(--progress-percentage),
+      #d3d3d3 var(--progress-percentage) 100%
+    );
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    font-size: 0.8rem;
+
+    font-weight: bold;
+
+    color: #6c757d;
+
+    z-index: 10;
+  }
+
+  .progress-circle::before {
+    content: "";
+    position: absolute;
+    top: 5px;
+    left: 5px;
+
+    width: calc(100% - 10px);
+
+    height: calc(100% - 10px);
+
+    border-radius: 50%;
+
+    background-color: #fafbfc;
+
+    z-index: -1;
+  }
 
     .pret-item {
         border: 1px solid #dee2e6;
@@ -113,19 +168,16 @@
         <div class="row align-items-end">
             <div class="col-md-8">
             <h5 class="mb-2 fw-semibold text-dark">Aperçu de mes prets</h5>
-            
-            {% comment %}
 
             <p class="mb-0 mt-2 fs-6 text-muted">
                 Prets :
                 <strong class="fw-bold">{{ demandes_pret|length }}</strong> <small>total</small>,
-                <strong class="fw-bold">{{ demandes_pret|filter:"pret.statut='En attente'"|length }}</strong> <small>en attentes</small>,
-                <strong class="fw-bold">{{ demandes_pret|filter:"pret.statut='Approuvé'"|length }}</strong> <small>approuvé</small>,
-                <strong class="fw-bold">{{ demandes_pret|filter:"pret.statut='Remboursé'"|length }}</strong> <small>remboursé</small>,
-                <strong class="fw-bold">{{ demandes_pret|filter:"pret.statut='Depassé'"|length }}</strong> <small>depassé</small>
+                <strong class="fw-bold">{{ demandes_pret|prets_statut_count:'En attente' }}</strong> <small>en attentes</small>,
+                <strong class="fw-bold">{{ demandes_pret|prets_statut_count:'Approuvé' }}</strong> <small>en cours</small>,
+                <strong class="fw-bold">{{ demandes_pret|prets_statut_count:'Remboursé' }}</strong> <small>remboursé</small>,
+                <strong class="fw-bold">{{ demandes_pret|prets_statut_count:'Depassé' }}</strong> <small>depassé</small>
             </p>
 
-            {% endcomment %}
             </div>
 
             <div class="col-md-4 text-md-end mt-3 mt-md-0">
@@ -145,10 +197,9 @@
 
     <div class="mt-4">
         <div id="pretsList">
-            {% for item in demandes_pret %}
-            {% with item.pret as pret %}
-            {% with item.echeances as echeances %}
+            {% for pret in demandes_pret %}
             {% with pret.id|stringformat:"%d" as pret_id_str %}
+            {% with progress_percentage=pret.montant_payer|pourcentage:pret.solde_remboursé|stringformat:".0f" %}
             <div class="pret-item mb-3">
                 <div class="pret-header d-flex justify-content-between align-items-center"
                      data-bs-toggle="collapse" href="#collapsePret{{ pret_id_str }}" role="button"
@@ -179,7 +230,19 @@
                         <span class="badge bg-secondary ms-2">{{ pret.statut }}</span>
                         {% endif %}
                     </div>
-                    <i class="fas fa-chevron-down text-muted"></i>
+
+                    <div class="d-flex align-items-center gap-3 {% if pret.statut == 'Retiré' %}retire{% endif %}">
+                        <div class="progress-circle-container">
+                            <div
+                            class="progress-circle"
+                            style="--progress-percentage: {{ progress_percentage }}%; --progress-color: {% if progress_percentage|floatformat:0 >= 100 %}green{% elif progress_percentage|floatformat:0 > 50 %}orange{% else %}red{% endif %};"
+                            >
+                            {{ progress_percentage }}%
+                            </div>
+                        </div>
+                        <i class="fas fa-chevron-down text-muted {% if objectif.statut == 'Retiré' %}retire{% endif %}"></i>
+
+                    </div>
                 </div>
                 <div class="collapse" id="collapsePret{{ pret_id_str }}" data-bs-parent="#pretsList">
                     <div class="pret-details">
@@ -205,46 +268,46 @@
                                     <li><small><span class="details-label">Date d'approbation :</span> {{ pret.date_approbation|date:"d/m/Y" }}</small></li>
                                     <li><small><span class="details-label">Date limite de remboursement :</span> {{ pret.date_remboursement|date:"d/m/Y" }}</small></li>
                                     <li><small><span class="details-label">Montant remboursé :</span> {{ pret.solde_remboursé|intcomma }} {% if pret.devise == "USD" %} ${% else %} FC{% endif %} ({{ pret.solde_remboursé|pourcentage:pret.montant_payer|floatformat:2 }}%)</small></li>
-                                    <li><small><span class="details-label">Solde restant à rembourser :</span> {{ pret.solde_remboursé|intcomma }} {% if pret.devise == "USD" %} ${% else %} FC{% endif %} ({{ pret.solde_restant|pourcentage_inverse:pret.montant_payer }}%)</small></li>
+                                    <li><small><span class="details-label">Solde restant à rembourser :</span> {{ pret.montant_payer|sub:pret.solde_remboursé }} {% if pret.devise == "USD" %} ${% else %} FC{% endif %} ({{ pret.solde_remboursé|pourcentage_inverse:pret.montant_payer|floatformat:2 }}%)</small></li>
                                 </ul>
                             </div>
                             <div class="col-md-6">
                                 <h6 class="mt-3 mt-md-0 mb-2">Historique de Paiement ({{ pret.get_mode_payement_display|capfirst }})</h6>
-                                 <ul class="echeance-list">
+                               <ul class="echeance-list">
 
-                                    {% for echeance in echeances|slice:":5"  %}
+                                    {% for echeance in pret.echeances.all %}
 
                                     <li class="echeance-item">
                                         <small>
-                                            <span class="echeance-statut-indicator {% if echeance.statut == 'Payé' %}statut-paye{% elif echeance.statut == 'Échec' %}statut-echec{% elif echeance.statut == 'Dépassé' %}statut-depasse{% elif echeance.statut == 'En attente' %}statut-en-attente{% else %}statut-autre{% endif %}"></span>
+                                            <span class="echeance-statut-indicator {% if echeance.statut == 'payé' %}statut-paye{% elif echeance.statut == 'échoué' %}statut-echec{% elif echeance.statut == 'en_retard' %}statut-depasse{% elif echeance.statut == 'en_attente' %}statut-en-attente{% else %}statut-autre{% endif %}"></span>
                                             <strong>{% if pret.mode_payement == 'hebdomadaire' %} semaine{% else %}mois{% endif %}{{ echeance.numero }}</strong>
-                                            {% if pret.mode_payement == 'hebdomadaire' %}({{ echeance.date_fin|date:'d/m/Y' }}){% elif pret.mode_payement == 'mensuel' %}
-                                                Date limite: {{ echeance.date_fin|date:'d/m/Y' }}
+                                            {% if pret.mode_payement == 'hebdomadaire' %}({{ echeance.date_echeance|date:'d/m/Y' }}){% elif pret.mode_payement == 'mensuel' %}
+                                                Date limite: {{ echeance.date_echeance|date:'d/m/Y' }}
                                             {% else %}
-                                                Date limite: {{ echeance.date_fin|date:'d/m/Y' }}
+                                                Date limite: {{ echeance.date_echeance|date:'d/m/Y' }}
                                             {% endif %}
-                                            - ({{ echeance.montant_attendu|floatformat:2 }} {% if pret.devise == 'USD' %}${% else %}FC{% endif %}) -
-                                            {% if echeance.statut == 'Payé' %}
+                                            - ({{ echeance.montant|stringformat:".3f" }} {% if pret.devise == 'USD' %}${% else %}FC{% endif %}) -
+                                            {% if echeance.statut == 'payé' %}
                                                 <span class="text-success">Payé</span>
-                                            {% elif echeance.statut == 'Échec' %}
+                                            {% elif echeance.statut == 'échoué' %}
                                                 <span class="text-danger">Échec</span>
-                                            {% elif echeance.statut == 'Dépassé' %}
+                                            {% elif echeance.statut == 'en_retard' %}
                                                 <span class="text-warning">Dépassé</span>
-                                            {% elif echeance.statut == 'En attente' %}
-                                            <span class="text-warning">En attente</span> 
+                                            {% elif echeance.statut == 'en_attente' %}
+                                                <span class="text-warning">En attente</span>
                                             {% else %}
-                                                <span class="text-muted">{{ echeance.statut|capfirst }}</span>
+                                                <span class="text-muted">{{ echeance.get_statut_display|capfirst }}</span>
                                             {% endif %}
                                         </small>
                                     </li>
 
-                                    
+
                                     {% endfor %}
-                                     {% if echeances|length > 5 %}
-                                        <div class="mt-2">
-                                            <button class="btn btn-sm btn-outline-secondary">Afficher les 5 suivants</button>
-                                        </div>
-                                    {% endif %}
+                                        {% if pret.echeances.all|length > 5 %}
+                                            <div class="mt-2">
+                                                <button class="btn btn-sm btn-outline-secondary">Afficher les {{ pret.echeances.all|length|add:"-5" }} suivants</button>
+                                            </div>
+                                        {% endif %}
                                 </ul>
                             </div>
                         </div>
@@ -260,7 +323,6 @@
                     </div>
                 </div>
             </div>
-            {% endwith %}
             {% endwith %}
             {% endwith %}
             {% empty %}

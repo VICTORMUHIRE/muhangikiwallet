@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
+from datetime import timedelta
 from pathlib import Path
 import os
 import pymysql
@@ -210,9 +211,19 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'Africa/Lubumbashi'  # Ajustez votre timezone (pour Goma, pourrait être 'Africa/Lubumbashi' ou 'Africa/Kinshasa')
 
+from celery.schedules import crontab
+
 CELERY_BEAT_SCHEDULE = {
-    'hello-world-every-2-seconds': {
-        'task': 'membres.tasks.hello_world_task',
-        'schedule': 2.0,
+    # 'hello-world-every-2-seconds': {
+    #     'task': 'membres.tasks.hello_world_task',
+    #     'schedule': 2.0,
+    # },
+    # 'remboursement_automatique_pret_every_midnight': {
+    #     'task': 'membres.tasks.remboursement_automatique_pret',
+    #     'schedule': crontab(hour=12, minute=0),
+    # },
+    'remboursement_automatique_pret': {
+        'task': 'membres.tasks.remboursement_automatique_pret',
+        'schedule': timedelta(seconds=120),
     },
 }

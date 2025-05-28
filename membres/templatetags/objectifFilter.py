@@ -35,17 +35,3 @@ def pourcentage_inverse(value, total):
         return "0.00"
 
 
-@register.filter(name='dict_item')
-def dict_item(dictionary, key):
-    return dictionary.get(key)
-
-@register.filter
-def subtract_days(date, days):
-    if isinstance(date, (int, float)):
-        date = datetime.date.fromtimestamp(date)
-    if hasattr(date, 'day'):
-        try:
-            return date - timedelta(days=int(days))
-        except ValueError:
-            return date
-    return ''

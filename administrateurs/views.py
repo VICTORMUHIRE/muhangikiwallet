@@ -9,15 +9,15 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.core.paginator import Paginator
 from django.db.models import Q
 
+from administrateurs.services import generer_echeances
 from membres.models import Membres
 from organisations.models import Organisations
 from agents.models import Agents
-from .models import Administrateurs, ContributionsMensuelles, CodesReference, NumerosCompte, Users, Constantes, HistoriqueConstantes
+from .models import  NumerosCompte, Users, Constantes, HistoriqueConstantes
 from agents.models import Agents, NumerosAgent
 from agents.forms import AgentsForm, ModifierAgentsForm
 from organisations.models import Organisations
-from organisations.forms import OrganisationsForm
-from transactions.models import Transactions, Prets, TypesPret, Contributions, DepotsObjectif, Retraits, Transferts, DepotsInscription, Benefices, RetraitsObjectif, AnnulationObjectif, RemboursementsPret, RetraitsAdmin, BalanceAdmin
+from transactions.models import EcheancePret, Transactions, Prets, TypesPret, Contributions, DepotsObjectif, Retraits, Transferts, DepotsInscription, Benefices, RetraitsObjectif, AnnulationObjectif, RemboursementsPret, RetraitsAdmin, BalanceAdmin
 
 from .forms import AdministrateurForm, ConstantesForm
 from membres.forms import MembresForm, ModifierMembresForm
@@ -32,6 +32,7 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Sum
 from random import randint
 from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
 from django.utils import timezone
 from functools import wraps
 
@@ -593,21 +594,6 @@ def prets(request):
 @verifier_admin
 def voir_pret(request, pret_id):
     pret = get_object_or_404(Prets, pk=pret_id)
-
-    # Capital mensuel et total du membre
-    pret.membre.capital = Contributions.objects.filter(
-        transaction__membre=pret.membre,
-        mois=pret.membre.mois_contribution,
-        devise=pret.devise,
-        statut="Approuvé"
-    ).aggregate(total=Sum('montant'))['total'] or 0
-
-    pret.membre.capital_total = Contributions.objects.filter(
-        transaction__membre=pret.membre,
-        devise=pret.devise,
-        statut="Approuvé"
-    ).aggregate(total=Sum('montant'))['total'] or 0
-
     if request.method == "POST":
         mot_de_passe = request.POST.get("password")
         transaction_form = TransactionsForm(request.POST, instance=pret.transaction)
@@ -626,59 +612,15 @@ def voir_pret(request, pret_id):
                 transaction.montant = pret.montant
                 transaction.devise = pret.devise
 
-                # # Calcul du bénéfice
-                # taux_change = 2800
-                # facteur = taux_change if pret.devise == "USD" else 1
-                # montant_benefice = (float(pret.montant_remboursé) - float(pret.montant)) * 0.5 * facteur
+                compte = pret.membre.compte_USD if pret.devise == "USD" else pret.membre.compte_CDF
+                compte.solde += pret.montant
 
-                # # Total des contributions (en CDF)
-                # total_contributions_CDF = Transactions.objects.filter(
-                #     devise="CDF", statut="Approuvé", type="contribution"
-                # ).aggregate(total=Sum('montant'))['total'] or 0
-
-                # total_contributions_USD = Transactions.objects.filter(
-                #     devise="USD", statut="Approuvé", type="contribution"
-                # ).aggregate(total=Sum('montant'))['total'] or 0
-
-                # total_contributions_CDF += total_contributions_USD * taux_change
-
-                # if total_contributions_CDF > 0:
-                #     membres_actifs = Membres.objects.filter(status=True)
-
-                #     for membre in membres_actifs:
-                #         # Contributions du membre (en CDF)
-                #         contrib_CDF = Transactions.objects.filter(
-                #             membre=membre, devise="CDF", statut="Approuvé", type="contribution"
-                #         ).aggregate(total=Sum('montant'))['total'] or 0
-
-                #         contrib_USD = Transactions.objects.filter(
-                #             membre=membre, devise="USD", statut="Approuvé", type="contribution"
-                #         ).aggregate(total=Sum('montant'))['total'] or 0
-
-                #         total_membre_CDF = contrib_CDF + (contrib_USD * taux_change)
-                #         proportion = float(total_membre_CDF / total_contributions_CDF)
-                #         benefice_membre = montant_benefice * proportion
-
-                #         Benefices.objects.create(
-                #             pret=pret,
-                #             membre=membre,
-                #             montant=benefice_membre / facteur,
-                #             devise=pret.devise
-                #         )
-
-                #     # Enregistrement du bénéfice pour l'administration (une seule fois)
-                #     BalanceAdmin.objects.create(
-                #         montant=montant_benefice / facteur,
-                #         devise=pret.devise,
-                #         type="pret"
-                #     )
-                #      Enregistrement du credit - (le pourcentage liee au taux d'interet)
-                #     # Dans le solde utilisateur
-
-                compteMembre = pret.membre.compte_USD if pret.devise == "USD" else pret.membre.compte_CDF
-                compteMembre.solde += pret.montant_remboursé
+                # generations des echeances d'un pret
+                generer_echeances(pret)
+                        
                 pret.save()
                 transaction.save()
+                compte.save()
                 messages.success(request, "Le prêt a été approuvé avec succès.")
                 return redirect("administrateurs:home")
 
@@ -694,6 +636,8 @@ def voir_pret(request, pret_id):
     }
 
     return render(request, "administrateurs/voir_pret.html", context)
+
+
 
 @login_required
 @verifier_admin
@@ -739,6 +683,7 @@ def voir_retrait_objectif(request, retrait_objectif_id):
                 retrait_objectif.save()
                 messages.success(request, "Le retrait a été approuvé avec succès")
                 return redirect("administrateurs:home")
+            
             else:
                 messages.error(request, "Veuillez corriger les erreurs du formulaire")
         else:
@@ -856,7 +801,7 @@ def voir_retrait(request, retrait_id):
                 )
                 
                 #Enregistrement du retrait du benefice dans le compte du client
-                compteMembre = retrait.membre.compte_USD if retrait.devise == "USD" else retrait.membre.compte_CDF
+                compte = retrait.membre.compte_USD if retrait.devise == "USD" else retrait.membre.compte_CDF
                 compteMembre.solde += Decimal(str(retrait.montant))        
 
 
