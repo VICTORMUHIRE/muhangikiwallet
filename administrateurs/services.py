@@ -30,3 +30,27 @@ def generer_echeances(pret):
     # Fixer la date de remboursement à la date de la dernière échéance
     pret.date_remboursement = date_debut + interval * nb_echeances
     pret.save()
+
+def generer_echeances_test_minutes(pret, nombre_echeances=10, intervalle_minutes=4):
+
+    date_debut = pret.date_approbation
+
+    date_courante = date_debut  # Initialiser date_courante à la date de début
+    numero = 1
+
+    if nombre_echeances <= 0 or pret.montant_payer <= 0:
+        return  # Éviter les erreurs si le nombre d'échéances ou le montant est invalide
+
+    montant_par_echeance = pret.montant_payer / nombre_echeances
+
+    for i in range(nombre_echeances):
+        date_courante += timedelta(minutes=intervalle_minutes) # Incrémenter AVANT de créer l'échéance
+        EcheancePret.objects.create(
+            pret=pret,
+            numero=numero,
+            date_echeance=date_courante,
+            montant=montant_par_echeance
+        )
+        numero += 1
+
+        print(f"({numero}, {date_courante.strftime('%d/%m/%Y %H:%M:%S')}) \n")

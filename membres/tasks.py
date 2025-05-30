@@ -57,7 +57,7 @@ def remboursement_automatique_pret():
         pret__statut="Approuvé",
         statut__in=["en_attente", "échoué", "en_retard"],
         date_echeance__lte=now()
-    ).order_by('date_echeance') # Important de traiter les échéances dans l'ordre
+    ).order_by('date_echeance')
 
     for echeance in echeances:
         pret = echeance.pret
@@ -103,24 +103,30 @@ def remboursement_automatique_pret():
         elif echeance.statut == "en_attente":
             # Premier échec de paiement
             echeance.statut = "échoué"
-            echeance.grace_jusqua = now() + timedelta(days=2)
+            echeance.grace_jusqua = now() + timedelta(minutes=1)
             echeance.save()
             # Envoyer une notification à l'utilisateur (à implémenter)
-            subject = f"Échec de remboursement de prêt N°{pret.pk} - Échéance {echeance.numero}"
-            message = f"Votre tentative de remboursement pour l'échéance du {echeance.date_echeance} a échoué. Veuillez recharger votre compte avant le {echeance.grace_jusqua.strftime('%d/%m/%Y %H:%M')}"
-            send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [membre.email])
-            print(f"Échec de remboursement pour l'échéance {echeance.numero} du prêt {pret.pk} de {membre.nom}. Délai de grâce jusqu'au {echeance.grace_jusqua}")
+
+            print(f"Votre tentative de remboursement pour l'échéance du {echeance.date_echeance} a échoué. Veuillez recharger votre compte avant le {echeance.grace_jusqua.strftime('%d/%m/%Y %H:%M')}")
+
+            # subject = f"Échec de remboursement de prêt N°{pret.pk} - Échéance {echeance.numero}"
+            # message = f"Votre tentative de remboursement pour l'échéance du {echeance.date_echeance} a échoué. Veuillez recharger votre compte avant le {echeance.grace_jusqua.strftime('%d/%m/%Y %H:%M')}"
+            # send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [membre.email])
+            # print(f"Échec de remboursement pour l'échéance {echeance.numero} du prêt {pret.pk} de {membre.nom}. Délai de grâce jusqu'au {echeance.grace_jusqua}")
 
         elif echeance.statut == "échoué" and now() > echeance.grace_jusqua:
             # Échec après la période de grâce, marquer en retard et appliquer la pénalité
             echeance.statut = "en_retard"
             echeance.penalite += echeance.montant * PENALITE_FIXE
             echeance.save()
+            
+            print(f"Votre échéance du {echeance.date_echeance} est en retard. Une pénalité de {echeance.penalite} {pret.devise} a été appliquée.")
+
             # Envoyer une notification de retard et de pénalité (à implémenter)
-            subject = f"Remboursement de prêt en retard N°{pret.pk} - Échéance {echeance.numero}"
-            message = f"Votre échéance du {echeance.date_echeance} est en retard. Une pénalité de {echeance.penalite} {pret.devise} a été appliquée."
-            send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [membre.email])
-            print(f"Échéance {echeance.numero} du prêt {pret.pk} de {membre.nom} en retard. Pénalité de {echeance.penalite} appliquée.")
+            # subject = f"Remboursement de prêt en retard N°{pret.pk} - Échéance {echeance.numero}"
+            # message = f"Votre échéance du {echeance.date_echeance} est en retard. Une pénalité de {echeance.penalite} {pret.devise} a été appliquée."
+            # send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [membre.email])
+            # print(f"Échéance {echeance.numero} du prêt {pret.pk} de {membre.nom} en retard. Pénalité de {echeance.penalite} appliquée.")
 
         elif echeance.statut == "en_retard":
             # Tenter à nouveau le paiement pour les échéances en retard (le montant_du inclut déjà la pénalité)

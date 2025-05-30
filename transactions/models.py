@@ -116,7 +116,7 @@ class RetraitsAdmin(models.Model):
 class TypesPret(models.Model):
     nom = models.CharField(max_length=45,unique=True, verbose_name="Nom du type de pret")
     description = models.TextField(blank=True, null=True, verbose_name="Description")
-    taux_interet = models.DecimalField(max_digits=5, decimal_places=5, verbose_name="Taux d'intérêt (%)")
+    taux_interet = models.DecimalField(max_digits=10, decimal_places=5, verbose_name="Taux d'intérêt (%)")
     delais_traitement = models.IntegerField(default=24, verbose_name="Délai de traitement (heures)")
     delai_remboursement = models.IntegerField(verbose_name="Delai de remboursement(en mois)")
     investissement_min = models.DecimalField(max_digits=10, decimal_places=5, null=True, blank=True, verbose_name="Investissement minimum")

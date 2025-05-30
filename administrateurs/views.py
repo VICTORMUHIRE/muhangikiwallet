@@ -9,7 +9,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.core.paginator import Paginator
 from django.db.models import Q
 
-from administrateurs.services import generer_echeances
+from administrateurs.services import generer_echeances, generer_echeances_test_minutes
 from membres.models import Membres
 from organisations.models import Organisations
 from agents.models import Agents
@@ -616,7 +616,7 @@ def voir_pret(request, pret_id):
                 compte.solde += pret.montant
 
                 # generations des echeances d'un pret
-                generer_echeances(pret)
+                generer_echeances_test_minutes(pret)
                         
                 pret.save()
                 transaction.save()

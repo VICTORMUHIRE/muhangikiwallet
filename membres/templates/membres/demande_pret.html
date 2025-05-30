@@ -7,75 +7,89 @@
 {% block content %}
 
 <style>
+    .details-label {
+        font-weight: 600;
+        color: #333;
+        display: inline-block;
+        width: 180px; /* Ajuster la largeur pour un meilleur alignement des icônes */
+        margin-bottom: 0.2rem; /* Ajouter un peu d'espace sous les labels */
+    }
+    li{
+        list-style-type: none;
+    }
+    ul{
+        color: #616161 !important;
+    }
 
-  .progress-circle-container {
-    width: 50px;
+    .echeance-item {
+        padding: 0.8rem 1rem; /* Augmenter le padding pour un aspect plus aéré */
+        border-bottom: 1px solid #e0e0e0; /* Couleur de bord plus claire */
+        align-items: center;
+        transition: background-color 0.3s ease; /* Ajouter une transition pour l'effet de survol */
+    }
 
-    height: 50px;
+    .echeance-item:hover {
+        background-color: #f9f9f9; /* Léger fond gris au survol */
+    }
 
-    position: relative;
+    .echeance-item:last-child {
+        border-bottom: none;
+    }
 
-    display: flex;
+    .echeance-statut-icon {
+        margin-right: 1rem; /* Augmenter l'espace pour une meilleure visibilité de l'icône */
+        flex-shrink: 0;
+    }
 
-    justify-content: center;
+    .progress-circle-container {
+        width: 60px; /* Légèrement plus grand */
+        height: 60px;
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
 
-    align-items: center;
-  }
+    .progress-circle {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background: conic-gradient(
+            #feaf3d var(--progress-percentage),
+            #d3d3d3 var(--progress-percentage) 100%
+        );
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 0.9rem; /* Légèrement plus grand */
+        font-weight: bold;
+        color: #6c757d;
+        z-index: 10;
+    }
 
-  .progress-circle {
-    width: 100%;
-
-    height: 100%;
-
-    border-radius: 50%;
-
-    background: conic-gradient(
-      #feaf3d var(--progress-percentage),
-      #d3d3d3 var(--progress-percentage) 100%
-    );
-
-    display: flex;
-
-    justify-content: center;
-
-    align-items: center;
-
-    font-size: 0.8rem;
-
-    font-weight: bold;
-
-    color: #6c757d;
-
-    z-index: 10;
-  }
-
-  .progress-circle::before {
-    content: "";
-    position: absolute;
-    top: 5px;
-    left: 5px;
-
-    width: calc(100% - 10px);
-
-    height: calc(100% - 10px);
-
-    border-radius: 50%;
-
-    background-color: #fafbfc;
-
-    z-index: -1;
-  }
+    .progress-circle::before {
+        content: "";
+        position: absolute;
+        top: 6px; /* Ajuster pour la taille */
+        left: 6px; /* Ajuster pour la taille */
+        width: calc(100% - 12px); /* Ajuster pour la taille */
+        height: calc(100% - 12px); /* Ajuster pour la taille */
+        border-radius: 50%;
+        background-color: #fff; /* Fond blanc pour un cercle plus net */
+        z-index: -1;
+    }
 
     .pret-item {
-        border: 1px solid #dee2e6;
-        border-radius: 0.25rem;
-        margin-bottom: 0.5rem;
+        border: 1px solid #e0e0e0; /* Bord plus clair */
+        border-radius: 0.3rem; /* Bords légèrement plus arrondis */
+        margin-bottom: 0.75rem; /* Plus d'espace entre les prêts */
         overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); /* Ajouter une légère ombre */
     }
 
     .pret-header {
-        background-color: #fafbfc;
-        padding: 0.75rem 1rem;
+        background-color: #f8f9fa; /* Fond gris très clair */
+        padding: .5rem 1.25rem; /* Plus de padding */
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -87,69 +101,64 @@
     }
 
     .pret-details {
-        padding: 1rem;
+        padding: 1.25rem; /* Plus de padding */
         background-color: #fff;
     }
 
     .statut-icon {
-        margin-right: 0.5rem;
+        margin-right: 0.75rem; /* Plus d'espace pour l'icône de statut du prêt */
     }
 
     .notification-erreur {
-        background-color: #fdecea;
-        border: 1px solid #e74c3c;
-        color: #e74c3c;
-        padding: 0.75rem;
-        border-radius: 0.25rem;
+        background-color: #ffebee; /* Rouge très clair */
+        border: 1px solid #ef9a9a; /* Bord rouge clair */
+        color: #d32f2f; /* Rouge plus foncé pour le texte */
+        padding: 1rem;
+        border-radius: 0.3rem;
         margin-bottom: 1rem;
-    }
-
-    .details-label {
-        font-weight: bold;
-        margin-right: 0.5rem;
     }
 
     .echeance-list {
         list-style: none;
         padding-left: 0;
+        padding-right: 1rem;
         margin-bottom: 0;
+        max-height: 18rem;
+        overflow-y: scroll;
+        scrollbar-width: thin; /* 'auto' ou 'thin' */
+        scrollbar-color: #aaa #f1f1f1; /* thumb track */
+
+    }
+    .echeance-list::-webkit-scrollbar {
+    width: 8px; /* Largeur de la barre de défilement */
+}
+
+    .echeance-list::-webkit-scrollbar-track {
+        background-color: #f1f1f1;
+        border-radius: 4px;
     }
 
-    .echeance-item {
-        padding: 0.5rem 0;
-        border-bottom: 1px solid #eee;
+    .echeance-list::-webkit-scrollbar-thumb {
+        background-color: #aaa; 
+        border-radius: 4px;
     }
 
-    .echeance-item:last-child {
-        border-bottom: none;
+    .echeance-list::-webkit-scrollbar-thumb:hover {
+        background-color: #777; /* Couleur au survol */
     }
 
-    .echeance-statut-indicator {
-        display: inline-block;
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
+
+    /* Icônes pour les détails du prêt */
+    .loan-detail-icon {
         margin-right: 0.5rem;
+        color: #777; /* Couleur discrète pour les icônes */
     }
 
-    .statut-paye {
-        background-color: #28a745; /* Vert */
-    }
-
-    .statut-echec {
-        background-color: #dc3545; /* Rouge */
-    }
-
-    .statut-en-attente, .statut-depasse {
-        background-color: #ffc107; /* Jaune/Orange */
-    }
-
-    .statut-rembourse {
-        background-color: #17a2b8; /* Bleu clair */
-    }
-
-    .statut-autre {
-        background-color: #6c757d; /* Gris */
+    /* Style pour mettre en évidence le solde restant */
+    .solde-restant {
+        font-size: 1rem;
+        font-weight: bold;
+        color: #28a745; /* Vert pour indiquer le montant à rembourser */
     }
 </style>
 <div class="container-fluid p-3 p-md-4 rounded-3" style="background-color: #fff; min-height: 100%;">
@@ -199,7 +208,7 @@
         <div id="pretsList">
             {% for pret in demandes_pret %}
             {% with pret.id|stringformat:"%d" as pret_id_str %}
-            {% with progress_percentage=pret.montant_payer|pourcentage:pret.solde_remboursé|stringformat:".0f" %}
+            {% with progress_percentage=pret.solde_remboursé|pourcentage:pret.montant_payer|stringformat:".0f" %}
             <div class="pret-item mb-3">
                 <div class="pret-header d-flex justify-content-between align-items-center"
                      data-bs-toggle="collapse" href="#collapsePret{{ pret_id_str }}" role="button"
@@ -212,12 +221,12 @@
                         {% elif pret.statut == 'Depassé' %}
                         <i class="fas fa-exclamation-triangle text-danger statut-icon"></i>
                         {% elif pret.statut == 'Remboursé' %}
-                        <i class="fas fa-check-double text-info statut-icon"></i>
+                        <i class="fas fa-check-double text-warning statut-icon"></i>
                         {% else %}
                         <i class="fas fa-question-circle text-secondary statut-icon"></i>
                         {% endif %}
                         <span class="fw-semibold">{{ pret.type_pret }}</span>
-                        <small class="text-muted">({{ pret.montant|intcomma }} {% if pret.devise == "USD" %} ${% else %} FC{% endif %})</small>
+                        <small class="text-muted">({{ pret.montant|stringformat:".2f" }} {% if pret.devise == "USD" %} ${% else %} FC{% endif %})</small>
                         {% if pret.statut == 'Approuvé' %}
                         <span class="badge bg-success ms-2">Approuvé</span>
                         {% elif pret.statut == 'En attente' %}
@@ -247,67 +256,73 @@
                 <div class="collapse" id="collapsePret{{ pret_id_str }}" data-bs-parent="#pretsList">
                     <div class="pret-details">
                         {% if pret.statut == 'En attente' %}
-                        <h6 class="mb-3">Détails de la Demande</h6>
+                        <h6 class="mb-3"><i class="fas fa-info-circle loan-detail-icon"></i> Détails de la Demande</h6>
                         <ul class="mb-0 text-muted">
-                            <li><small><span class="details-label">Montant demandé :</span> {{ pret.montant|intcomma }} {% if pret.devise == "USD" %} ${% else %} FC{% endif %}</small></li>
-                            <li><small><span class="details-label">Montant total à payer :</span> {{ pret.montant_payer|intcomma }} {% if pret.devise == "USD" %} ${% else %} FC{% endif %}</small></li>
-                            <li><small><span class="details-label">Mode de paiement :</span> {{ pret.mode_payement|capfirst }}</small></li>
-                            <li><small><span class="details-label">Montant à rembourser par {% if pret.mode_payement == "hebdomadaire" %} semaine{% else %} mois{% endif %} :</span> {{ pret.montant_remboursé|intcomma }} {% if pret.devise == "USD" %} ${% else %} FC{% endif %} </small></li>
-                            <li><small><span class="details-label">Date de demande :</span> {{ pret.date_demande|date:"d/m/Y" }}</small></li>
+                            <li><small><span class="details-label"> Montant demandé :</span> {{ pret.montant|stringformat:".2f" }} {% if pret.devise == "USD" %} ${% else %} FC{% endif %}</small></li>
+                            <li><small><span class="details-label"> Montant total à payer :</span> {{ pret.montant_payer|stringformat:".2f" }} {% if pret.devise == "USD" %} ${% else %} FC{% endif %}</small></li>
+                            <li><small><span class="details-label"> Mode de paiement :</span> {{ pret.mode_payement|capfirst }}</small></li>
+                            <li><small><span class="details-label"> Paiement {% if pret.mode_payement == 'hebdomadaire' %}hebdomadaire{% else %}mensuel{% endif %} :</span> {{ pret.montant_remboursé|stringformat:".2f" }} {% if pret.devise == "USD" %} ${% else %} FC{% endif %} </small></li>
+                            <li><small><span class="details-label"> Date de demande :</span> {{ pret.date_demande|date:"d/m/Y" }}</small></li>
                         </ul>
                         {% elif pret.statut == 'Approuvé' or pret.statut == 'Remboursé' or pret.statut == 'Depassé' %}
-                        <div class="row">
-                            <div class="col-md-6">
-                                <h6 class="mb-3">Détails du Prêt</h6>
-                                <ul class="mb-0 text-muted">
-                                    <li><small><span class="details-label">Montant demandé :</span> {{ pret.montant|intcomma }} {% if pret.devise == "USD" %} ${% else %} FC{% endif %}</small></li>
-                                    <li><small><span class="details-label">Montant total à payer :</span> {{ pret.montant_payer|intcomma }} {% if pret.devise == "USD" %} ${% else %} FC{% endif %}</small></li>
-                                    <li><small><span class="details-label">Mode de paiement :</span> {{ pret.mode_payement|capfirst }}</small></li>
-                                    <li><small><span class="details-label">Montant à rembourser par {% if pret.mode_payement == 'hebdomadaire' %} semaine{% else %}mois{% endif %} :</span> {{ pret.montant_remboursé|intcomma }} {% if pret.devise == "USD" %} ${% else %} FC{% endif %} </small></li>
-                                    <li><small><span class="details-label">Date de demande :</span> {{ pret.date_demande|date:"d/m/Y" }}</small></li>
-                                    <li><small><span class="details-label">Date d'approbation :</span> {{ pret.date_approbation|date:"d/m/Y" }}</small></li>
-                                    <li><small><span class="details-label">Date limite de remboursement :</span> {{ pret.date_remboursement|date:"d/m/Y" }}</small></li>
-                                    <li><small><span class="details-label">Montant remboursé :</span> {{ pret.solde_remboursé|intcomma }} {% if pret.devise == "USD" %} ${% else %} FC{% endif %} ({{ pret.solde_remboursé|pourcentage:pret.montant_payer|floatformat:2 }}%)</small></li>
-                                    <li><small><span class="details-label">Solde restant à rembourser :</span> {{ pret.montant_payer|sub:pret.solde_remboursé }} {% if pret.devise == "USD" %} ${% else %} FC{% endif %} ({{ pret.solde_remboursé|pourcentage_inverse:pret.montant_payer|floatformat:2 }}%)</small></li>
+
+                        <div class="row px-3">
+                            <div class="col-12 col-md-6">
+                                <h6 class="mb-3"> Détails du prêt</h6>
+                                <ul class="mb-0 " style="padding-left: 0 !important;">
+                                    <li><small><span class="details-label"> Montant demandé :</span> {{ pret.montant|stringformat:".2f" }} {% if pret.devise == "USD" %} ${% else %} FC{% endif %}</small></li>
+                                    <li><small><span class="details-label"> Montant total à payer :</span> {{ pret.montant_payer|stringformat:".2f" }} {% if pret.devise == "USD" %} ${% else %} FC{% endif %}</small></li>
+                                    <li><small><span class="details-label"> Mode de paiement :</span> {{ pret.mode_payement|capfirst }}</small></li>
+                                    <li><small><span class="details-label">Paiement {% if pret.mode_payement == 'hebdomadaire' %}hebdomadaire{% else %}mensuel{% endif %} :</span> {{ pret.montant_remboursé|stringformat:".2f" }} {% if pret.devise == "USD" %} ${% else %} FC{% endif %}</small></li>
+                                    <li><small><span class="details-label">Approbation :</span> {{ pret.date_approbation|date:"d/m/Y" }}</small></li>
+                                    <li><small><span class="details-label">Remboursement :</span> {{ pret.date_remboursement|date:"d/m/Y" }}</small></li>
+                                    <li><small><span class="details-label">Déjà remboursé :</span> {{ pret.solde_remboursé|stringformat:".2f" }} {% if pret.devise == "USD" %} ${% else %} FC{% endif %} ({{ pret.solde_remboursé|pourcentage:pret.montant_payer|floatformat:2 }}%)</small></li>
+                                    <li><small><span class="details-label">Restant :</span> <span class="solde-restant">{{ pret.montant_payer|sub:pret.solde_remboursé|stringformat:".2f" }} {% if pret.devise == "USD" %} ${% else %} FC{% endif %}</span> ({{ pret.solde_remboursé|pourcentage_inverse:pret.montant_payer|floatformat:2 }}%)</small></li>
                                 </ul>
                             </div>
-                            <div class="col-md-6">
-                                <h6 class="mt-3 mt-md-0 mb-2">Historique de Paiement ({{ pret.get_mode_payement_display|capfirst }})</h6>
-                               <ul class="echeance-list">
 
-                                    {% for echeance in pret.echeances.all %}
-
-                                    <li class="echeance-item">
-                                        <small>
-                                            <span class="echeance-statut-indicator {% if echeance.statut == 'payé' %}statut-paye{% elif echeance.statut == 'échoué' %}statut-echec{% elif echeance.statut == 'en_retard' %}statut-depasse{% elif echeance.statut == 'en_attente' %}statut-en-attente{% else %}statut-autre{% endif %}"></span>
-                                            <strong>{% if pret.mode_payement == 'hebdomadaire' %} semaine{% else %}mois{% endif %}{{ echeance.numero }}</strong>
-                                            {% if pret.mode_payement == 'hebdomadaire' %}({{ echeance.date_echeance|date:'d/m/Y' }}){% elif pret.mode_payement == 'mensuel' %}
-                                                Date limite: {{ echeance.date_echeance|date:'d/m/Y' }}
-                                            {% else %}
-                                                Date limite: {{ echeance.date_echeance|date:'d/m/Y' }}
-                                            {% endif %}
-                                            - ({{ echeance.montant|stringformat:".3f" }} {% if pret.devise == 'USD' %}${% else %}FC{% endif %}) -
+                            <div class="col-12 col-md-6">
+                                <h6 class="mt-4 mt-md-0 mb-2">Historique des paiements ({{ pret.get_mode_payement_display|capfirst }})</h6>
+                                <ul class="echeance-list">
+                                {% for echeance in pret.echeances.all %}
+                                <li class="echeance-item d-flex align-items-center gap-2 {% if forloop.counter > 5 %}hidden{% endif %}">
+                                    <span class="echeance-statut-icon">
+                                    {% if echeance.statut == 'payé' %}
+                                        <i class="fas fa-check-circle text-success fs-6"></i>
+                                    {% elif echeance.statut == 'échoué' %}
+                                        <i class="fas fa-times-circle text-danger fs-6"></i>
+                                    {% elif echeance.statut == 'en_retard' %}
+                                        <i class="fas fa-exclamation-triangle text-warning fs-6"></i>
+                                    {% elif echeance.statut == 'en_attente' %}
+                                        <i class="fas fa-clock text-warning fs-6"></i>
+                                    {% else %}
+                                        <i class="fas fa-question-circle text-secondary fs-6"></i>
+                                    {% endif %}
+                                    </span>
+                                    <small class="d-flex justify-content-between w-100">
+                                        <span>
+                                            <strong>{% if pret.mode_payement == 'hebdomadaire' %}Semaine{% else %}Mois{% endif %} {{ echeance.numero }}</strong>
+                                            ({{ echeance.date_echeance|date:'d/m/Y' }})
+                                        </span>
+                                        <span>
+                                            {{ echeance.montant|floatformat:2 }} {% if pret.devise == 'USD' %}${% else %}FC{% endif %}
+                                        </span>
+                                        <span>
                                             {% if echeance.statut == 'payé' %}
-                                                <span class="text-success">Payé</span>
+                                            <span class="text-success fw-semibold">Payé</span>
                                             {% elif echeance.statut == 'échoué' %}
-                                                <span class="text-danger">Échec</span>
+                                            <span class="text-danger fw-semibold">Échec</span>
                                             {% elif echeance.statut == 'en_retard' %}
-                                                <span class="text-warning">Dépassé</span>
+                                            <span class="text-warning fw-semibold">Retard</span>
                                             {% elif echeance.statut == 'en_attente' %}
-                                                <span class="text-warning">En attente</span>
+                                            <span class="text-warning fw-semibold">En attente</span>
                                             {% else %}
-                                                <span class="text-muted">{{ echeance.get_statut_display|capfirst }}</span>
+                                            
                                             {% endif %}
-                                        </small>
-                                    </li>
-
-
-                                    {% endfor %}
-                                        {% if pret.echeances.all|length > 5 %}
-                                            <div class="mt-2">
-                                                <button class="btn btn-sm btn-outline-secondary">Afficher les {{ pret.echeances.all|length|add:"-5" }} suivants</button>
-                                            </div>
-                                        {% endif %}
+                                        </span>
+                                    </small>
+                                </li>
+                                {% endfor %}
                                 </ul>
                             </div>
                         </div>
@@ -316,7 +331,7 @@
                         <div class="notification-erreur">
                             <i class="fas fa-exclamation-circle me-2"></i> Ce prêt est en retard.
                             Date limite : {{ pret.date_remboursement|date:"d/m/Y" }}.
-                            Solde restant dû : {{ pret.solde_restant|intcomma }} {% if pret.devise == "USD" %} ${% else %} FC{% endif %}.
+                            Solde restant dû : <span class="solde-restant">{{ pret.montant_payer|sub:pret.solde_remboursé|stringformat:".2f" }} {% if pret.devise == "USD" %} ${% else %} FC{% endif %}</span>.
                         </div>
                         {% endif %}
                         {% endif %}
@@ -335,3 +350,4 @@
 </div>
 
 {% endblock %}
+

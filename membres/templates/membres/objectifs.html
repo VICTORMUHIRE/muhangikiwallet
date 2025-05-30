@@ -243,7 +243,8 @@
     </h6>
 
     {% for objectif in objectifs %} 
-    {% with progress_percentage=objectif.montant|pourcentage:objectif.montant_cible|stringformat:".0f" %} {% with objectif.nom|slugify as objectif_slug %}
+    {% with progress_percentage=objectif.montant|pourcentage:objectif.montant_cible|stringformat:".0f" %} 
+    {% with objectif.nom|slugify as objectif_slug %}
 
     <div
       class="objectif-item mb-3 {% if objectif.statut == 'Retiré' %}retire{% endif %}"
@@ -280,7 +281,7 @@
               class="progress-circle"
               style="--progress-percentage: {{ progress_percentage }}%; --progress-color: {% if progress_percentage|floatformat:0 >= 100 %}green{% elif progress_percentage|floatformat:0 > 50 %}orange{% else %}red{% endif %};"
             >
-              {{ progress_percentage }}%
+              {{ progress_percentage|floatformat:0 }}%
             </div>
           </div>
           {% endif %}
