@@ -1026,7 +1026,6 @@ def retirer_investissement(request):
             if form.is_valid():
                 montant = form.cleaned_data['montant']
                 devise = form.cleaned_data['devise']
-                compte = membre.compte_USD if devise == "USD" else membre.compte_CDF
                 solde_contribution = Transactions.objects.filter(membre=membre, devise=devise, statut="Approuvé", type="contribution").aggregate(total=Sum('montant'))['total'] or 0
 
                 if Prets.objects.filter(membre=membre, statut__in=["En attente","Approuvé", "Depassé"]).exists():
@@ -1044,26 +1043,15 @@ def retirer_investissement(request):
                             montant=montant,
                             frais=frais,
                             devise=devise,
-                            statut="Approuvé",
+                            
                             transaction=Transactions.objects.create(
                                 membre=membre,
                                 montant=montant_membre,
                                 devise=devise,
                                 type="retrait investissement",
-                                statut="Approuvé"
+                                
                             )
                         )
-
-                        # Enregistrement du bénéfice pour l'administration (une seule fois)
-                        BalanceAdmin.objects.create(
-                            montant=montant_admin,
-                            devise=devise,
-                            type="Retrait investissement"
-                        )
-
-                        # Débit du compte
-                        compte.solde += montant_membre
-                        compte.save()
 
                         messages.success(request, "Investissement Retire avec succès.")
                         return redirect("membres:retirer_investissement")

@@ -17,7 +17,7 @@ from .models import  NumerosCompte, Users, Constantes, HistoriqueConstantes
 from agents.models import Agents, NumerosAgent
 from agents.forms import AgentsForm, ModifierAgentsForm
 from organisations.models import Organisations
-from transactions.models import EcheancePret, Transactions, Prets, TypesPret, Contributions, DepotsObjectif, Retraits, Transferts, DepotsInscription, Benefices, RetraitsObjectif, AnnulationObjectif, RemboursementsPret, RetraitsAdmin, BalanceAdmin
+from transactions.models import EcheancePret, RetraitContributions, Transactions, Prets, TypesPret, Contributions, DepotsObjectif, Retraits, Transferts, DepotsInscription, Benefices, RetraitsObjectif, AnnulationObjectif, RemboursementsPret, RetraitsAdmin, BalanceAdmin
 
 from .forms import AdministrateurForm, ConstantesForm
 from membres.forms import MembresForm, ModifierMembresForm
@@ -31,8 +31,6 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum
 from random import randint
-from datetime import datetime, timedelta
-from dateutil.relativedelta import relativedelta
 from django.utils import timezone
 from functools import wraps
 
@@ -637,8 +635,6 @@ def voir_pret(request, pret_id):
 
     return render(request, "administrateurs/voir_pret.html", context)
 
-
-
 @login_required
 @verifier_admin
 def rejeter_pret(request, pret_id):
@@ -775,8 +771,8 @@ def rejeter_annulation_objectif(request, annulation_objectif_id):
 
 @login_required
 @verifier_admin
-def voir_retrait(request, retrait_id):
-    retrait = get_object_or_404(Retraits, pk=retrait_id)    
+def valider_retrait_investissement(request, retrait_id):
+    retrait = get_object_or_404(RetraitContributions, pk=retrait_id)    
     membre = retrait.membre
 
     if request.method == "POST":
@@ -793,17 +789,18 @@ def voir_retrait(request, retrait_id):
                 transaction.date_approbation = timezone.now()
                 transaction.statut = "Approuvé"
 
-
-                BalanceAdmin.objects.create(
-                    montant=float(transaction.montant) * retrait.frais,
-                    devise=transaction.devise,
-                    type="retrait"
-                )
+                compte = membre.compte_USD if transaction.devise == "USD" else membre.compte_CDF
                 
-                #Enregistrement du retrait du benefice dans le compte du client
-                compte = retrait.membre.compte_USD if retrait.devise == "USD" else retrait.membre.compte_CDF
-                compteMembre.solde += Decimal(str(retrait.montant))        
+                # Enregistrement du bénéfice pour l'administration (une seule fois)
+                BalanceAdmin.objects.create(
+                    montant=retrait.montant - transaction.montant,
+                    devise=transaction.devise,
+                    type="Retrait investissement"
+                )
 
+                # Débit du compte
+                compte.solde += transaction.montant 
+                compte.save()
 
                 transaction.save()
                 retrait.save()

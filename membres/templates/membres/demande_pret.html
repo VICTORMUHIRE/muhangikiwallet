@@ -302,7 +302,7 @@
                                     <small class="d-flex justify-content-between w-100">
                                         <span>
                                             <strong>{% if pret.mode_payement == 'hebdomadaire' %}Semaine{% else %}Mois{% endif %} {{ echeance.numero }}</strong>
-                                            ({{ echeance.date_echeance|date:'d/m/Y' }})
+                                            ({{ echeance.date_echeance|date:'d/m/Y H:i:s' }})
                                         </span>
                                         <span>
                                             {{ echeance.montant|floatformat:2 }} {% if pret.devise == 'USD' %}${% else %}FC{% endif %}
