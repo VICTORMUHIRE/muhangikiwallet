@@ -195,6 +195,7 @@ class RemboursementsPret(models.Model):
 
 class Benefices(models.Model):
     pret = models.ForeignKey(Prets, on_delete=models.CASCADE, verbose_name="Prêt")
+    remboursement = models.ForeignKey(RemboursementsPret, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Remboursement associé")
     membre = models.ForeignKey(Membres, blank=True, null=True, on_delete=models.CASCADE, verbose_name="Membre")
     
     montant = models.DecimalField(max_digits=10, decimal_places=5, verbose_name="Montant du bénéfice")

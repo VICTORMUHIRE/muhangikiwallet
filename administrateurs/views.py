@@ -9,7 +9,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.core.paginator import Paginator
 from django.db.models import Q
 
-from administrateurs.services import generer_echeances, generer_echeances_test_minutes
+from administrateurs.services import generer_echeances, generer_echeances_test_minutes, solde_entreprise
 from membres.models import Membres
 from organisations.models import Organisations
 from agents.models import Agents
@@ -46,17 +46,10 @@ def verifier_admin(func):
 @login_required
 @verifier_admin
 def home(request):
-    # Solde total de l'entreprise
-    solde_total_entreprise_cdf = Transactions.objects.filter(devise="CDF", type="contribution", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
-    solde_total_entreprise_usd = Transactions.objects.filter(devise="USD", type="contribution", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
-
     # Solde de toutes les dettes
     total_montant_dettes_cdf = Prets.objects.filter(devise="CDF", statut__in=["Approuvé", "Remboursé", "Depassé"]).aggregate(total=Sum('montant_remboursé'))['total'] or 0
     total_montant_dettes_usd = Prets.objects.filter(devise="USD", statut__in=["Approuvé", "Remboursé", "Depassé"]).aggregate(total=Sum('montant_remboursé'))['total'] or 0
     
-    total_prets_CDF = Prets.objects.filter(devise="CDF", statut__in=["Approuvé", "Remboursé", "Depassé"]).aggregate(total=Sum('montant'))['total'] or 0
-    total_prets_USD = Prets.objects.filter(devise="USD", statut__in=["Approuvé", "Remboursé", "Depassé"]).aggregate(total=Sum('montant'))['total'] or 0
-
     total_montant_dettes_remboursees_CDF = RemboursementsPret.objects.filter(devise="CDF", statut="Approuvé").aggregate(total=Sum('montant'))['total'] or 0
     total_montant_dettes_remboursees_USD = RemboursementsPret.objects.filter(devise="USD", statut="Approuvé").aggregate(total=Sum('montant'))['total'] or 0
 
@@ -64,28 +57,13 @@ def home(request):
     total_depots_objectifs_cdf = Objectifs.objects.filter(devise="CDF", statut__in=["En cours", "Atteint", "Epuisé"]).aggregate(Sum('montant'))['montant__sum'] or 0
     total_depots_objectifs_usd = Objectifs.objects.filter(devise="USD", statut__in=["En cours", "Atteint", "Epuisé"]).aggregate(Sum('montant'))['montant__sum'] or 0
 
-    # Calcul du solde total des retraits
-    total_retraits_cdf = Transactions.objects.filter(devise="CDF", type="retrait", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
-    total_retraits_usd = Transactions.objects.filter(devise="USD", type="retrait", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
-
     # Calcul du solde Admin
     total_montant_admin_cdf = BalanceAdmin.objects.filter(devise="CDF").aggregate(Sum('montant'))['montant__sum'] or 0
     total_montant_admin_usd = BalanceAdmin.objects.filter(devise="USD").aggregate(Sum('montant'))['montant__sum'] or 0
 
-    total_depot_inscription_CDF = Transactions.objects.filter(devise="CDF", statut="Approuvé", type="depot_inscription").aggregate(total=Sum('montant'))['total'] or 0
-    total_depot_inscription_USD = Transactions.objects.filter(devise="USD", statut="Approuvé", type="depot_inscription").aggregate(total=Sum('montant'))['total'] or 0
-    
     # Calcul du solde total des retraits Admin
     total_retraits_admin_cdf = Transactions.objects.filter(devise="CDF", type="retrait_admin", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
     total_retraits_admin_usd = Transactions.objects.filter(devise="USD", type="retrait_admin", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
-
-    # Calcul du solde total des retraits_tout
-    total_retraits_tout_cdf = Transactions.objects.filter(devise="CDF", type="retrait_tout", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
-    total_retraits_tout_usd = Transactions.objects.filter(devise="USD", type="retrait_tout", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
-
-    # Calcul du solde total des qnnulations_objectif
-    total_annulation_objectif_cdf = AnnulationObjectif.objects.filter(devise="CDF", statut="Approuvé").aggregate(total=Sum('montant'))['total'] or 0
-    total_annulation_objectif_usd = AnnulationObjectif.objects.filter(devise="USD", statut="Approuvé").aggregate(total=Sum('montant'))['total'] or 0
 
     # Nombre total de membres, organisations et agents
     nombre_membres = Membres.objects.count()
@@ -102,9 +80,12 @@ def home(request):
     demandes_annulation_objectif = AnnulationObjectif.objects.filter(statut="En attente")
     demandes_retrait_objectif = RetraitsObjectif.objects.filter(statut="En attente")
     
+    solde_total_entreprise_cdf = solde_entreprise("CDF")
+    solde_total_entreprise_usd = solde_entreprise("USD")
+
     context = {
-        'solde_total_entreprise_cdf': float(solde_total_entreprise_cdf) + float(total_depot_inscription_CDF) + float(total_montant_dettes_remboursees_CDF) + float(total_annulation_objectif_cdf)/10 - (float(total_prets_CDF) + float(total_retraits_cdf) + float(total_retraits_tout_cdf) + float(total_retraits_admin_cdf)),
-        'solde_total_entreprise_usd': float(solde_total_entreprise_usd) + float(total_depot_inscription_USD) + float(total_montant_dettes_remboursees_USD) + float(total_annulation_objectif_usd)/10 - (float(total_prets_USD) + float(total_retraits_usd) + float(total_retraits_tout_usd) + float(total_retraits_admin_usd)),
+        'solde_total_entreprise_cdf': solde_total_entreprise_cdf,
+        'solde_total_entreprise_usd': solde_total_entreprise_usd,
         'total_dettes_cdf': float(total_montant_dettes_cdf) - float(total_montant_dettes_remboursees_CDF),
         'total_dettes_usd': float(total_montant_dettes_usd) - float(total_montant_dettes_remboursees_USD),
         'total_depots_objectifs_cdf': total_depots_objectifs_cdf,

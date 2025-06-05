@@ -1,5 +1,6 @@
 from decimal import Decimal
 import json
+from django.db.models import Q
 from django.contrib import messages
 from django.core.files.storage import FileSystemStorage
 from django.conf import settings
@@ -17,7 +18,6 @@ from .models import Membres
 from .forms import MembresForm, ModifierMembresForm
 from agents.models import Agents, NumerosAgent
 from administrateurs.models import Users, NumerosCompte,Villes, Communes, Quartiers, Avenues
-from organisations.models import Organisations
 from objectifs.models import Objectifs
 from objectifs.forms import ObjectifsForm
 from django.contrib.auth.forms import PasswordChangeForm
@@ -34,7 +34,7 @@ from django.db import transaction as db_transaction
 def verifier_membre(func):
     def verify(request, *args, **kwargs):
         if request.user.is_membre():
-            if request.user.membre.status and Transactions.objects.filter(membre=request.user.membre, type="depot_inscription", statut="Approuvé").exists():
+            if request.user.membre.status:
                 return func(request, *args, **kwargs)
             else : return redirect("membres:statut")
 
@@ -67,62 +67,14 @@ def get_avenues(request):
 def statut(request):
     depot_inscription = DepotsInscription.objects.filter(membre=request.user.membre).first()
 
-    reseaux = NumerosAgent.objects.values_list('reseau', flat=True).distinct()
-    numeros_categories = {reseau: [] for reseau in reseaux}
-    for reseau in reseaux:
-        for numero_agent in NumerosAgent.objects.filter(reseau=reseau):
-            numeros_categories[reseau].append((numero_agent.numero, numero_agent.pk))
-
-    if request.method == 'POST':
-        form = TransactionsForm(request.POST, request.FILES)
-        membre_form = ModifierMembresForm(request.POST, request.FILES, instance=request.user.membre)       
-        
-        mot_de_passe = request.POST.get('mot_de_passe')
-
-        if form.is_valid():
-            if check_password(mot_de_passe, request.user.password):
-                transaction = form.save(commit=False)
-
-                transaction.devise = depot_inscription.devise
-                transaction.montant = depot_inscription.montant
-                transaction.agent = transaction.numero_agent.agent
-                transaction.membre=request.user.membre
-                transaction.type="depot_inscription"
-                transaction.statut = "En attente"
-
-                depot_inscription.date = timezone.now()
-                depot_inscription.transaction = transaction
-                
-                transaction.save()
-                depot_inscription.save()
-
-                messages.success(request, "Votre dépot d'inscription a été soumise avec succès !")
-                return redirect('membres:home')
-            
-            else:
-                messages.error(request, "Mot de passe incorrect")
-
-        elif membre_form.is_valid():
-            membre_form.save()
-
-            depot_inscription.statut = "En attente"
-            depot_inscription.save()
-
-            messages.success(request, "Vos informations ont été modifiées avec succès !")
-            return redirect('membres:home')
-        
-        else:
-            messages.error(request, "Veuillez corriger les erreurs du formulaire")
-
-    else:
-        form = TransactionsForm(initial={"montant": depot_inscription.montant, "devise": depot_inscription.devise})
-        membre_form = ModifierMembresForm(instance=request.user.membre)
+ 
+    form = TransactionsForm(initial={"montant": depot_inscription.montant, "devise": depot_inscription.devise})
+    membre_form = ModifierMembresForm(instance=request.user.membre)
 
     context = {
         'form': form,
         'membre_form': membre_form,
-        'reseaux': reseaux,
-        'numeros_categories': numeros_categories,
+
         "depot_inscription": depot_inscription
     }
 
@@ -499,106 +451,6 @@ def demande_pret(request):
 
     return render(request, "membres/demande_pret.html", context)
 
-# Vue pour la page de remboursement du pret du membre
-@login_required
-@verifier_membre
-def rembourser_pret(request, transaction_id):
-    pret = get_object_or_404(
-        Prets,
-        transaction=get_object_or_404(
-            Transactions,
-            pk=transaction_id,
-            membre=request.user.membre,
-            type="pret",
-            statut="Approuvé"
-        ),
-        statut__in=["Approuvé", "Depassé","Remboursé"]
-    )
-
-    if pret.statut == "Remboursé":
-        messages.warning(request, "Ce prêt est déjà totalement remboursé.")
-        return redirect("membres:demande_pret")
-
-    compte_membre = pret.membre.compte_USD if pret.devise == "USD" else pret.membre.compte_CDF
-    montant_restant = pret.montant_remboursé - pret.solde_remboursé
-
-    if request.method == "POST":
-        form = TransactionsForm(request.POST, request.FILES)
-        mot_de_passe = request.POST.get('password')
-
-        if form.is_valid():
-            if not check_password(mot_de_passe, request.user.password):
-                messages.error(request, "Mot de passe incorrect. Veuillez réessayer.")
-                return redirect(request.path)
-
-            montant = form.cleaned_data['montant']
-
-            # Validation du montant
-            if montant <= 0 or montant > montant_restant or montant > compte_membre.solde:
-                messages.error(request, "Montant invalide ou solde insuffisant.")
-                return redirect(request.path)
-
-            # Vérifier s'il n'existe pas déjà une transaction en attente (facultatif maintenant)
-            if Transactions.objects.filter(
-                membre=request.user.membre,
-                type="remboursement_pret",
-                statut="En attente"
-            ).exists():
-                messages.error(request, "Une demande de remboursement est déjà en attente.")
-                return redirect(request.path)
-
-            # Créer et enregistrer la transaction
-            transaction = form.save(commit=False)
-            transaction.membre = request.user.membre
-            transaction.type = "remboursement_pret"
-            transaction.statut = "Approuvé"
-            transaction.description = f"Remboursement automatique du prêt N°{pret.pk}"
-            transaction.date_approbation = timezone.now()
-            transaction.save()
-
-            # Créer l'objet de remboursement
-            RemboursementsPret.objects.create(
-                pret=pret,
-                montant=montant,
-                devise=pret.devise,
-                transaction=transaction,
-                statut="Remboursé"
-            )
-
-            # Mise à jour du prêt
-            pret.solde_remboursé += montant
-            if pret.solde_remboursé >= pret.montant_remboursé:
-                pret.solde_remboursé = pret.montant_remboursé  # éviter dépassement
-                if pret.statut == "Depassé":
-                    BalanceAdmin.objects.create(
-                        montant=5 * (2800 if pret.devise == "CDF" else 1),
-                        devise=pret.devise,
-                        type="remboursement_pret"
-                    )
-                pret.statut = "Remboursé"
-                pret.date_remboursement = timezone.now()
-                pret.transaction.save()
-            pret.save()
-
-            # Mise à jour du compte
-            compte_membre.solde -= montant
-            compte_membre.save()
-
-            messages.success(request, "Remboursement effectué avec succès !")
-            return redirect("membres:demande_pret")
-        else:
-            messages.error(request, "Veuillez corriger les erreurs dans le formulaire.")
-    else:
-        form = TransactionsForm()
-
-    context = {
-        "form": form,
-        "pret": pret,
-        "montant_restant": montant_restant,
-    }
-
-    return render(request, "membres/rembourser_pret.html", context)
-
 # Vue pour la page de gestion des objectifs du membre
 @login_required
 @verifier_membre
@@ -828,12 +680,13 @@ def annulation_objectif(request, objectif_id):
 # Vue pour la page de retrait du membre
 @login_required
 @verifier_membre
-def retrait(request):
+def benefices(request):
     membre = get_object_or_404(Membres, user=request.user)
     frais_retrais_benefice = 0.025
 
     #verfication s'il y a deja eu un retrait
     retraits = Retraits.objects.filter(membre=membre, statut="Approuvé")
+    benefices = Benefices.objects.filter(membre=membre)
 
     montant_benefices_cdf = benefices_actuelle(membre, "CDF")
     montant_benefices_usd = benefices_actuelle(membre, "USD")
@@ -879,97 +732,134 @@ def retrait(request):
 
     context = {
         "form": form,
-        "retraits":retraits,
+        "benefices":benefices,
+        "ben"
         "membre": membre,
         "montant_benefices_cdf": montant_benefices_cdf,
         "montant_benefices_usd": montant_benefices_usd,
         "date": timezone.now()
     }
 
-    return render(request, "membres/retrait.html", context)
+    return render(request, "membres/benefices.html", context)
 
 # Vue pour la page de gestion des transferts du membre
 @login_required
-@verifier_membre
+@verifier_membre 
+
 def transfert(request):
-    membre = get_object_or_404(Membres, user=request.user)
+    membre_connecte = request.user.membre
+    transferts = Transferts.objects.filter(
+        Q(membre_expediteur=membre_connecte) | Q(membre_destinataire=membre_connecte)
+    ).order_by('-date')
+
+    # Fetching 'id' along with other details for the autocomplete
+    membres_destinataires_queryset = Membres.objects.exclude(user=request.user).values('pk', 'nom', 'prenom', 'numero_telephone')
+    destinataires_js = [
+        {
+            'id': m['pk'], # Include the ID here
+            'nom_complet': f"{m['nom'].capitalize()} {m['prenom'].capitalize()}",
+            'numero_telephone': m['numero_telephone']
+        }
+        for m in membres_destinataires_queryset
+    ]
 
     if request.method == "POST":
         form = TransfertsForm(request.POST)
         if form.is_valid():
             montant = form.cleaned_data['montant']
             devise = form.cleaned_data['devise']
-            numero_destinataire = form.cleaned_data['numero_destinataire']
             motif = form.cleaned_data['motif']
+            mot_de_passe = request.POST.get('mot_de_passe')
+            destinataire_id = request.POST.get('destinataire_id') # Get the ID from the hidden input
 
-            # Vérification du mot de passe
-            password = request.POST.get('password')
-            if not check_password(password, request.user.password):
-                messages.error(request, 'Mot de passe incorrect. Veuillez réessayer.')
-                return render(request, "membres/transfert.html", {"form": form, "membre": membre})
+            context = {
+                    "form": form,
+                    "membre": membre_connecte,
+                    "transferts": transferts,
+                    "membres_destinataires_json": json.dumps(destinataires_js),
+                }
 
-            # Déterminer le destinataire (membre ou organisation)
+            # 1. Validate if a destinataire ID was provided by the frontend
+            if not destinataire_id:
+                messages.error(request, "Veuillez sélectionner un destinataire valide dans la liste.")
+                return render(request, "membres/transfert.html",context )
+
+            # 2. Try to retrieve the destinataire Membres object using the ID
             try:
-                destinataire = Membres.objects.get(numero_telephone=numero_destinataire)
-                destinataire_type = "membre"
+                destinataire = Membres.objects.get(pk=destinataire_id)
             except Membres.DoesNotExist:
+                messages.error(request, "Destinataire introuvable. Veuillez réessayer ou choisir un autre membre.")
+                return render(request, "membres/transfert.html",context)
+            except Exception as e:
+                # Catch any other potential database errors
+                messages.error(request, f"Une erreur s'est produite lors de la recherche du destinataire: {e}")
+                return render(request, "membres/transfert.html",context)
+
+            # 3. Verify the sender's password
+            if check_password(mot_de_passe, request.user.password):
                 try:
-                    destinataire = Organisations.objects.get(numero_telephone=numero_destinataire)
-                    destinataire_type = "organisation"
-                except Organisations.DoesNotExist:
-                    messages.error(request, "Numéro de destinataire invalide")
-                    return render(request, "membres/transfert.html", {"form": form, "membre": membre})
+                    compte_expediteur = membre_connecte.compte_CDF if devise == "CDF" else membre_connecte.compte_USD
+                    compte_destinataire = destinataire.compte_CDF if devise == "CDF" else destinataire.compte_USD
 
-            # Calcul du solde (à adapter en fonction de votre logique)
-            solde_disponible = membre.solde_cdf if devise == "CDF" else membre.solde_usd
+                    print(f"destinateur {compte_destinataire.solde} \n expeditaire {compte_expediteur.solde}")
+                except AttributeError:
+                    messages.error(request, "Erreur de configuration des comptes. Assurez-vous que les comptes CDF et USD sont liés à chaque membre.")
+                    return render(request, "membres/transfert.html",context)
 
-            if solde_disponible >= montant:
-                try:
-                    # Créer la transaction
-                    transaction = Transactions.objects.create(
-                        membre=membre,
-                        montant=montant,
-                        devise=devise,
-                        description=f"Transfert vers {destinataire}",
-                        operation="transfert",
-                        operateur="membre",
-                    )
+                # 4. Check sufficient balance
+                if compte_expediteur.solde >= montant:
+                    try:
+                        # Create Transaction
+                        transaction = Transactions.objects.create(
+                            membre=membre_connecte,
+                            montant=montant,
+                            devise=devise,
+                            type = "Transfert",
+                            description=f"Transfert vers {destinataire.nom} {destinataire.prenom}",
+                        )
 
-                    # Créer le transfert
-                    transfert = form.save(commit=False)
-                    transfert.transaction = transaction
-                    transfert.membre_expediteur = membre
-                    transfert.expediteur = "membre"
-                    transfert.destinataire = destinataire_type
-                    transfert.motif = motif
+                        # Create Transfer
+                        transfert_obj = Transferts.objects.create( # Renamed variable to avoid conflict with queryset
+                            transaction=transaction,
+                            membre_expediteur=membre_connecte,
+                            membre_destinataire=destinataire,
+                            expediteur="membre",
+                            destinataire="membre",
+                            motif=motif,
+                            montant=montant,
+                            devise=devise,
+                        )
 
-                    if destinataire_type == "membre":
-                        transfert.membre_destinataire = destinataire
-                    else:
-                        transfert.organisation_destinataire = destinataire
+                        # Update sender's balance
+                        compte_expediteur.solde -= montant
+                        compte_expediteur.save()
 
-                    transfert.save()
+                        # Update recipient's balance
+                        compte_destinataire.solde += montant
+                        compte_destinataire.save()
 
-                    # Mettre à jour le solde du membre (à adapter en fonction de votre logique)
-                    if devise == "CDF":
-                        membre.solde_cdf -= montant
-                    else:
-                        membre.solde_usd -= montant
-                    membre.save()
+                        messages.success(request, f"Transfert de {montant} {devise} effectué avec succès vers {destinataire.nom} {destinataire.prenom}.")
+                        return redirect('membres:transfert')
 
-                    messages.success(request, f"Transfert de {montant} {devise} effectué avec succès vers {destinataire}")
-                    return redirect('membres:transfert')  # Redirigez vers une page appropriée
-
-                except Exception as e:
-                    messages.error(request, f"Une erreur s'est produite lors du transfert: {e}")
+                    except Exception as e:
+                        messages.error(request, f"Une erreur inattendue s'est produite lors du transfert: {e}")
+                else:
+                    messages.error(request, "Solde insuffisant pour effectuer ce transfert.")
             else:
-                messages.error(request, "Solde insuffisant")
+                messages.error(request, "Mot de passe incorrect.")
         else:
-            messages.error(request, "Veuillez corriger les erreurs dans le formulaire")
+            # Form is not valid
+            messages.error(request, "Veuillez corriger les erreurs dans le formulaire.")
     else:
         form = TransfertsForm()
 
-    return render(request, "membres/transfert.html", {"form": form, "membre": membre})
+    return render(request, "membres/transfert.html", {
+                    "form": form,
+                    "membre": membre_connecte,
+                    "transferts": transferts,
+                    "membres_destinataires_json": json.dumps(destinataires_js),
+                })
+
 
 # Vue pour la page de gestion des transactions du membre
 @login_required

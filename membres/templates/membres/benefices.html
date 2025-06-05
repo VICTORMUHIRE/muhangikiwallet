@@ -180,25 +180,30 @@
           <thead class="thead-light">
             <tr>
               <th>Montant</th>
-              <th>Frais</th>
-              <th>recus</th>
+              <th>Source</th>
               <th>Date</th>
             </tr>
           </thead>
           <tbody>
-            {% for retrait in retraits %}
+            {% for benefice in benefices %}
             <tr  style="cursor: pointer;">
-              <td>{{ retrait.montant|stringformat:".2f" }} {% if retrait.devise == "USD" %} $ {% else %} FC {% endif %}</td>
-              <td>{{retrait.frais}} </td>
-              <td>{{retrait.montant_recu|stringformat:".2f"}} {% if retrait.devise == "USD" %} $ {% else %} FC {% endif %}</td>
+              <td>{{ benefice.montant|stringformat:".2f" }} {% if benefice.devise == "USD" %} $ {% else %} FC {% endif %}</td>
               <td>
-                <small class="d-none d-md-inline">{{ retrait.date|date:"d E Y H:i" }}</small>
-                <small class="d-md-none">{{ retrait.date|date:"d/m/Y" }}</small>
+                {% if benefice.remboursement %}
+                  Remboursement de {{ benefice.remboursement.montant|stringformat:".2f" }} 
+                  {% if benefice.remboursement.devise == "USD" %} $ {% else %} FC {% endif %}
+                {% else %}
+                  Non défini
+                {% endif %}
+              </td>
+              <td>
+                <small class="d-none d-md-inline">{{ benefice.date|date:"d E Y H:i" }}</small>
+                <small class="d-md-none">{{ benefice.date|date:"d/m/Y" }}</small>
               </td>
             </tr>
             {% empty %}
             <tr>
-              <td colspan="5" class="text-center">Aucun retrait effectué.</td>
+              <td colspan="5" class="text-center">Aucune benefice disponible.</td>
             </tr>
             {% endfor %}
           </tbody>

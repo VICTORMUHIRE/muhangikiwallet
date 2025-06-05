@@ -37,7 +37,7 @@ urlpatterns = [
     path("voir_annulation_objectif/<int:annulation_objectif_id>", views.voir_annulation_objectif, name="voir_annulation_objectif"),
     path("rejeter_annulation_objectif/<int:annulation_objectif_id>", views.rejeter_annulation_objectif, name="rejeter_annulation_objectif"),
 
-    path("retraits/<int:retrait_id>", views.voir_retrait, name="voir_retrait"),
+    path("retraits/<int:retrait_id>", views.valider_retrait_investissement, name="voir_retrait"),
     path("rejeter_retrait/<int:retrait_id>", views.rejeter_retrait, name="rejeter_retrait"),
 
     path("demande_retrait_tout/<int:retrait_id>", views.demande_retrait_tout, name="demande_retrait_tout"),

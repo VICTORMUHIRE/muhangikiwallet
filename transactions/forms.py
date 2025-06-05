@@ -67,11 +67,33 @@ class DepotsObjectifForm(forms.ModelForm):
         model = DepotsObjectif
         fields = ["objectif", "montant", "devise"]
 
-class TransfertsForm(forms.ModelForm):
-    numero_destinataire = forms.CharField(max_length=20)
-    class Meta:
-        model = Transferts
-        fields = ["devise", "motif"]
+class TransfertsForm(forms.Form):
+    recherche_destinataire = forms.CharField(
+        label='Destinataire (Nom ou Numéro)',
+        widget=forms.TextInput(attrs={'placeholder': 'Entrez le nom ou le numéro'})
+    )
+    montant = forms.DecimalField(
+        label='Montant à transférer',
+        min_value=0.01,
+        widget=forms.NumberInput(attrs={'placeholder': '0.00'})
+    )
+    devise = forms.ChoiceField(
+        label='Devise',
+        choices=[('CDF', 'CDF'), ('USD', 'USD')],
+        widget=forms.Select
+    )
+    motif = forms.CharField(
+        label='Motif (Optionnel)',
+        required=False,
+        widget=forms.Textarea(attrs={'rows': 2, 'placeholder': 'Ajouter un motif'})
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['recherche_destinataire'].widget.attrs.update({'class': 'form-control mb-3'})
+        self.fields['montant'].widget.attrs.update({'class': 'form-control mb-3'})
+        self.fields['devise'].widget.attrs.update({'class': 'form-select mb-3'})
+        self.fields['motif'].widget.attrs.update({'class': 'form-control mb-3'})
 
 class DepotsInscriptionForm(forms.ModelForm):
     class Meta:

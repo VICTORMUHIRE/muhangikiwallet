@@ -1,5 +1,17 @@
 from datetime import timedelta
-from transactions.models import EcheancePret
+from django.db.models import Sum
+from transactions.models import Contributions, EcheancePret, Prets, RemboursementsPret, RetraitContributions, Transactions
+
+def solde_entreprise(devise):
+
+    investissements = Contributions.objects.filter(devise=devise).aggregate(Sum('montant'))['montant__sum'] or 0
+    retrait_investissement = RetraitContributions.objects.filter(devise=devise).aggregate(Sum('montant'))['montant__sum'] or 0
+    total_montant_dettes_remboursees = RemboursementsPret.objects.filter(devise=devise, statut="Approuvé").aggregate(total=Sum('montant'))['total'] or 0
+    total_prets = Prets.objects.filter(devise=devise, statut__in=["Approuvé", "Remboursé", "Depassé"]).aggregate(total=Sum('montant'))['total'] or 0
+    total_retraits_admin = Transactions.objects.filter(devise=devise, type="retrait_admin", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
+
+    return float(investissements) - float(retrait_investissement) + float(total_montant_dettes_remboursees) - float(total_prets) + float(total_retraits_admin)
+
 
 def generer_echeances(pret):
     date_debut = pret.date_approbation.date()

@@ -130,7 +130,7 @@
 
         .transaction-item { border-bottom: 1px solid #dee2e6; } /* Light gray border */
         .transaction-icon i { font-size: 1.2rem; }
-        .transaction-retrait { color: #dc3545; } /* Red for withdrawals */
+        .transaction-benefices { color: #dc3545; } /* Red for withdrawals */
         .transaction-transfert { color: #007bff; } /* Blue for transfers */
         .transaction-depot-objectif { color: #28a745; } /* Green for goal deposits */
         .transaction-depot-inscription { color: #ffc107; } /* Yellow for registration deposits */
@@ -295,7 +295,7 @@
                 </li>
 
                 <li class="nav-item">
-                    <a class="nav-link {% if '/retrait/' in request.path %}active{% endif %}" href="{% url 'membres:retrait' %}">
+                    <a class="nav-link {% if '/benefices/' in request.path %}active{% endif %}" href="{% url 'membres:benefices' %}">
                         <i class="fa fa-arrow-trend-up me-2"></i> Benefices
                     </a>
                 </li>

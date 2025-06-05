@@ -83,6 +83,7 @@ def remboursement_automatique_pret():
                 membre=membre,
                 montant=echeance.montant,
                 type="remboursement_pret",
+                devise=pret.devise,
                 statut="Approuvé",
                 description=f"Remboursement automatique échéance {echeance.numero} prêt {pret.pk}",
             )
