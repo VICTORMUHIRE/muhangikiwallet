@@ -745,7 +745,6 @@ def benefices(request):
 # Vue pour la page de gestion des transferts du membre
 @login_required
 @verifier_membre 
-
 def transfert(request):
     membre_connecte = request.user.membre
     transferts = Transferts.objects.filter(
@@ -756,7 +755,7 @@ def transfert(request):
     membres_destinataires_queryset = Membres.objects.exclude(user=request.user).values('pk', 'nom', 'prenom', 'numero_telephone')
     destinataires_js = [
         {
-            'id': m['pk'], # Include the ID here
+            'id': m['pk'],
             'nom_complet': f"{m['nom'].capitalize()} {m['prenom'].capitalize()}",
             'numero_telephone': m['numero_telephone']
         }
@@ -943,7 +942,7 @@ def retirer_investissement(request):
                             )
                         )
 
-                        messages.success(request, "Investissement Retire avec succès.")
+                        messages.success(request, "Retrait Investissement soumise avec succès.")
                         return redirect("membres:retirer_investissement")
                 else:
                     messages.error(request, "Solde insuffisant ou montant invalide.")

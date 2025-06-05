@@ -573,36 +573,39 @@ def prets(request):
 @verifier_admin
 def voir_pret(request, pret_id):
     pret = get_object_or_404(Prets, pk=pret_id)
+    solde_entreprise = solde_entreprise(pret.devise)
     if request.method == "POST":
         mot_de_passe = request.POST.get("password")
         transaction_form = TransactionsForm(request.POST, instance=pret.transaction)
 
         if check_password(mot_de_passe, request.user.password):
             if transaction_form.is_valid():
-                pret.date_approbation = timezone.now()
-                pret.administrateur = request.user.admin
-                pret.statut = "Approuvé"
-                
+               if solde_entreprise > pret.montant:
+                    pret.date_approbation = timezone.now()
+                    pret.administrateur = request.user.admin
+                    pret.statut = "Approuvé"
+                    
 
-                transaction = transaction_form.save(commit=False)
-                transaction.date_approbation = timezone.now()
-                transaction.statut = "Approuvé"
-                transaction.membre = pret.membre
-                transaction.montant = pret.montant
-                transaction.devise = pret.devise
+                    transaction = transaction_form.save(commit=False)
+                    transaction.date_approbation = timezone.now()
+                    transaction.statut = "Approuvé"
+                    transaction.membre = pret.membre
+                    transaction.montant = pret.montant
+                    transaction.devise = pret.devise
 
-                compte = pret.membre.compte_USD if pret.devise == "USD" else pret.membre.compte_CDF
-                compte.solde += pret.montant
+                    compte = pret.membre.compte_USD if pret.devise == "USD" else pret.membre.compte_CDF
+                    compte.solde += pret.montant
 
-                # generations des echeances d'un pret
-                generer_echeances_test_minutes(pret)
-                        
-                pret.save()
-                transaction.save()
-                compte.save()
-                messages.success(request, "Le prêt a été approuvé avec succès.")
-                return redirect("administrateurs:home")
-
+                    # generations des echeances d'un pret
+                    generer_echeances_test_minutes(pret)
+                            
+                    pret.save()
+                    transaction.save()
+                    compte.save()
+                    messages.success(request, "Le prêt a été approuvé avec succès.")
+                    return redirect("administrateurs:home")
+               else:
+                   messages.error(request, "vous ne pouvez pas valider ce pret, car le capital de l'entreprise est insuffisant depandament du montant de pret")
             else:
                 messages.error(request, "Le formulaire de transaction est invalide.")
         else:
@@ -754,6 +757,7 @@ def rejeter_annulation_objectif(request, annulation_objectif_id):
 @verifier_admin
 def valider_retrait_investissement(request, retrait_id):
     retrait = get_object_or_404(RetraitContributions, pk=retrait_id)    
+    solde_total_entreprise = solde_entreprise(retrait.devise)
     membre = retrait.membre
 
     if request.method == "POST":
@@ -762,31 +766,35 @@ def valider_retrait_investissement(request, retrait_id):
 
         if check_password(mot_de_passe, request.user.password):
             if transaction_form.is_valid():
-                retrait.date_approbation = timezone.now()
-                retrait.statut = "Approuvé"
+                if retrait.montant < solde_entreprise:
+                        
+                    retrait.date_approbation = timezone.now()
+                    retrait.statut = "Approuvé"
 
-                transaction = transaction_form.save(commit=False)
-                transaction.membre = membre
-                transaction.date_approbation = timezone.now()
-                transaction.statut = "Approuvé"
+                    transaction = transaction_form.save(commit=False)
+                    transaction.membre = membre
+                    transaction.date_approbation = timezone.now()
+                    transaction.statut = "Approuvé"
 
-                compte = membre.compte_USD if transaction.devise == "USD" else membre.compte_CDF
-                
-                # Enregistrement du bénéfice pour l'administration (une seule fois)
-                BalanceAdmin.objects.create(
-                    montant=retrait.montant - transaction.montant,
-                    devise=transaction.devise,
-                    type="Retrait investissement"
-                )
+                    compte = membre.compte_USD if transaction.devise == "USD" else membre.compte_CDF
+                    
+                    # Enregistrement du bénéfice pour l'administration (une seule fois)
+                    BalanceAdmin.objects.create(
+                        montant=retrait.montant - transaction.montant,
+                        devise=transaction.devise,
+                        type="Retrait investissement"
+                    )
 
-                # Débit du compte
-                compte.solde += transaction.montant 
-                compte.save()
+                    # Débit du compte
+                    compte.solde += transaction.montant 
+                    compte.save()
 
-                transaction.save()
-                retrait.save()
-                messages.success(request, "Le retrait a été approuvé avec succès")
-                return redirect("administrateurs:home")
+                    transaction.save()
+                    retrait.save()
+                    messages.success(request, "Le retrait a été approuvé avec succès")
+                    return redirect("administrateurs:home")
+                else:
+                    messages.error(request, "vous ne pouvez pas valider le retrait car le capital de l'entreprise est insufisant")
             else:
                 messages.error(request, "Veuillez corriger les erreurs du formulaire")
         else:
