@@ -19,6 +19,7 @@ urlpatterns = [
 
 
     path("objectifs/", views.objectifs, name="objectifs"),
+    path('api/objectifs/', views.get_objectifs_by_status, name='api_objectifs_by_status'),
     path("objectifs/depot/<int:objectif_id>", views.depot_objectif, name="depot_objectif"),
     path('objectifs/retrait/<int:objectif_id>', views.retrait_objectif, name='retrait_objectif'),
     path("objectifs/archiver/<int:objectif_id>", views.archiver_objectif, name="archiver_objectif"),

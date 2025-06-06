@@ -11,19 +11,18 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum
 from django.template.defaultfilters import slugify
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_GET
 from django.views.decorators.csrf import csrf_exempt
 from membres.service import benefices_actuelle, investissement_actuelle, rechargerCompteService
 from .models import Membres
 from .forms import MembresForm, ModifierMembresForm
-from agents.models import Agents, NumerosAgent
 from administrateurs.models import Users, NumerosCompte,Villes, Communes, Quartiers, Avenues
 from objectifs.models import Objectifs
 from objectifs.forms import ObjectifsForm
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import login, update_session_auth_hash
 from transactions.models import BalanceAdmin, RetraitContributions, Solde, Transactions, Prets, RemboursementsPret, TypesPret, Contributions, DepotsObjectif, Retraits, Transferts, DepotsInscription, Benefices, RetraitsObjectif, AnnulationObjectif
-from transactions.forms import ContributionsForm, PretsForm, SoldeForm, TransfertsForm, RetraitsForm, DepotsInscriptionForm, TypesPretForm, TransactionsForm, DepotsObjectifForm
+from transactions.forms import  PretsForm, SoldeForm, TransfertsForm,TransactionsForm, DepotsObjectifForm
 from datetime import datetime, timedelta
 from django.utils import timezone
 from functools import wraps
@@ -498,6 +497,46 @@ def objectifs(request):
         "solde_objectifs_USD": solde_objectifs_USD
     }
     return render(request, "membres/objectifs.html", context)
+
+
+
+
+
+
+@login_required
+@require_GET
+@verifier_membre
+def get_objectifs_by_status(request):
+    membre = request.user.membre
+    status = request.GET.get('statut')
+
+    print(f"\n {status} \n")
+    
+    if status and status != 'Tous':
+        objectifs = Objectifs.objects.filter(membre=membre, statut=status).order_by('-date_creation')
+    else:
+        objectifs = Objectifs.objects.filter(membre=membre).order_by('-date_creation')
+
+    objectifs_data = []
+    for objectif in objectifs:
+        progress_percentage = 0
+        if objectif.montant_cible and objectif.montant_cible > 0:
+            progress_percentage = (objectif.montant / objectif.montant_cible) * 100
+
+        objectifs_data.append({
+            'id': objectif.id,
+            'nom': objectif.nom,
+            'description': objectif.description,
+            'montant_cible': str(objectif.montant_cible), # Convertir Decimal en string
+            'montant': str(objectif.montant), # Convertir Decimal en string
+            'devise': objectif.devise,
+            'date_creation': objectif.date_creation.isoformat(), # Format ISO pour JS
+            'date_fin': objectif.date_fin.isoformat() if objectif.date_fin else None,
+            'statut': objectif.statut,
+            'progress_percentage': round(float(progress_percentage), 2), # Pour JS
+        })
+
+    return JsonResponse({'objectifs': objectifs_data})
 
 @login_required
 @require_POST
