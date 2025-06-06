@@ -585,56 +585,114 @@ def depot_objectif(request, objectif_id):
 
 # Vue pour retrait d'objectif
 @login_required
+@require_POST
 @verifier_membre
 def retrait_objectif(request, objectif_id):
-    objectif = get_object_or_404(Objectifs, membre=request.user.membre, pk=objectif_id, statut="Atteint")
+    objectif = get_object_or_404(Objectifs, membre=request.user.membre, pk=objectif_id)
     membre = request.user.membre
+    compte = membre.compte_USD if objectif.devise == "USD" else membre.compte_CDF
+
     try:
         data = json.loads(request.body)
         password = data.get('password')
 
+        print(password)
+
         if not check_password(password, request.user.password):
-            return JsonResponse({'error': 'Mot de passe incorrect.'}, status=400)
+            return JsonResponse({'success': False, 'error': 'Mot de passe incorrect.'}, status=400) # Changé status 400 à 403 pour plus de précision
 
-        membre = request.user.membre
-        compte = membre.compte_USD if objectif.devise == "USD" else membre.compte_CDF
+        if objectif.montant == objectif.montant_cible:
 
-        RetraitsObjectif.objects.create(
-            membre=membre,
-            objectif=objectif,
-            montant=objectif.montant_cible,
-            devise=objectif.devise,
-            statut="Approuvé",
-            transaction=Transactions.objects.create(
+            RetraitsObjectif.objects.create(
                 membre=membre,
-                montant=objectif.montant_cible,
+                objectif=objectif,
+                montant=objectif.montant_cible, 
                 devise=objectif.devise,
-                type="retrait_objectif",
                 statut="Approuvé",
+                transaction=Transactions.objects.create( 
+                    membre=membre,
+                    montant=objectif.montant_cible,
+                    devise=objectif.devise,
+                    type="retrait_objectif", 
+                    statut="Approuvé",
+                )
             )
-        )
 
-        #changement du statut de l'objectif
-        objectif.statut = "Retiré"
-        objectif.save()
+            objectif.statut = "Retiré" 
+            objectif.montant = Decimal('0.00')
+            objectif.save()
 
-        # Retirer l'argent du compte principal
-        compte.solde += Decimal(str(objectif.montant_cible))
-        compte.save()
+            compte.solde += objectif.montant_cible 
+            compte.save()
 
-        return JsonResponse({'success': True, 'message': f"Retrait de {objectif.montant_cible} {objectif.devise} pour l'objectif '{objectif.type}' effectué avec succès."})
+            return JsonResponse({'success': True, 'message': f"Retrait complet de {objectif.montant_cible} {objectif.devise} pour l'objectif '{objectif.nom}' effectué avec succès."})
 
+        else:
+            try:
+                montant_retrait = Decimal(str(data.get('montant'))) 
+                frais_retrait_objectif = Decimal('0.01') 
+
+                if montant_retrait <= 0 or montant_retrait > objectif.montant:
+                    return JsonResponse({'success': False, 'error': f'Montant de retrait invalide. Maximum: {objectif.montant} {objectif.devise}'}, status=400)
+                
+                # Calcul des montants
+                montant_admin = montant_retrait * frais_retrait_objectif
+                montant_membre = montant_retrait - montant_admin
+
+                RetraitsObjectif.objects.create(
+                    membre=membre,
+                    objectif=objectif,
+                    montant=montant_retrait, 
+                    devise=objectif.devise,
+                    statut="Approuvé",
+                    transaction=Transactions.objects.create(
+                        membre=membre,
+                        montant=montant_membre, 
+                        devise=objectif.devise,
+                        type="retrait_objectif", 
+                        statut="Approuvé",
+                    )
+                )
+                
+                BalanceAdmin.objects.create(
+                    montant=montant_admin,
+                    devise=objectif.devise,
+                    type="Frais de retrait objectif" 
+                )
+
+                objectif.montant -= float(montant_retrait)
+                
+                compte.solde += montant_membre
+
+                objectif.save()
+                compte.save()
+
+                return JsonResponse({
+                    'success': True,
+                    'message': f"Retrait de {montant_retrait} {objectif.devise} (frais de {montant_admin} {objectif.devise}). Vous avez reçu {montant_membre} {objectif.devise}.",
+                    'nouveau_montant_objectif': str(objectif.montant), # Utile pour rafraîchir l'UI
+                    'nouveau_solde_compte': str(compte.solde),
+                    'devise': objectif.devise
+                })
+            except ValueError: 
+                 return JsonResponse({'success': False, 'error': 'Montant de retrait invalide.'}, status=400)
+            except Exception as e:
+                return JsonResponse({'success': False, 'error': f"Une erreur s'est produite lors du retrait partiel: {str(e)}"}, status=500)
+                
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': "Données JSON invalides."}, status=400)
     except Objectifs.DoesNotExist:
-        return JsonResponse({'error': 'Objectif introuvable.'}, status=404)
+        return JsonResponse({'success': False, 'error': 'Objectif introuvable ou ne vous appartient pas.'}, status=404)
     except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+        # Cela attrape les erreurs générales qui ne sont pas gérées par les blocs try/except internes
+        return JsonResponse({'success': False, 'error': f"Une erreur inattendue est survenue: {str(e)}"}, status=500)
+
 
 @login_required
 @verifier_membre
-def annulation_objectif(request, objectif_id):
-    objectif = get_object_or_404(Objectifs, membre=request.user.membre, pk=objectif_id, statut__in=['En cours', 'Epuisé'])
+def archiver_objectif(request, objectif_id):
     membre = request.user.membre
-    compte = membre.compte_USD if objectif.devise == "USD" else membre.compte_CDF
+    objectif = get_object_or_404(Objectifs, membre=membre, pk=objectif_id, statut__in=['En cours'], montant__lte=0 )
 
     try:
         data = json.loads(request.body)
@@ -643,31 +701,10 @@ def annulation_objectif(request, objectif_id):
         if not check_password(password, request.user.password):
             return JsonResponse({'success': False, 'error': 'Mot de passe incorrect.'}, status=400)
 
-        AnnulationObjectif.objects.create(
-            membre=membre,
-            objectif=objectif,
-            montant=objectif.montant,
-            devise=objectif.devise,
-            date_approbation=timezone.now(),
-            statut="Approuvé",
-            transaction=Transactions.objects.create(
-                membre=membre,
-                montant=objectif.montant,
-                devise=objectif.devise,
-                statut="Approuvé",
-                type="annulation_objectif"
-            )
-        )
-
-        # Retransférer l'argent qui était déjà affecté à l'objectif dans le compte principal
-        compte.solde += Decimal(str(objectif.montant))
-        compte.save()
-
-        objectif.statut = "Annulé"
-        objectif.montant = 0
+        objectif.statut = "Archivé"
         objectif.save()
 
-        return JsonResponse({'success': True, 'message': f"Objectif '{objectif.nom}' annulé avec succès"})
+        return JsonResponse({'success': True, 'message': f"Objectif '{objectif.nom}' archive avec succès"})
 
     except json.JSONDecodeError:
         return JsonResponse({'success': False, 'error': "Données JSON invalides"}, status=400)
@@ -675,6 +712,37 @@ def annulation_objectif(request, objectif_id):
         return JsonResponse({'success': False, 'error': 'Objectif introuvable.'}, status=404)
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+@require_POST 
+@login_required
+@verifier_membre 
+def reactiver_objectif(request, objectif_id):
+    membre = request.user.membre
+    try:
+        objectif = get_object_or_404(
+            Objectifs,
+            membre=membre,
+            pk=objectif_id,
+            statut='Archivé' 
+        )
+    except Objectifs.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Objectif introuvable, non archivé ou ne vous appartient pas.'}, status=404)
+    
+    try:
+        data = json.loads(request.body)
+        password = data.get('password')
+
+        if not check_password(password, request.user.password):
+            return JsonResponse({'success': False, 'error': 'Mot de passe incorrect.'}, status=403) 
+
+        objectif.statut = "En cours"
+        objectif.save()
+
+        return JsonResponse({'success': True, 'message': f"L'objectif '{objectif.nom}' a été réactivé avec succès."})
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': "Données de requête invalides (JSON mal formé)."}, status=400)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': f"Une erreur inattendue s'est produite lors de la réactivation: {str(e)}"}, status=500)
 
 
 # Vue pour la page de retrait du membre
@@ -699,6 +767,7 @@ def benefices(request):
 
             montant_benefices = montant_benefices_cdf if transaction.devise == "CDF" else montant_benefices_usd
             montant_recu = float(transaction.montant) * (1 - frais_retrais_benefice),
+            montant_admin = float(transaction.montant) * frais_retrais_benefice
 
             if transaction.montant > 0 and transaction.montant <= montant_benefices:                    
                 Retraits.objects.create(
@@ -714,6 +783,11 @@ def benefices(request):
                         type="retrait"
                     )
                 )
+                BalanceAdmin.objects.create(
+                        montant=montant_admin,
+                        devise=transaction.devise,
+                        type="Retrait benefice"
+                 )
 
                 # Crédit du compte
                 compte = membre.compte_USD if transaction.devise == "USD" else membre.compte_CDF

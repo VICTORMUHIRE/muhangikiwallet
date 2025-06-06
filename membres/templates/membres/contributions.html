@@ -46,8 +46,7 @@
     border-radius: 0.5rem;
     overflow: hidden;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
-    min-height: 50vh;
-    max-height: 70vh; 
+   
     overflow-y: auto;
     padding: 1.5rem;
   }
@@ -158,10 +157,10 @@
             <div class="col-md-8">
                 <h5 class="mb-2 fw-semibold text-dark">Aperçu de mes investissements</h5>
                 <p class="mb-1 fs-6 text-muted">
-                Total investi (CDF) : <strong>{{ solde_contribution_CDF|intcomma }} fc</strong>
+                Total investi (CDF) : <strong>{{ solde_contribution_CDF|stringformat:".2f" }} fc</strong>
                 </p>
                 <p class="mb-0 fs-6 text-muted">
-                Total investi (USD) : <strong>{{ solde_contribution_USD|intcomma }} $</strong>
+                Total investi (USD) : <strong>{{ solde_contribution_USD|stringformat:".2f" }} $</strong>
                 </p>
             </div>
             <div class="col-md-4 text-md-end mt-3 mt-md-0">
@@ -192,7 +191,7 @@
                     <tbody>
                         {% for contribution in contributions %}
                         <tr>
-                            <td>{{ contribution.montant|intcomma }} {% if contribution.devise == "USD" %} $ {% else %} FC {% endif %}</td>
+                            <td>{{ contribution.montant|stringformat:".2f" }} {% if contribution.devise == "USD" %} $ {% else %} FC {% endif %}</td>
                             <td class="d-none d-md-table-cell">{{ contribution.devise }}</td>
                             <td>{{ contribution.date|date:"d/m/Y" }}</td>
                         </tr>

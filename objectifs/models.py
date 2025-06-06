@@ -32,7 +32,7 @@ class Objectifs(models.Model):
     type = models.ForeignKey(TypesObjectif, on_delete=models.CASCADE, verbose_name="Type d'objectif", blank=True, null=True)
 
     description = models.TextField(verbose_name="Description", blank=True, null=True)
-    statut = models.CharField(max_length=20, choices=(("En cours", "En cours"), ("Atteint", "Atteint"), ("Retiré", "Retiré"), ("Epuisé", "Epuisé"), ("Annulé", "Annulé")), default="En cours", verbose_name="Statut")
+    statut = models.CharField(max_length=20, choices=(("En cours", "En cours"), ("Atteint", "Atteint"), ("Retiré", "Retiré"), ("Epuisé", "Epuisé"), ("Archivé", "Archivé")), default="En cours", verbose_name="Statut")
 
     def pourcentage_atteint(self):
         return (self.montant / self.montant_cible) * 100

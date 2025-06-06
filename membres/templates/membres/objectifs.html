@@ -212,9 +212,9 @@
             atteints,
 
             <strong class="fw-bold"
-              >{{ objectifs|objectif_statut_count:'Annulé' }}</strong
+              >{{ objectifs|objectif_statut_count:'Archivé' }}</strong
             >
-            annulés,
+            Archivés,
 
             <strong class="fw-bold"
               >{{ objectifs|objectif_statut_count:'Retiré' }}</strong
@@ -263,7 +263,7 @@
           <i class="fas fa-check-circle text-success"></i>
           {% elif objectif.statut == 'En cours' %}
           <i class="fas fa-hourglass-half text-warning"></i>
-          {% elif objectif.statut == 'Annulé' or objectif.statut == 'Epuisé' %}
+          {% elif objectif.statut == 'Archivé' or objectif.statut == 'Epuisé' %}
           <i class="fas fa-times-circle text-danger"></i>
           {% elif objectif.statut == 'Retiré' %}
           <i class="fas fa-box-open text-secondary"></i>
@@ -322,7 +322,7 @@
             <li>
               <small><strong>Statut :</strong>
                 <span
-                  class="badge {% if objectif.statut == 'Atteint' %}bg-success{% elif objectif.statut == 'En cours' %}bg-warning{% elif objectif.statut == 'Annulé' or objectif.statut == 'Epuisé' %}bg-danger{% elif objectif.statut == 'Retiré' %}bg-secondary{% else %}bg-info{% endif %} rounded-pill"
+                  class="badge {% if objectif.statut == 'Atteint' %}bg-success{% elif objectif.statut == 'En cours' %}bg-warning{% elif objectif.statut == 'Archivé' or objectif.statut == 'Epuisé' %}bg-danger{% elif objectif.statut == 'Retiré' %}bg-secondary{% else %}bg-info{% endif %} rounded-pill"
                 >
                   {{ objectif.statut }}
                 </span>
@@ -331,45 +331,63 @@
           </ul>
 
           <div class="d-flex justify-content-end gap-2 mt-3 objectif-actions">
-            {% if objectif.statut not in 'Atteint Retiré Annulé Epuisé' %}
-
-            <button
-              type="button"
-              class="btn btn-danger btn-sm rounded-pill"
-              data-bs-toggle="modal"
-              data-bs-target="#AnnulereObjectifModalLabel{{ objectif.id }}"
-            >
-              <i class="fas fa-ban me-1"></i>Annuler
-            </button>
-
-            {% endif %} {% if objectif.statut == 'En cours' %}
-
-            <button
-              type="button"
-              class="btn btn-primary btn-sm rounded-pill"
-              data-bs-toggle="modal"
-              data-bs-target="#depotObjectifModal{{ objectif.id }}"
-              data-objectif-id="{{ objectif.id }}"
-              data-objectif-nom="{{ objectif.nom }}"
-              data-objectif-devise="{{ objectif.devise }}"
-            >
-              <i class="fas fa-upload me-1"></i>Déposer
-            </button>
-
+  
+            {% if objectif.statut == 'En cours' %}
+              {% if objectif.montant <= 0 %}
+                <button
+                    type="button"
+                    class="btn btn-danger btn-sm rounded-pill"
+                    data-bs-toggle="modal"
+                    data-bs-target="#archiverObjectifModal{{ objectif.id }}"
+                >
+                    <i class="fas fa-ban me-1"></i>Archiver
+                </button>
+              {% else %} 
+                <button
+                    type="button"
+                    class="btn btn-danger btn-sm rounded-pill"
+                    data-bs-toggle="modal"
+                    data-bs-target="#retraitPartielObjectifModal{{ objectif.id }}"
+                >
+                    <i class="fas fa-download me-1"></i>Retirer
+                </button>
+              {% endif %}
+              <button
+                    type="button"
+                    class="btn btn-primary btn-sm rounded-pill"
+                    data-bs-toggle="modal"
+                    data-bs-target="#depotObjectifModal{{ objectif.id }}"
+                    data-objectif-id="{{ objectif.id }}"
+                    data-objectif-nom="{{ objectif.nom }}"
+                    data-objectif-devise="{{ objectif.devise }}"
+                >
+                    <i class="fas fa-upload me-1"></i>Déposer
+                </button>
+            
+            {% elif objectif.statut == 'Archivé' %}
+                {# An 'Archivé' objective can be Reactivated #}
+                <button
+                    type="button"
+                    class="btn btn-success btn-sm rounded-pill"
+                    data-bs-toggle="modal"
+                    data-bs-target="#reactiverObjectifModal{{ objectif.id }}"
+                >
+                    <i class="fas fa-redo me-1"></i>Activer
+                </button>
+            
             {% elif objectif.statut == 'Atteint' %}
-
-            <button
-              type="button"
-              class="btn btn-success btn-sm rounded-pill"
-              data-bs-toggle="modal"
-              data-bs-target="#retraitObjectifModal{{ objectif.id }}"
-            >
-              <i class="fas fa-download me-1"></i>Retirer
-            </button>
-
+                
+                <button
+                    type="button"
+                    class="btn btn-success btn-sm rounded-pill"
+                    data-bs-toggle="modal"
+                    data-bs-target="#retraitObjectifModal{{ objectif.id }}"
+                >
+                    <i class="fas fa-download me-1"></i>Retirer
+                </button>
             {% endif %}
-          </div>
         </div>
+                </div>
       </div>
     </div>
 
@@ -390,7 +408,9 @@
 
 {% include "membres/components/ajouter_objectif.html" with form=form %} 
 {% for objectif in objectifs %} 
-    {% include "membres/components/annuler_objectif.html" with objectif=objectif %} 
-    {% include "membres/components/retrait_objectif.html" with objectif=objectif %} 
+    {% include "membres/components/archiver_0bjectif.html" with objectif=objectif %} 
+    {% include "membres/components/retrait_objectif.html" with objectif=objectif %}
+    {% include "membres/components/retrait_partiel_objectif.html" with objectif=objectif %} 
+    {% include "membres/components/reactiver_objectif.html" with objectif=objectif %} 
 {% endfor %} 
 {% endblock %}

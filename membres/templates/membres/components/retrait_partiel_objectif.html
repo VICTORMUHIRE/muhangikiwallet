@@ -1,0 +1,147 @@
+
+{% load humanize %}
+{% load colorFilter %} 
+
+<div class="modal fade" id="retraitPartielObjectifModal{{ objectif.id }}" tabindex="-1" aria-labelledby="retraitPartielObjectifModalLabel{{ objectif.id }}" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="retraitPartielObjectifModalLabel{{ objectif.id }}">Retirer de "{{ objectif.nom }}"</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div><strong>Objectif Cible :</strong> {{ objectif.montant_cible|intcomma }} {{ objectif.devise }}</div>
+                <div><strong>Montant Actuel :</strong> {{ objectif.montant|intcomma }} {{ objectif.devise }}</div>
+                <div><strong>Montant Disponible au Retrait :</strong> {{ objectif.montant|intcomma }} {{ objectif.devise }}</div>
+                <hr>
+                <form id="retraitObjectifForm{{ objectif.id }}">
+                    {% csrf_token %}
+
+                    <div class="alert alert-danger mt-3 d-none" id="retrait-partiel-error-message{{ objectif.id }}"></div>
+                    <div class="alert alert-success mt-3 d-none" id="retrait-partiel-success-message{{ objectif.id }}"></div>
+                    <input type="hidden" name="objectif_id" value="{{ objectif.id }}">
+                    <div class="mb-3">
+                        <label for="montant_retrait{{ objectif.id }}" class="form-label">Montant à retirer</label>
+                        <input type="number" step="0.01" class="form-control" id="montant_retrait{{ objectif.id }}" name="montant" placeholder="Entrez le montant en {{ objectif.devise }}" required min="0.01" max="{{ objectif.montant }}">
+                        <div class="form-text text-muted">Max: {{ objectif.montant|intcomma }} {{ objectif.devise }}</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="mot_de_passe_retrait_partiel{{ objectif.id }}" class="form-label">Mot de passe</label>
+                        <input type="password" class="form-control" id="mot_de_passe_retrait_partiel{{ objectif.id }}" name="password" required> {# Utiliser 'password' ici pour correspondre à votre vue #}
+                    </div>
+                    
+                    <button type="button" class="btn btn-success" onclick="effectuerRetrait('{{ objectif.id }}')">Retirer</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+
+    
+        function effectuerRetrait(objectifId) {
+            const form = document.getElementById(`retraitObjectifForm${objectifId}`);
+            const montantInput = document.getElementById(`montant_retrait${objectifId}`);
+            const motDePasseInput = document.getElementById(`mot_de_passe_retrait_partiel${objectifId}`);
+            const csrfToken = form.querySelector('[name=csrfmiddlewaretoken]').value;
+            const errorDiv = document.getElementById(`retrait-partiel-error-message{{ objectif.id }}`);
+            const successDiv = document.getElementById(`retrait-partiel-success-message${objectifId}`);
+            const modalElement = document.getElementById(`retraitPartielObjectifModal${objectifId}`);
+            const modal = bootstrap.Modal.getInstance(modalElement);
+
+            // Réinitialiser les messages
+            errorDiv.classList.add('d-none');
+            successDiv.classList.add('d-none');
+            errorDiv.textContent = '';
+            successDiv.textContent = '';
+
+            // Validation client-side simple
+            const montant = parseFloat(montantInput.value);
+            const objectifMontantActuel = parseFloat(montantInput.max); // Max est défini à objectif.montant
+
+            if (isNaN(montant) || montant <= 0 || montant > objectifMontantActuel) {
+                errorDiv.textContent = 'Veuillez entrer un montant de retrait valide (supérieur à 0 et inférieur ou égal au montant actuel).';
+                errorDiv.classList.remove('d-none');
+                return;
+            }
+            if (!motDePasseInput.value) {
+                errorDiv.textContent = 'Veuillez entrer votre mot de passe.';
+                errorDiv.classList.remove('d-none');
+
+
+                return;
+            }
+            console.log(motDePasseInput.value);
+            
+
+            fetch(`/membres/objectifs/retrait/${objectifId}`, { 
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                },
+                body: JSON.stringify({
+                    montant: montant,
+                    password: motDePasseInput.value, 
+                }),
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => { throw err; });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    successDiv.textContent = data.message;
+                    successDiv.classList.remove('d-none');
+
+                    setTimeout(() => {
+                        if (modal) {
+                            modal.hide();
+                        }
+                        form.reset(); // Réinitialiser le formulaire
+                        window.location.reload(); // Recharger la page pour voir les changements
+                    }, 1500);
+                } else {
+                    errorDiv.textContent = data.error || 'Une erreur inconnue s\'est produite lors du retrait.';
+                    errorDiv.classList.remove('d-none');
+                }
+            })
+            .catch(error => {
+                errorDiv.textContent = error.error || 'Une erreur de communication est survenue.';
+                errorDiv.classList.remove('d-none');
+                console.error('Erreur lors du retrait:', error);
+            });
+        }
+    
+
+    // Gestionnaire d'événement pour réinitialiser le modal à la fermeture
+    document.addEventListener('DOMContentLoaded', () => {
+        const modalElement = document.getElementById(`retraitPartielObjectifModal{{ objectif.id }}`);
+        if (modalElement) {
+            modalElement.addEventListener('hidden.bs.modal', () => {
+                const errorDiv = document.getElementById(`retrait-partiel-error-message{{ objectif.id }}`);
+                const successDiv = document.getElementById(`retrait-partiel-success-message{{ objectif.id }}`);
+                const montantInput = document.getElementById(`montant_retrait{{ objectif.id }}`);
+                const motDePasseInput = document.getElementById(`mot_de_passe_retrait_partiel{{ objectif.id }}`);
+
+                if (errorDiv) {
+                    errorDiv.classList.add('d-none');
+                    errorDiv.textContent = '';
+                }
+                if (successDiv) {
+                    successDiv.classList.add('d-none');
+                    successDiv.textContent = '';
+                }
+                if (montantInput) {
+                    montantInput.value = ''; // Effacer le montant
+                }
+                if (motDePasseInput) {
+                    motDePasseInput.value = ''; // Effacer le mot de passe
+                }
+            });
+        }
+    });
+</script>

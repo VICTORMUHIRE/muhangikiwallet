@@ -16,10 +16,15 @@ urlpatterns = [
     path("transaction/<int:transaction_id>", views.transaction, name="transaction"),
     path("transactions/", views.transactions, name="transactions"),
     path("demande_pret/", views.demande_pret, name="demande_pret"),
+
+
     path("objectifs/", views.objectifs, name="objectifs"),
     path("objectifs/depot/<int:objectif_id>", views.depot_objectif, name="depot_objectif"),
     path('objectifs/retrait/<int:objectif_id>', views.retrait_objectif, name='retrait_objectif'),
-    path("objectifs/annuler/<int:objectif_id>", views.annulation_objectif, name="annulation_objectif"),
+    path("objectifs/archiver/<int:objectif_id>", views.archiver_objectif, name="archiver_objectif"),
+    path("objectifs/reactiver/<int:objectif_id>", views.reactiver_objectif, name="reactiver_objectif"),
+
+
     path("profile/", views.profile, name="profile"),
     path("notifications/", views.notifications, name="notifications"),
     path("parametres/", views.parametres, name="parametres"),

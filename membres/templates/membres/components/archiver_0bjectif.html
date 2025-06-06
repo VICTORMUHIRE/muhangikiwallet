@@ -1,0 +1,145 @@
+<div
+    class="modal fade"
+    id="archiverObjectifModal{{ objectif.id }}" {# SIMPLIFIED ID: Removed 'Label' from the end for cleaner JS #}
+    tabindex="-1"
+    aria-labelledby="archiverObjectifModalHeading{{ objectif.id }}" {# Points to the actual heading #}
+    aria-hidden="true"
+>
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="archiverObjectifModalHeading{{ objectif.id }}"> {# ID for the heading, as referenced by aria-labelledby #}
+                    Archiver l'objectif "{{ objectif.nom }}"
+                </h5>
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                    aria-label="Close"
+                ></button>
+            </div>
+            <div class="modal-body">
+                <p>
+                    Êtes-vous sûr de vouloir archiver l'objectif
+                    <strong>"{{ objectif.nom}}"</strong> de
+                    <strong>{{ objectif.montant_cible|stringformat:".2f" }} {{ objectif.devise}}</strong>?
+                </p>
+                <div class="alert alert-danger mt-3 d-none" id="archiver-error-message{{ objectif.id }}"></div> {# Renamed for consistency #}
+                <div class="alert alert-success mt-3 d-none" id="archiver-success-message{{ objectif.id }}"></div> {# Renamed for consistency #}
+                <form
+                    id="archiverObjectifForm{{ objectif.id }}" {# Renamed for consistency #}
+                >
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <input
+                            type="password"
+                            class="form-control"
+                            id="mot_de_passe_archiver{{ objectif.id }}" {# Renamed for consistency #}
+                            name="password"
+                            placeholder="Entrez votre mot de passe"
+                            required
+                        />
+                    </div>
+                    <button
+                        type="button"
+                        class="btn btn-sm btn-danger"
+                        onclick="archiverObjectifAjax('{{ objectif.id }}')"
+                    >
+                        Confirmer l'archivage
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    function archiverObjectifAjax(objectifId) {
+        const form = document.getElementById(`archiverObjectifForm${objectifId}`);
+        const passwordInput = document.getElementById(`mot_de_passe_archiver${objectifId}`);
+        const csrfToken = form.querySelector('[name=csrfmiddlewaretoken]').value;
+        const errorDiv = document.getElementById(`archiver-error-message${objectifId}`);
+        const successDiv = document.getElementById(`archiver-success-message${objectifId}`);
+
+        // --- CRUCIAL CORRECTION HERE ---
+        const modalElement = document.getElementById(`archiverObjectifModal${objectifId}`);
+        const modal = bootstrap.Modal.getInstance(modalElement);
+
+        // Clear previous messages on new attempt
+        errorDiv.classList.add('d-none');
+        successDiv.classList.add('d-none');
+        errorDiv.textContent = '';
+        successDiv.textContent = '';
+
+        // Basic client-side password validation
+        if (!passwordInput.value) {
+            errorDiv.textContent = 'Veuillez entrer votre mot de passe.';
+            errorDiv.classList.remove('d-none');
+            return; // Stop the function if password is empty
+        }
+
+
+        fetch(`/membres/objectifs/archiver/${objectifId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
+            },
+            body: JSON.stringify({
+                password: passwordInput.value,
+            }),
+        })
+        .then(response => {
+            if (!response.ok) {
+                // Handle HTTP errors (e.g., 400, 403, 500)
+                return response.json().then(err => { throw err; });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                successDiv.textContent = data.message;
+                successDiv.classList.remove('d-none');
+                setTimeout(() => {
+                    if (modal) { 
+                        modal.hide();
+                    }
+                    window.location.reload();
+                }, 1500);
+            } else {
+                errorDiv.textContent = data.error || 'Une erreur inconnue s\'est produite.';
+                errorDiv.classList.remove('d-none');
+            }
+        })
+        .catch(error => {
+            
+            if (error.error) { 
+                 errorDiv.textContent = error.error;
+            } else {
+                 errorDiv.textContent = 'Une erreur s\'est produite lors de l\'archivage.'; // General message
+                 console.error('Erreur lors de l\'archivage:', error);
+            }
+            errorDiv.classList.remove('d-none');
+        });
+    }
+
+    const archiverObjectifModalElement = document.getElementById(`archiverObjectifModal{{ objectif.id }}`);
+    if (archiverObjectifModalElement) {
+        archiverObjectifModalElement.addEventListener('hidden.bs.modal', () => {
+            const errorDiv = document.getElementById(`archiver-error-message{{ objectif.id }}`);
+            const successDiv = document.getElementById(`archiver-success-message{{ objectif.id }}`);
+            const passwordInput = document.getElementById(`mot_de_passe_archiver{{ objectif.id }}`); // Add this to clear password
+
+            if (errorDiv) {
+                errorDiv.classList.add('d-none');
+                errorDiv.textContent = '';
+            }
+            if (successDiv) {
+                successDiv.classList.add('d-none');
+                successDiv.textContent = '';
+            }
+            if (passwordInput) { // Clear password field on modal close
+                passwordInput.value = '';
+            }
+        });
+    }
+</script>
