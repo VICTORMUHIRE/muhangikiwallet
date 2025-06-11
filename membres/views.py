@@ -1,4 +1,6 @@
-from decimal import Decimal
+from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned 
+import traceback
+from decimal import Decimal,InvalidOperation
 import json
 from django.db.models import Q
 from django.contrib import messages
@@ -62,22 +64,64 @@ def get_avenues(request):
     return JsonResponse(list(avenues), safe=False)
 
 # Vue pour la page de statut des membres
+# Vue pour la page de statut des membres
 @login_required
 def statut(request):
     depot_inscription = DepotsInscription.objects.filter(membre=request.user.membre).first()
 
- 
-    form = TransactionsForm(initial={"montant": depot_inscription.montant, "devise": depot_inscription.devise})
-    membre_form = ModifierMembresForm(instance=request.user.membre)
+    if request.method == 'POST':
+        form = TransactionsForm(request.POST, request.FILES)
+        membre_form = ModifierMembresForm(request.POST, request.FILES, instance=request.user.membre)       
+        
+        mot_de_passe = request.POST.get('mot_de_passe')
+
+        if form.is_valid():
+            if check_password(mot_de_passe, request.user.password):
+                transaction = form.save(commit=False)
+
+                transaction.devise = depot_inscription.devise
+                transaction.montant = depot_inscription.montant
+                transaction.agent = transaction.numero_agent.agent
+                transaction.membre=request.user.membre
+                transaction.type="depot_inscription"
+                transaction.statut = "En attente"
+
+                depot_inscription.date = timezone.now()
+                depot_inscription.transaction = transaction
+                
+                transaction.save()
+                depot_inscription.save()
+
+                messages.success(request, "Votre dépot d'inscription a été soumise avec succès !")
+                return redirect('membres:home')
+            
+            else:
+                messages.error(request, "Mot de passe incorrect")
+
+        elif membre_form.is_valid():
+            membre_form.save()
+
+            depot_inscription.statut = "En attente"
+            depot_inscription.save()
+
+            messages.success(request, "Vos informations ont été modifiées avec succès !")
+            return redirect('membres:home')
+        
+        else:
+            messages.error(request, "Veuillez corriger les erreurs du formulaire")
+
+    else:
+        form = TransactionsForm(initial={"montant": depot_inscription.montant, "devise": depot_inscription.devise})
+        membre_form = ModifierMembresForm(instance=request.user.membre)
 
     context = {
         'form': form,
         'membre_form': membre_form,
-
         "depot_inscription": depot_inscription
     }
 
-    return render(request, 'membres/statut.html', context) # Pass the form to the template
+    return render(request, 'membres/statut.html', context) 
+
 
 # Vue pour la page d'inscription des membres
 def inscription(request):
@@ -500,43 +544,55 @@ def objectifs(request):
 
 
 
-
-
-
 @login_required
 @require_GET
 @verifier_membre
 def get_objectifs_by_status(request):
-    membre = request.user.membre
-    status = request.GET.get('statut')
+    try:      
+        membre = request.user.membre
+        status = request.GET.get('statut')
+        
+        objectifs = []
+        if status and status != 'Tous':        
+            objectifs = Objectifs.objects.filter(membre=membre, statut=status).order_by('-date_creation')
+        else:
+            objectifs = Objectifs.objects.filter(membre=membre).order_by('-date_creation')
+            
+        objectifs_data = []
+        for objectif in objectifs:
+            progress_percentage = 0
+            try:
+                if objectif.montant_cible is not None and objectif.montant_cible > 0:
+                    montant = Decimal(str(objectif.montant))
+                    montant_cible = Decimal(str(objectif.montant_cible))
+                    progress_percentage = (montant / montant_cible) * 100
+                else:
+                    progress_percentage = 0
+            except (InvalidOperation, TypeError, ZeroDivisionError) as e:                           
+                progress_percentage = 0
 
-    print(f"\n {status} \n")
-    
-    if status and status != 'Tous':
-        objectifs = Objectifs.objects.filter(membre=membre, statut=status).order_by('-date_creation')
-    else:
-        objectifs = Objectifs.objects.filter(membre=membre).order_by('-date_creation')
+            objectifs_data.append({
+                'id': objectif.id,
+                'nom': objectif.nom,
+                'description': objectif.description if objectif.description is not None else '',
+                'montant_cible': str(objectif.montant_cible) if objectif.montant_cible is not None else '0',
+                'montant': str(objectif.montant) if objectif.montant is not None else '0',
+                'devise': objectif.devise,
+                'date_creation': objectif.date_creation.isoformat() if objectif.date_creation else None,
+                'date_fin': objectif.date_fin.isoformat() if objectif.date_fin else None,
+                'statut': objectif.statut,
+                'progress_percentage': round(float(progress_percentage), 2),
+            })       
+        
+        return JsonResponse({'objectifs': objectifs_data})
 
-    objectifs_data = []
-    for objectif in objectifs:
-        progress_percentage = 0
-        if objectif.montant_cible and objectif.montant_cible > 0:
-            progress_percentage = (objectif.montant / objectif.montant_cible) * 100
-
-        objectifs_data.append({
-            'id': objectif.id,
-            'nom': objectif.nom,
-            'description': objectif.description,
-            'montant_cible': str(objectif.montant_cible), # Convertir Decimal en string
-            'montant': str(objectif.montant), # Convertir Decimal en string
-            'devise': objectif.devise,
-            'date_creation': objectif.date_creation.isoformat(), # Format ISO pour JS
-            'date_fin': objectif.date_fin.isoformat() if objectif.date_fin else None,
-            'statut': objectif.statut,
-            'progress_percentage': round(float(progress_percentage), 2), # Pour JS
-        })
-
-    return JsonResponse({'objectifs': objectifs_data})
+    except ObjectDoesNotExist as e:        
+        return JsonResponse({'error': 'L\'objectif ou le membre demandé n\'existe pas.'}, status=404)
+    except MultipleObjectsReturned as e:        
+        return JsonResponse({'error': 'Plusieurs objectifs correspondent aux critères, ce qui est inattendu.'}, status=500)
+    except Exception as e:
+        traceback.print_exc()
+        return JsonResponse({'error': f'Une erreur interne est survenue: {e}'}, status=500)
 
 @login_required
 @require_POST
@@ -547,29 +603,36 @@ def depot_objectif(request, objectif_id):
         montant = data.get('montant')
         mot_de_passe = data.get('mot_de_passe')
 
+       
         if not montant or not mot_de_passe:
             return JsonResponse({'error': 'Le montant et le mot de passe sont requis.'}, status=400)
 
+       
         objectif = get_object_or_404(Objectifs, membre=request.user.membre, pk=objectif_id, statut="En cours")
-
+       
         if not check_password(mot_de_passe, request.user.password):
             return JsonResponse({'error': 'Mot de passe incorrect.'}, status=400)
-
+       
         try:
             montant_depot = float(montant)
-            if montant_depot <= 0 or montant_depot > (objectif.montant_cible - objectif.montant):
-                return JsonResponse({'error': 'Montant de dépôt invalide.'}, status=400)
         except ValueError:
-            return JsonResponse({'error': 'Montant de dépôt invalide.'}, status=400)
+            return JsonResponse({'error': 'Montant de dépôt invalide (doit être un nombre).'}, status=400)
 
-        # Vérification du solde du compte
+       
+        montant_restant_pour_cible = objectif.montant_cible - objectif.montant
+        if montant_depot <= 0:
+            return JsonResponse({'error': 'Le montant de dépôt doit être supérieur à zéro.'}, status=400)
+        if montant_depot > montant_restant_pour_cible:
+            return JsonResponse({
+                'error': f'Le montant de dépôt ({montant_depot:.2f} {objectif.devise}) est supérieur au montant restant pour atteindre l\'objectif ({montant_restant_pour_cible:.2f} {objectif.devise}).'
+            }, status=400)
+
+       
         membre = request.user.membre
         compte = membre.compte_USD if objectif.devise == "USD" else membre.compte_CDF
-
-        if compte.solde < montant_depot:
+        if compte.solde < Decimal(str(montant_depot)):
             return JsonResponse({'error': f'Solde insuffisant sur votre compte {objectif.devise}.'}, status=400)
-
-        # Créer la transaction
+       
         transaction = Transactions.objects.create(
             membre=membre,
             montant=montant_depot,
@@ -578,8 +641,7 @@ def depot_objectif(request, objectif_id):
             statut="Approuvé",
             date_approbation=timezone.now()
         )
-
-        # Créer l'enregistrement de dépôt sur objectif
+       
         DepotsObjectif.objects.create(
             objectif=objectif,
             transaction=transaction,
@@ -589,22 +651,25 @@ def depot_objectif(request, objectif_id):
             date_approbation=timezone.now()
         )
 
-        # Mettre à jour le montant de l'objectif
+       
         objectif.montant += montant_depot
         if objectif.montant >= objectif.montant_cible:
             objectif.statut = "Atteint"
         objectif.save()
 
-        # Retirer l'argent du compte principal
+       
         compte.solde -= Decimal(str(montant_depot))
         compte.save()
 
+       
         try:
             progress_percentage = float(objectif.montant / objectif.montant_cible) * 100
         except (TypeError, ZeroDivisionError):
             progress_percentage = 0
+
         progress_color = "green" if progress_percentage >= 100 else "orange" if progress_percentage > 50 else "red"
 
+       
         return JsonResponse({
             'success': True,
             'message': 'Dépôt effectué avec succès !',
@@ -617,10 +682,11 @@ def depot_objectif(request, objectif_id):
         })
 
     except Objectifs.DoesNotExist:
-        return JsonResponse({'error': 'Objectif introuvable.'}, status=404)
+        return JsonResponse({'error': 'Objectif introuvable ou non "En cours".'}, status=404)
     except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
-
+       
+        print(f"Une erreur inattendue est survenue: {e}")
+        return JsonResponse({'error': 'Une erreur interne est survenue. Veuillez réessayer.'}, status=500)
 
 # Vue pour retrait d'objectif
 @login_required
@@ -634,8 +700,6 @@ def retrait_objectif(request, objectif_id):
     try:
         data = json.loads(request.body)
         password = data.get('password')
-
-        print(password)
 
         if not check_password(password, request.user.password):
             return JsonResponse({'success': False, 'error': 'Mot de passe incorrect.'}, status=400) # Changé status 400 à 403 pour plus de précision
@@ -661,7 +725,7 @@ def retrait_objectif(request, objectif_id):
             objectif.montant = Decimal('0.00')
             objectif.save()
 
-            compte.solde += objectif.montant_cible 
+            compte.solde += Decimal(str(objectif.montant_cible ))
             compte.save()
 
             return JsonResponse({'success': True, 'message': f"Retrait complet de {objectif.montant_cible} {objectif.devise} pour l'objectif '{objectif.nom}' effectué avec succès."})

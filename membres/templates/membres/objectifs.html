@@ -201,55 +201,39 @@
             <button class="nav-link" id="retire-tab" data-bs-toggle="tab" data-bs-target="#retire" type="button" role="tab" aria-controls="retire" aria-selected="false" data-status="Retiré">Retirés</button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" type="button" role="tab" aria-controls="all" aria-selected="false" data-status="Tous">Tous</button>
+            <button class="nav-link" id="all-tab" data-bs-toggle="tab" data-bs-target="#tous" type="button" role="tab" aria-controls="all" aria-selected="false" data-status="Tous">Tous</button>
         </li>
     </ul>
 
     <div class="tab-content" id="objectifTabContent">
         <div class="tab-pane fade show active" id="en-cours" role="tabpanel" aria-labelledby="en-cours-tab">
             <div id="objectifsList-en-cours">
-                <h6 class="mb-3 fw-semibold">
-                    <i class="fas fa-list-ul me-2 text-dark"></i> Objectifs En cours
-                </h6>
-                {# Les objectifs seront chargés ici via AJAX #}
-                <div class="text-center text-muted py-5" id="loading-spinner">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Chargement...</span>
-                    </div>
-                    <p class="mt-2">Chargement des objectifs...</p>
-                </div>
+              <div class="text-center text-muted py-5" id="loading-spinner">
+                  <div class="spinner-border text-primary" role="status">
+                      <span class="visually-hidden">Chargement...</span>
+                  </div>
+                  <p class="mt-2">Chargement des objectifs...</p>
+              </div>
             </div>
         </div>
         <div class="tab-pane fade" id="atteint" role="tabpanel" aria-labelledby="atteint-tab">
             <div id="objectifsList-atteint">
-                <h6 class="mb-3 fw-semibold">
-                    <i class="fas fa-list-ul me-2 text-dark"></i> Objectifs Atteints
-                </h6>
-                
+
             </div>
         </div>
         <div class="tab-pane fade" id="archive" role="tabpanel" aria-labelledby="archive-tab">
-            <div id="objectifsList-archive">
-                <h6 class="mb-3 fw-semibold">
-                    <i class="fas fa-list-ul me-2 text-dark"></i> Objectifs Archivés
-                </h6>
-                
+            <div id="objectifsList-archivé">
+                                
             </div>
         </div>
         <div class="tab-pane fade" id="retire" role="tabpanel" aria-labelledby="retire-tab">
-            <div id="objectifsList-retire">
-                <h6 class="mb-3 fw-semibold">
-                    <i class="fas fa-list-ul me-2 text-dark"></i> Objectifs Retirés
-                </h6>
-                {# Les objectifs seront chargés ici via AJAX #}
+            <div id="objectifsList-retiré">
+                
             </div>
         </div>
-        <div class="tab-pane fade" id="all" role="tabpanel" aria-labelledby="all-tab">
-            <div id="objectifsList-all">
-                <h6 class="mb-3 fw-semibold">
-                    <i class="fas fa-list-ul me-2 text-dark"></i> Tous les Objectifs
-                </h6>
-                {# Les objectifs seront chargés ici via AJAX #}
+        <div class="tab-pane fade" id="tous" role="tabpanel" aria-labelledby="all-tab">
+            <div id="objectifsList-tous">
+
             </div>
         </div>
     </div>
@@ -257,6 +241,14 @@
 </div>
 
 {% include "membres/components/ajouter_objectif.html" with form=form %}
+{% for objectif in objectifs %} {# You need to iterate over all objectives to generate modals for each #}
+    {% include "membres/components/depot_objectif.html" with objectif=objectif %}
+    {% include "membres/components/archiver_0bjectif.html" with objectif=objectif %}
+    {% include "membres/components/retrait_objectif.html" with objectif=objectif %}
+    {% include "membres/components/retrait_partiel_objectif.html" with objectif=objectif %}
+{% include "membres/components/reactiver_objectif.html" with objectif=objectif %}
+                        
+{% endfor %}
 
 
 <script>
@@ -265,6 +257,7 @@
         const targetDivId = `objectifsList-${status.replace(/\s/g, '-').toLowerCase()}`;
         const targetDiv = document.getElementById(targetDivId);
         const spinner = document.getElementById('loading-spinner');
+
 
         if (targetDiv) {
             targetDiv.innerHTML = `<h6 class="mb-3 fw-semibold">
@@ -295,7 +288,7 @@
         .then(data => {
             if (targetDiv) {
                 let objectifsHtml = ``;
-
+               
                 if (data.objectifs && data.objectifs.length > 0) {
                     data.objectifs.forEach(objectif => {
                         const progressPercentage = ((objectif.montant / objectif.montant_cible) * 100).toFixed(0);
@@ -410,7 +403,7 @@
                                     </div>
                                 </div>
                             </div>
-                            
+
                         `;
                     });
                     targetDiv.innerHTML = objectifsHtml;
@@ -427,9 +420,7 @@
             console.error('Erreur lors du chargement des objectifs:', error);
             if (targetDiv) {
                 targetDiv.innerHTML = `
-                    <h6 class="mb-3 fw-semibold">
-                        <i class="fas fa-list-ul me-2 text-dark"></i> Objectifs ${status}
-                    </h6>
+                    
                     <div class="alert alert-danger" role="alert">
                         Impossible de charger les objectifs pour le statut "${status}".
                     </div>
@@ -452,4 +443,5 @@
         loadObjectifsByStatus('En cours');
     });
 </script>
+
 {% endblock %}

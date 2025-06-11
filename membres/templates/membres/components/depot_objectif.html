@@ -11,8 +11,12 @@
             <div class="modal-body">
                 <div><strong>Objectif Cible :</strong> {{ objectif.montant_cible|intcomma }} {{ objectif.devise }}</div>
                 <div><strong>Montant Actuel :</strong> {{ objectif.montant|intcomma }} {{ objectif.devise }}</div>
-                <div><strong>Montant Restant :</strong> {{ objectif.montant_cible|sub:objectif.montant|intcomma }} {{ objectif.devise }}</div>
+                
+                 <div><strong>Montant Restant :</strong> {{ objectif.montant_cible|sub:objectif.montant|intcomma }} {{ objectif.devise }}</div> 
                 <hr>
+
+                <div class="alert alert-danger mt-3 d-none" id="depot-error-message{{ objectif.id }}"></div>
+                <div class="alert alert-success mt-3 d-none" id="depot-success-message{{ objectif.id }}"></div>
                 <form id="depotObjectifForm{{ objectif.id }}">
                     {% csrf_token %}
                     <input type="hidden" name="objectif_id" value="{{ objectif.id }}">
@@ -24,8 +28,7 @@
                         <label for="mot_de_passe_depot{{ objectif.id }}" class="form-label">Mot de passe</label>
                         <input type="password" class="form-control" id="mot_de_passe_depot{{ objectif.id }}" name="mot_de_passe" required>
                     </div>
-                    <div class="alert alert-danger mt-3 d-none" id="depot-error-message{{ objectif.id }}"></div>
-                    <div class="alert alert-success mt-3 d-none" id="depot-success-message{{ objectif.id }}"></div>
+
                     <button type="button" class="btn btn-primary" onclick="effectuerDepot('{{ objectif.id }}')">Déposer</button>
                 </form>
             </div>

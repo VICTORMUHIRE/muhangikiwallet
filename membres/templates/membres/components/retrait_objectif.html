@@ -24,6 +24,8 @@
                     <strong>{{ objectif.montant_cible|stringformat:".2f" }} {{ objectif.devise }}</strong>pour l'objectif
                     <strong>{{ objectif.nom }}</strong>?
                 </p>
+                <div class="alert alert-danger mt-3 d-none" id="retrait-error-message{{ objectif.id }}"></div>
+                <div class="alert alert-success mt-3 d-none" id="retrait-success-message{{ objectif.id }}"></div>
                 <form
                     method="post"
                     id="retraitObjectifForm{{ objectif.id }}" >
@@ -38,11 +40,10 @@
                             required
                         />
                     </div>
-                    <div class="alert alert-danger mt-3 d-none" id="retrait-error-message{{ objectif.id }}"></div>
-                    <div class="alert alert-success mt-3 d-none" id="retrait-success-message{{ objectif.id }}"></div>
+                    
                     <button
                         type="button" class="btn btn-sm btn-success"
-                        onclick="effectuerRetrait('{{ objectif.id }}')" >
+                        onclick="effectuerRetraitComplet('{{ objectif.id }}')" >
                         Confirmer le retrait
                     </button>
                 </form>
@@ -52,7 +53,7 @@
 </div>
 
 <script>
-    function effectuerRetrait(objectifId) {
+    function effectuerRetraitComplet(objectifId) {
         const form = document.getElementById(`retraitObjectifForm${objectifId}`);
         const passwordInput = document.getElementById(`mot_de_passe_retrait${objectifId}`);
         const csrfToken = form.querySelector('[name=csrfmiddlewaretoken]').value;
@@ -79,10 +80,7 @@
             if (data.success) {
                 successDiv.textContent = data.message;
                 successDiv.classList.remove('d-none');
-                setTimeout(() => {
-                    modal.hide();
-                    window.location.reload(); 
-                }, 1500);
+
             } else {
                 errorDiv.textContent = data.error;
                 errorDiv.classList.remove('d-none');
