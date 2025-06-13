@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.db import models
 from membres.models import Membres
 from organisations.models import Organisations
@@ -161,12 +162,22 @@ class EcheancePret(models.Model):
     pret = models.ForeignKey(Prets, on_delete=models.CASCADE, related_name="echeances")
     numero = models.PositiveIntegerField()
     date_echeance = models.DateTimeField()
-    montant = models.DecimalField(max_digits=12, decimal_places=5)
+    montant = models.DecimalField(max_digits=12, decimal_places=5) # This stays the original amount
+
+    montant_du = models.DecimalField(
+        max_digits=12,
+        decimal_places=5,
+        default=Decimal('0.00'), 
+        help_text="Montant restant à payer pour cette échéance."
+    )
+ 
     statut = models.CharField(max_length=20, choices=[
         ("en_attente", "En attente"),
         ("payé", "Payé"),
         ("échoué", "Échoué"),
         ("reporté", "Reporté"),
+        ("partiellement_payé", "Partiellement payé"), 
+        ("en_retard", "En retard"), 
     ], default="en_attente")
     penalite = models.DecimalField(max_digits=12, decimal_places=5, default=0)
     date_paiement = models.DateTimeField(null=True, blank=True)
@@ -174,6 +185,14 @@ class EcheancePret(models.Model):
 
     def est_en_grace(self):
         return self.statut == "échoué" and self.grace_jusqua and now() < self.grace_jusqua
+
+    def save(self, *args, **kwargs):
+        if not self.pk:  
+            self.montant_du = self.montant
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"Échéance {self.numero} du Prêt {self.pret.id} - Montant dû: {self.montant_du:.2f} (Original: {self.montant:.2f})"
 
 
 class RemboursementsPret(models.Model):

@@ -13,9 +13,12 @@ urlpatterns = [
     path("benefices/", views.benefices, name="benefices"),
     path("transfert/", views.transfert, name="transfert"),
     path("contributions/", views.contributions, name="contributions"),
-    path("transaction/<int:transaction_id>", views.transaction, name="transaction"),
+    path("transaction/<int:transaction_id>", views.transaction_detail, name="transaction"),
     path("transactions/", views.transactions, name="transactions"),
+    
+    
     path("demande_pret/", views.demande_pret, name="demande_pret"),
+    path('prets/payer-avance/<int:pret_id>/', views.payer_avance_pret, name='payer_avance_pret'),
 
 
     path("objectifs/", views.objectifs, name="objectifs"),

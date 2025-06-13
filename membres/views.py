@@ -3,6 +3,7 @@ import traceback
 from decimal import Decimal,InvalidOperation
 import json
 from django.db.models import Q
+from django.db import transaction 
 from django.contrib import messages
 from django.core.files.storage import FileSystemStorage
 from django.conf import settings
@@ -16,6 +17,7 @@ from django.template.defaultfilters import slugify
 from django.views.decorators.http import require_POST, require_GET
 from django.views.decorators.csrf import csrf_exempt
 from membres.service import benefices_actuelle, investissement_actuelle, rechargerCompteService
+from membres.tasks import partager_benefices
 from .models import Membres
 from .forms import MembresForm, ModifierMembresForm
 from administrateurs.models import Users, NumerosCompte,Villes, Communes, Quartiers, Avenues
@@ -493,6 +495,122 @@ def demande_pret(request):
     }
 
     return render(request, "membres/demande_pret.html", context)
+
+login_required
+@require_POST
+@csrf_exempt
+def payer_avance_pret(request, pret_id):
+    try:
+        data = json.loads(request.body)
+        montant_avance = data.get('montant_avance')
+        mot_de_passe = data.get('mot_de_passe')
+
+        if not montant_avance or not mot_de_passe:
+            return JsonResponse({'error': 'Le montant de l\'avance et le mot de passe sont requis.'}, status=400)
+
+        try:
+            montant_avance = Decimal(str(montant_avance))
+        except (ValueError, TypeError):
+            return JsonResponse({'error': 'Montant de l\'avance invalide (doit être un nombre).'}, status=400)
+
+        if montant_avance <= 0:
+            return JsonResponse({'error': 'Le montant de l\'avance doit être supérieur à zéro.'}, status=400)
+
+        pret = get_object_or_404(
+            Prets,
+            membre=request.user.membre,
+            pk=pret_id,
+            statut='Approuvé'
+        )
+
+        if not check_password(mot_de_passe, request.user.password):
+            return JsonResponse({'error': 'Mot de passe incorrect.'}, status=403)
+
+        solde_restant_pret = pret.montant_payer - pret.solde_remboursé
+
+        if montant_avance > solde_restant_pret:
+            return JsonResponse({
+                'error': f'Le montant de l\'avance ({montant_avance:.2f} {pret.devise}) est supérieur au solde restant du prêt ({solde_restant_pret:.2f} {pret.devise}).'
+            }, status=400)
+
+        membre = request.user.membre
+        compte = membre.compte_USD if pret.devise == "USD" else membre.compte_CDF
+
+        if compte.solde < montant_avance:
+            return JsonResponse({'error': f'Solde insuffisant sur votre compte {pret.devise}.'}, status=400)
+
+        with transaction.atomic():
+            compte.solde -= montant_avance
+            compte.save()
+
+            Transactions.objects.create(
+                membre=membre,
+                montant=montant_avance,
+                devise=pret.devise,
+                type="paiement_avance_pret",
+                statut="Approuvé",
+                date_approbation=timezone.now()
+            )
+
+            pret.solde_remboursé += montant_avance
+
+            montant_couvert_par_avance = montant_avance
+            echeances_payees_cette_avance = 0
+
+            echeances_a_payer = pret.echeances.filter(
+                statut__in=['en_attente', 'en_retard', 'partiellement_payé']
+            ).order_by('date_echeance')
+
+            for echeance in echeances_a_payer:
+                if montant_couvert_par_avance >= echeance.montant_du:
+                   
+                    montant_paye_pour_cette_echeance = echeance.montant_du
+                    echeance.montant_du = Decimal('0.00') # Set remaining amount to zero
+                    echeance.statut = 'payé'
+                    echeance.date_paiement = timezone.now()
+                    echeance.save()
+
+                    montant_couvert_par_avance -= montant_paye_pour_cette_echeance
+                    echeances_payees_cette_avance += 1
+
+                    partager_benefices(pret, montant_paye_pour_cette_echeance)
+
+                else:
+                    montant_paye_pour_cette_echeance = montant_couvert_par_avance
+                    echeance.montant_du -= montant_paye_pour_cette_echeance # Decrease the remaining amount
+                    echeance.statut = 'partiellement_payé' # Mark as partially paid
+                    echeance.save()
+
+                    # Share profits for the PARTIAL amount paid for this installment
+                    partager_benefices(pret, montant_paye_pour_cette_echeance)
+                    
+                    montant_couvert_par_avance = Decimal('0.00') # The advance is now exhausted
+                    break # Exit loop as advance is fully used
+
+            if pret.solde_remboursé >= pret.montant_payer:
+                pret.statut = 'Remboursé'
+                pret.date_remboursement = timezone.now()
+
+            pret.save()
+
+            return JsonResponse({
+                'success': True,
+                'message': f'Avance de {montant_avance:.2f} {pret.devise} effectuée avec succès ! {echeances_payees_cette_avance} échéance(s) entièrement payée(s). La dernière échéance a été ajustée si elle a été partiellement couverte.',
+                'nouveau_solde_rembourse': pret.solde_remboursé,
+                'solde_restant_pret': pret.montant_payer - pret.solde_remboursé,
+                'pret_statut': pret.statut
+            })
+
+    except Prets.DoesNotExist:
+        return JsonResponse({'error': 'Prêt introuvable ou non approuvé pour ce membre.'}, status=404)
+    except Exception as e:
+        print(f"Erreur inattendue dans payer_avance_pret: {e}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'error': 'Une erreur interne est survenue lors du paiement de l\'avance.'}, status=500)
+
+
+
 
 # Vue pour la page de gestion des objectifs du membre
 @login_required
@@ -1050,7 +1168,7 @@ def transactions(request):
 
 @login_required
 @verifier_membre
-def transaction(request, transaction_id):
+def transaction_detail(request, transaction_id):
     transaction = get_object_or_404(Transactions, pk=transaction_id, membre=request.user.membre)
     context = {
         "transaction": transaction

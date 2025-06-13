@@ -573,14 +573,14 @@ def prets(request):
 @verifier_admin
 def voir_pret(request, pret_id):
     pret = get_object_or_404(Prets, pk=pret_id)
-    solde_entreprise = solde_entreprise(pret.devise)
+    solde_entreprise_value = solde_entreprise(pret.devise)
     if request.method == "POST":
         mot_de_passe = request.POST.get("password")
         transaction_form = TransactionsForm(request.POST, instance=pret.transaction)
 
         if check_password(mot_de_passe, request.user.password):
             if transaction_form.is_valid():
-               if solde_entreprise > pret.montant:
+               if solde_entreprise_value > pret.montant:
                     pret.date_approbation = timezone.now()
                     pret.administrateur = request.user.admin
                     pret.statut = "Approuvé"
