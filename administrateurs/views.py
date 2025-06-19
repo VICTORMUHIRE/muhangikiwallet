@@ -13,16 +13,15 @@ from administrateurs.services import generer_echeances, generer_echeances_test_m
 from membres.models import Membres
 from organisations.models import Organisations
 from agents.models import Agents
-from .models import  NumerosCompte, Users, Constantes, HistoriqueConstantes
+from .models import  NumerosCompte, Users, Constantes
 from agents.models import Agents, NumerosAgent
 from agents.forms import AgentsForm, ModifierAgentsForm
 from organisations.models import Organisations
-from transactions.models import EcheancePret, RetraitContributions, Transactions, Prets, TypesPret, Contributions, DepotsObjectif, Retraits, Transferts, DepotsInscription, Benefices, RetraitsObjectif, AnnulationObjectif, RemboursementsPret, RetraitsAdmin, BalanceAdmin
+from transactions.models import  Retraits, Transactions, Prets, DepotsInscription, Benefices, RetraitsObjectif, AnnulationObjectif, RemboursementsPret, RetraitsAdmin, BalanceAdmin
 
 from .forms import AdministrateurForm, ConstantesForm
 from membres.forms import MembresForm, ModifierMembresForm
-from organisations.forms import OrganisationsForm
-from transactions.forms import TransactionsForm, TypesPretForm, ContributionsForm, PretsForm, TransfertsForm, RetraitsForm, DepotsInscriptionForm
+from transactions.forms import TransactionsForm, PretsForm, DepotsInscriptionForm
 from objectifs.models import Objectifs
 from django.utils import timezone
 from functools import wraps

@@ -53,6 +53,8 @@ INSTALLED_APPS = [
     'organisations',
     'administrateurs',
     'muhangiki_wallet',
+    'rest_framework',
+    'rest_framework.authtoken'
 ]
 
 MIDDLEWARE = [
@@ -94,29 +96,21 @@ WSGI_APPLICATION = 'muhangiki_wallet.wsgi.application'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    },
-    'defaul': {
+    # 'default': {
+    #     'ENGINE': 'django.db.backends.sqlite3',
+    #     'NAME': BASE_DIR / 'db.sqlite3',
+    # },
+    'default': {  
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'muhangikiwallet_muhangikiwallet', # Remplacez par le nom de votre base de données
-        'USER': 'muhangikiwallet_muhangik', # Remplacez par votre utilisateur de base de données
-        'PASSWORD': '@!rm0n123#', # Remplacez par votre mot de passe de base de données
-        'HOST': 'localhost',
-        'PORT': '3306',
-        'OPTIONS':{
-            'init_command':"SET sql_mode='STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION'"
-            },
-        
-    },
-    'mysql': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'muhangiki_wallet', # Remplacez par le nom de votre base de données
-        'USER': 'root', # Remplacez par votre utilisateur de base de données
-        'PASSWORD': '', # Remplacez par votre mot de passe de base de données
-        'HOST': 'localhost',
-        'PORT': '3306',
+        'NAME': 'muhangiki_wallet',     
+        'USER': 'django',                 
+        'PASSWORD': '1234',                 
+        'HOST': '172.24.80.1',
+        'PORT': '3306',                 
+        'OPTIONS': {
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION'",
+            'charset': 'utf8mb4', 
+        }
     },
     'postgres': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -198,6 +192,16 @@ BOOTSTRAP5 = {
     'use_bootstrap_5': True,
 }
 
+# rest_framework configuration
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.AllowAny',
+    ],
+}
 
 
 
@@ -214,10 +218,6 @@ CELERY_TIMEZONE = 'Africa/Lubumbashi'  # Ajustez votre timezone (pour Goma, pour
 from celery.schedules import crontab
 
 CELERY_BEAT_SCHEDULE = {
-    # 'hello-world-every-2-seconds': {
-    #     'task': 'membres.tasks.hello_world_task',
-    #     'schedule': 2.0,
-    # },
     # 'remboursement_automatique_pret_every_midnight': {
     #     'task': 'membres.tasks.remboursement_automatique_pret',
     #     'schedule': crontab(hour=12, minute=0),
@@ -227,3 +227,18 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': timedelta(seconds=120),
     },
 }
+
+
+# # Load environment variables from .env file
+# load_dotenv(os.path.join(BASE_DIR, '.env'))
+
+
+# # Maintenant, vous pouvez accéder à vos variables comme ceci:
+# SERDIPAY_USERNAME = os.getenv('SERDIPAY_USERNAME')
+# SERDIPAY_PASSWORD = os.getenv('SERDIPAY_PASSWORD')
+# SERDIPAY_PIN = os.getenv('SERDIPAY_PIN')
+# SERDIPAY_API_ID = os.getenv('SERDIPAY_API_ID')
+
+# SERDIPAY_TOKEN_URL = os.getenv('SERDIPAY_TOKEN_URL')
+# SERDIPAY_C2B_URL = os.getenv('SERDIPAY_C2B_URL')
+# SERDIPAY_B2C_URL = os.getenv('SERDIPAY_B2C_URL')

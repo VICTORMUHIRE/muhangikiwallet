@@ -1,11 +1,11 @@
 from datetime import timedelta
 from django.db.models import Sum
-from transactions.models import Contributions, EcheancePret, Prets, RemboursementsPret, RetraitContributions, Transactions
+from transactions.models import Contributions, EcheancePret, Prets, RemboursementsPret, Retraits, Transactions
 
 def solde_entreprise(devise):
 
     investissements = Contributions.objects.filter(devise=devise).aggregate(Sum('montant'))['montant__sum'] or 0
-    retrait_investissement = RetraitContributions.objects.filter(devise=devise).aggregate(Sum('montant'))['montant__sum'] or 0
+    retrait_investissement = Retraits.objects.filter(devise=devise, transaction__type = "retrait_investissement" ).aggregate(Sum('montant'))['montant__sum'] or 0
     total_montant_dettes_remboursees = RemboursementsPret.objects.filter(devise=devise, statut="Approuvé").aggregate(total=Sum('montant'))['total'] or 0
     total_prets = Prets.objects.filter(devise=devise, statut__in=["Approuvé", "Remboursé", "Depassé"]).aggregate(total=Sum('montant'))['total'] or 0
     total_retraits_admin = Transactions.objects.filter(devise=devise, type="retrait_admin", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0

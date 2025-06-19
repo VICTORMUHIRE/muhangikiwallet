@@ -29,7 +29,7 @@ OPERATEURS = [
 ]
 
 TRANSACTION_CHOICES = [
-    ('retrait', 'Retrait'),
+    ('retrait_benefice', 'Retrait Benefice'),
     ('retrait_tout', 'Retrait tout'),
     ('retrait_admin', 'Retrait admin'),
     ('retrait_objectif', 'Retrait objectif'),
@@ -323,28 +323,6 @@ class Retraits(models.Model):
     date_approbation = models.DateTimeField(blank=True, null=True, verbose_name="Date d'approbation")
 
     transaction = models.ForeignKey(Transactions, on_delete=models.CASCADE, blank=True, related_name="retrait", verbose_name="Transaction")
-
-    description = models.TextField(blank=True, null=True, verbose_name="Description")
-    statut = models.CharField(max_length=20, choices=(("En attente", "En attente"), ("Approuvé", "Approuvé"), ("Rejeté", "Rejeté"),  ("Annulé", "Annulé")), default="En attente", verbose_name="Statut")
-
-
-
-    def __str__(self):
-        return f"Retrait de {self.montant} - {self.date}"
-
-    class Meta:
-        verbose_name = "Retraits"
-        verbose_name_plural = "Retraits"
-
-class RetraitContributions(models.Model):
-    membre = models.ForeignKey(Membres, on_delete=models.CASCADE, verbose_name="Membres")
-    montant = models.FloatField(verbose_name="Montant")
-    devise = models.CharField(max_length=3, choices=DEVISE_CHOICES, verbose_name="Devise")
-    frais = models.FloatField(verbose_name="Frais")
-    date = models.DateTimeField(auto_now_add=True, verbose_name="Date")
-    date_approbation = models.DateTimeField(blank=True, null=True, verbose_name="Date d'approbation")
-    
-    transaction = models.ForeignKey(Transactions, on_delete=models.CASCADE, blank=True, related_name="retrait_investissement", verbose_name="Transaction")
 
     description = models.TextField(blank=True, null=True, verbose_name="Description")
     statut = models.CharField(max_length=20, choices=(("En attente", "En attente"), ("Approuvé", "Approuvé"), ("Rejeté", "Rejeté"),  ("Annulé", "Annulé")), default="En attente", verbose_name="Statut")

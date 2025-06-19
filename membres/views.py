@@ -16,7 +16,8 @@ from django.db.models import Sum
 from django.template.defaultfilters import slugify
 from django.views.decorators.http import require_POST, require_GET
 from django.views.decorators.csrf import csrf_exempt
-from membres.service import benefices_actuelle, investissement_actuelle, rechargerCompteService
+from membres.service import benefices_actuelle, investissement_actuelle
+from membres.services import serdipay_service
 from membres.tasks import partager_benefices
 from .models import Membres
 from .forms import MembresForm, ModifierMembresForm
@@ -25,14 +26,37 @@ from objectifs.models import Objectifs
 from objectifs.forms import ObjectifsForm
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import login, update_session_auth_hash
-from transactions.models import BalanceAdmin, RetraitContributions, Solde, Transactions, Prets, RemboursementsPret, TypesPret, Contributions, DepotsObjectif, Retraits, Transferts, DepotsInscription, Benefices, RetraitsObjectif, AnnulationObjectif
-from transactions.forms import  PretsForm, SoldeForm, TransfertsForm,TransactionsForm, DepotsObjectifForm
-from datetime import datetime, timedelta
+from transactions.models import BalanceAdmin, Solde, Transactions, Prets, TypesPret, Contributions, DepotsObjectif, Retraits, Transferts, DepotsInscription, Benefices, RetraitsObjectif
+from transactions.forms import  PretsForm, SoldeForm, TransfertsForm,TransactionsForm
+from datetime import timedelta
 from django.utils import timezone
 from functools import wraps
 from random import randint
 from django.http import JsonResponse
 from django.db import transaction as db_transaction
+
+
+from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+
+from django.contrib.auth import authenticate, login, logout
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import json
+
+from .models import Registre
+from rest_framework.views import APIView
+from membres.forms import MembresForm  
+from rest_framework.authtoken.models import Token
+from django.contrib.auth.hashers import check_password
+from django.contrib.auth import get_user_model
+
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework import status
+from rest_framework.permissions import AllowAny 
+from rest_framework.response import Response
+from .serializers import MembreRegistrationSerializer
 
 def verifier_membre(func):
     def verify(request, *args, **kwargs):
@@ -65,18 +89,15 @@ def get_avenues(request):
     avenues = Avenues.objects.filter(quartier_id=quartier_id).values('id', 'nom')
     return JsonResponse(list(avenues), safe=False)
 
-# Vue pour la page de statut des membres
-# Vue pour la page de statut des membres
 @login_required
 def statut(request):
     depot_inscription = DepotsInscription.objects.filter(membre=request.user.membre).first()
 
     if request.method == 'POST':
         form = TransactionsForm(request.POST, request.FILES)
-        membre_form = ModifierMembresForm(request.POST, request.FILES, instance=request.user.membre)       
+        membre_form = ModifierMembresForm(request.POST, request.FILES, instance=request.user.membre)     
         
         mot_de_passe = request.POST.get('mot_de_passe')
-
         if form.is_valid():
             if check_password(mot_de_passe, request.user.password):
                 transaction = form.save(commit=False)
@@ -125,6 +146,31 @@ def statut(request):
     return render(request, 'membres/statut.html', context) 
 
 
+@api_view(['POST']) 
+@permission_classes([AllowAny])
+def api_inscription_membre(request):
+
+    if request.method == 'POST':
+        serializer = MembreRegistrationSerializer(data=request.data)
+        
+        if serializer.is_valid():
+            try:
+                membre = serializer.save() 
+                
+                return Response(
+                    {"message": "Inscription réussie.", "membre_id": membre.id, "username": membre.user.username},
+                    status=status.HTTP_201_CREATED
+                )
+            except Exception as e:
+                return Response(
+                    {"error": f"Une erreur est survenue lors de l'inscription: {str(e)}"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+        else:
+            # Renvoie les erreurs de validation du serializer
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 # Vue pour la page d'inscription des membres
 def inscription(request):
     if request.user.is_authenticated:
@@ -138,7 +184,6 @@ def inscription(request):
 
             membre.user = Users.objects.create_user(
                 username=form.cleaned_data['numero_telephone'],
-                # email=form.cleaned_data['email'],
                 password=form.cleaned_data['mot_de_passe'],
                 first_name=form.cleaned_data['nom'],
                 last_name=form.cleaned_data['prenom'] or form.cleaned_data['postnom'],
@@ -166,9 +211,6 @@ def inscription(request):
         
         else:
             messages.error(request, "Veuillez corriger les erreurs du formulaire")
-            # fs = FileSystemStorage()
-            # for name, file in request.FILES.items():
-            #     filename = fs.save("{name}/" + file.name, file)
 
     else: form = MembresForm()
     
@@ -365,8 +407,8 @@ def demande_pret(request):
     taux_de_change = 2800
     membre = request.user.membre
 
-    solde_contribution_CDF = investissement_actuelle(membre, "CDF")
-    solde_contribution_USD = investissement_actuelle(membre, "USD")
+    solde_contribution_CDF = Decimal(str(investissement_actuelle(membre, "CDF"))) 
+    solde_contribution_USD = Decimal(str(investissement_actuelle(membre, "USD"))) 
 
     max_possible_cdf = solde_contribution_CDF + (solde_contribution_USD * taux_de_change)
     max_possible_usd = solde_contribution_USD + (solde_contribution_CDF / taux_de_change)
@@ -555,7 +597,6 @@ def payer_avance_pret(request, pret_id):
             pret.solde_remboursé += montant_avance
 
             montant_couvert_par_avance = montant_avance
-            echeances_payees_cette_avance = 0
 
             echeances_a_payer = pret.echeances.filter(
                 statut__in=['en_attente', 'en_retard', 'partiellement_payé']
@@ -571,21 +612,23 @@ def payer_avance_pret(request, pret_id):
                     echeance.save()
 
                     montant_couvert_par_avance -= montant_paye_pour_cette_echeance
-                    echeances_payees_cette_avance += 1
 
                     partager_benefices(pret, montant_paye_pour_cette_echeance)
 
-                else:
+                elif montant_couvert_par_avance < echeance.montant_du and montant_couvert_par_avance > 0 :
+
                     montant_paye_pour_cette_echeance = montant_couvert_par_avance
                     echeance.montant_du -= montant_paye_pour_cette_echeance # Decrease the remaining amount
                     echeance.statut = 'partiellement_payé' # Mark as partially paid
                     echeance.save()
 
-                    # Share profits for the PARTIAL amount paid for this installment
                     partager_benefices(pret, montant_paye_pour_cette_echeance)
                     
                     montant_couvert_par_avance = Decimal('0.00') # The advance is now exhausted
-                    break # Exit loop as advance is fully used
+                    break 
+                
+                else:
+                    break
 
             if pret.solde_remboursé >= pret.montant_payer:
                 pret.statut = 'Remboursé'
@@ -608,9 +651,6 @@ def payer_avance_pret(request, pret_id):
         import traceback
         traceback.print_exc()
         return JsonResponse({'error': 'Une erreur interne est survenue lors du paiement de l\'avance.'}, status=500)
-
-
-
 
 # Vue pour la page de gestion des objectifs du membre
 @login_required
@@ -659,7 +699,6 @@ def objectifs(request):
         "solde_objectifs_USD": solde_objectifs_USD
     }
     return render(request, "membres/objectifs.html", context)
-
 
 
 @login_required
@@ -911,6 +950,7 @@ def retrait_objectif(request, objectif_id):
 
 @login_required
 @verifier_membre
+@require_POST
 def archiver_objectif(request, objectif_id):
     membre = request.user.membre
     objectif = get_object_or_404(Objectifs, membre=membre, pk=objectif_id, statut__in=['En cours'], montant__lte=0 )
@@ -973,8 +1013,6 @@ def benefices(request):
     membre = get_object_or_404(Membres, user=request.user)
     frais_retrais_benefice = 0.025
 
-    #verfication s'il y a deja eu un retrait
-    retraits = Retraits.objects.filter(membre=membre, statut="Approuvé")
     benefices = Benefices.objects.filter(membre=membre)
 
     montant_benefices_cdf = benefices_actuelle(membre, "CDF")
@@ -1001,13 +1039,13 @@ def benefices(request):
                         membre=membre,
                         montant=montant_recu,
                         devise=transaction.devise,
-                        type="retrait"
+                        type="retrait_benefice"
                     )
                 )
                 BalanceAdmin.objects.create(
                         montant=montant_admin,
                         devise=transaction.devise,
-                        type="Retrait benefice"
+                        type="retrait_benefice"
                  )
 
                 # Crédit du compte
@@ -1199,7 +1237,7 @@ def retirer_investissement(request):
     solde_contribution_CDF = investissement_actuelle(membre,"CDF")
     solde_contribution_USD = investissement_actuelle(membre,"USD")
 
-    Retraitcontrubution = RetraitContributions.objects.filter(transaction__membre=request.user.membre)
+    Retraitcontrubution = Retraits.objects.filter(transaction__membre=request.user.membre, transaction__type = "retrait_investissement")
     frais = Decimal(0.1)
     
     if request.method == 'POST':
@@ -1222,7 +1260,7 @@ def retirer_investissement(request):
                         montant_admin = frais * Decimal(montant)
                         montant_membre = Decimal(montant) - montant_admin
 
-                        RetraitContributions.objects.create(
+                        Retraits.objects.create(
                             membre=membre,
                             montant=montant,
                             frais=frais,
@@ -1232,7 +1270,7 @@ def retirer_investissement(request):
                                 membre=membre,
                                 montant=montant_membre,
                                 devise=devise,
-                                type="retrait investissement",
+                                type="retrait_investissement",
                                 
                             )
                         )
@@ -1264,12 +1302,10 @@ def notifications(request):
     return render(request, "membres/notifications.html")
 
 
-# Traite le payement via mobile money chez un membre
 @login_required
-@verifier_membre
+@verifier_membre 
 def recharger_compte(request):
     membre = request.user.membre
-    frais_retrait = Decimal("0.035")
 
     if request.method == 'POST' and request.headers.get('Content-Type') == 'application/json' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         try:
@@ -1283,54 +1319,69 @@ def recharger_compte(request):
             if not check_password(mot_de_passe, request.user.password):
                 return JsonResponse({'error': "Mot de passe incorrect."}, status=401)
 
+            # Assurez-vous que SoldeForm est correctement défini et importé
             form = SoldeForm({'montant': montant, 'devise': devise, 'account_sender': numero})
 
             if form.is_valid():
                 montant_decimal = form.cleaned_data['montant']
                 devise_cleaned = form.cleaned_data['devise']
                 numero_cleaned = form.cleaned_data['account_sender']
-                net_montant = montant_decimal - (frais_retrait * montant_decimal)
-
+                net_montant = montant_decimal 
+                
                 if montant_decimal <= 0:
                     return JsonResponse({'error': "Montant invalide."}, status=400)
+                
+                try:
+                    serdipay_response = serdipay_service.recharge_account_c2b(
+                        client_phone=numero_cleaned,
+                        amount=float(montant_decimal), # L'API attend souvent un float
+                        currency=devise_cleaned,
+                        telecom_provider=fournisseur
+                    )
 
-                reference = f"TX-{request.user.id}-{timezone.now().strftime('%Y%m%d%H%M%S')}"
-                paiement_data = {
-                    "numero": numero_cleaned,
-                    "montant": float(montant_decimal),
-                    "devise": devise_cleaned,
-                    "reference": reference,
-                    "fournisseur": fournisseur
-                }
+                    session_status = serdipay_response.get('payment', {}).get('sessionStatus')
+                    serdipay_message = serdipay_response.get('message', 'Transaction SerdiPay traitée.')
 
-                # Appel à l'API de paiement
-                if rechargerCompteService(paiement_data):
-                    with db_transaction.atomic():
-                        transaction = Transactions.objects.create(
-                            membre=membre,
-                            type="Rechargement compte",
-                            montant=net_montant,
-                            devise=devise_cleaned,
-                            statut="Approuvé",
-                            date_approbation=timezone.now()
-                        )
 
-                        Solde.objects.create(
-                            transaction=transaction,
-                            montant=net_montant,
-                            devise=devise_cleaned,
-                            account_sender=numero_cleaned,
-                            frais_retrait=frais_retrait
-                        )
+                    if session_status == 2: 
+                        with db_transaction.atomic():
+                            transaction = Transactions.objects.create(
+                                membre=membre,
+                                type="recharger_compte",
+                                montant=net_montant,
+                                devise=devise_cleaned,
+                                statut="Approuvé",
+                                date_approbation=timezone.now(),
+                            )
 
-                        # Crédit du compte
-                        compte = membre.compte_USD if devise_cleaned == "USD" else membre.compte_CDF
-                        compte.solde += net_montant
-                        compte.save()
+                            Solde.objects.create(
+                                transaction=transaction,
+                                montant=net_montant,
+                                devise=devise_cleaned,
+                                account_sender=numero_cleaned,
 
-                    return JsonResponse({'success': True, 'message': "Rechargement effectué avec succès."}, status=200)
-                else:
-                    return JsonResponse({'error': "Échec du paiement. Veuillez réessayer."}, status=500)
+                            )
+
+                            # Crédit du compte si le statut est un succès immédiat
+                            compte = membre.compte_USD if devise_cleaned == "USD" else membre.compte_CDF
+                            compte.solde += net_montant
+                            compte.save()
+
+                        return JsonResponse({'success': True, 'message': "Rechargement effectué avec succès."}, status=200)
+
+                    elif serdipay_response.get('message') == "Transaction in process (callback)":
+                         return JsonResponse({'success': True, 'message': "Rechargement en cours de traitement. Veuillez vérifier le statut dans un instant."}, status=202) 
+                    else:
+                        # Gérer les autres cas où l'API n'a pas renvoyé un succès clair
+                        error_from_serdipay = serdipay_response.get('message', 'Réponse SerdiPay inattendue.')
+                        return JsonResponse({'error': f"Échec du paiement: {error_from_serdipay}"}, status=500)
+
+                except serdipay_service.SerdiPayServiceError as e:
+                    # Capture les exceptions levées par le SerdiPayService
+                    return JsonResponse({'error': f"Erreur lors de l'appel SerdiPay: {str(e)}"}, status=500)
+                except Exception as e:
+                    # Toute autre erreur inattendue lors du traitement
+                    return JsonResponse({'error': f"Une erreur interne est survenue: {str(e)}"}, status=500)
             else:
                 return JsonResponse({'errors': form.errors.as_json()}, status=400)
 
@@ -1345,3 +1396,115 @@ def recharger_compte(request):
             "form": form,
             "membre": membre,
         })
+
+
+# methodes api laravels
+@csrf_exempt
+def api_login_view(request):
+    if request.method == "POST":
+        if not request.body:
+            return JsonResponse({"status": "error", "message": "Empty body"}, status=400)
+
+        try:
+            data = json.loads(request.body)
+        except json.JSONDecodeError as e:
+            return JsonResponse({"status": "error", "message": f"Invalid JSON: {str(e)}"}, status=400)
+
+        username = data.get("username")
+        password = data.get("password")
+
+        if not username or not password:
+            return JsonResponse({"status": "error", "message": "Votre numéro et mot de passe sont obligatoire"}, status=400)
+
+        user = authenticate(request, username=username, password=password)
+
+        if user is not None:
+            login(request, user)
+
+            # Créer ou récupérer un token pour l'utilisateur
+            token, created = Token.objects.get_or_create(user=user)
+
+            # (optionnel) Log dans Registre
+            Registre.objects.create(
+                user=request.user,
+                user_agent=request.META.get("HTTP_USER_AGENT"),
+            )
+
+            return JsonResponse({
+                "status": "success",
+                "message": "Login successful",
+                "token": token.key,  # renvoyer le token ici
+                "username": user.username,
+                "nom": user.first_name,
+                "prenom": user.last_name,
+                "type": user.type,
+                "id": user.id,               
+             })
+        else:
+            return JsonResponse({"status": "error", "message": "Votre numéro ou mot de passe est incorrect"}, status=401)
+
+    return JsonResponse({"status": "error", "message": "Invalid method, POST required"}, status=405)
+
+User = get_user_model()
+@csrf_exempt
+def api_check_pwd_by_id(request):
+    if request.method == "POST":
+        if not request.body:
+            return JsonResponse({"status": "error", "message": "Empty body"}, status=400)
+
+        try:
+            data = json.loads(request.body)
+        except json.JSONDecodeError as e:
+            return JsonResponse({"status": "error", "message": f"Invalid JSON: {str(e)}"}, status=400)
+
+        user_id = data.get("id")
+        password = data.get("password")
+
+        if not user_id or not password:
+            return JsonResponse({"status": "error", "message": "ID and password are required"}, status=400)
+
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return JsonResponse({"status": "error", "message": "User not found"}, status=404)
+
+        if check_password(password, user.password):
+            return JsonResponse({
+                "status": "success",
+                "message": "Password is correct"
+            })
+        else:
+            return JsonResponse({
+                "status": "error",
+                "message": "Votre mot de passe est incorrect"
+            }, status=401)
+
+    return JsonResponse({"status": "error", "message": "Invalid method, POST required"}, status=405)
+@csrf_exempt
+def api_logout_view(request):
+    if request.method == "POST":
+        try:
+            # Récupère le token depuis les headers
+            auth_header = request.META.get('HTTP_AUTHORIZATION')
+            if auth_header is None or not auth_header.startswith('Token '):
+                return JsonResponse({"status": "error", "message": "No token provided"}, status=401)
+
+            token_key = auth_header.split(' ')[1]
+
+            # Supprime le token
+            try:
+                token = Token.objects.get(key=token_key)
+                token.delete()
+            except Token.DoesNotExist:
+                return JsonResponse({"status": "error", "message": "Invalid token"}, status=401)
+
+            # Déconnecte l'utilisateur
+            logout(request)
+
+            return JsonResponse({"status": "success", "message": "Logout successful"})
+
+        except Exception as e:
+            return JsonResponse({"status": "error", "message": f"Unexpected error: {str(e)}"}, status=500)
+
+    return JsonResponse({"status": "error", "message": "Invalid method, POST required"}, status=405)
+

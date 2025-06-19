@@ -53,3 +53,16 @@ class Membres(models.Model):
     class Meta:
         verbose_name = _("Membre")
         verbose_name_plural = _("Membres")
+
+
+class Registre(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user_agent = models.TextField(verbose_name="User agent")
+    date = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user} - {self.date}"
+
+    class Meta:
+        verbose_name = _("Registre")
+        verbose_name_plural = _("Registres")
