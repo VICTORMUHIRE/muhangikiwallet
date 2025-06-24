@@ -57,25 +57,24 @@
             box-shadow: 0px -2px 5px rgba(0, 0, 0, 0.1);
             z-index: 100; /* Assurez-vous qu'il soit au-dessus des autres éléments */
         }
+        .bottom-ul{
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+        }
 
-        .bottom-app-bar a {
+        .bottom-app-bar li{
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            width: 25%; /* 4 éléments dans la barre d'application inférieure */
             padding: 15px 0;
             text-decoration: none;
             color: #333;
-        }
-
-        .bottom-app-bar a i {
-            font-size: 24px;
-            margin-bottom: 5px;
-        }
-
-        .bottom-app-bar a span {
-            display: none;
+            a{
+                text-decoration: none;
+                color: #616161;
+            }
         }
 
         .bottom-app-bar a:hover i {
@@ -207,7 +206,6 @@
     <div class="top-app-bar bg-white p-2 d-flex align-items-center justify-content-between">
         <a class="navbar-brand d-flex align-items-center justify-content-center" href="{% url 'membres:home' %}">
             <img src="{% static 'LOGO_MUHANGIKI_WALLET_PRINCIPALE.png' %}" alt="Logo Muhangiki Wallet" height="40" class="d-inline-block">
-            <h5 class="ms-2">Muhangiki Wallet</h5>
         </a>
         {% if request.user.is_authenticated %}
         <div class="d-flex align-items-center justify-content-center">
@@ -260,8 +258,7 @@
             <!-- Logo & Titre -->
             <div class="sidebar-section-title px-3">
                 <a class="navbar-brand align-middle" href="{% url 'membres:home' %}">
-                <img src="{% static 'LOGO_MUHANGIKI_WALLET_NOIR.png' %}" alt="Logo Muhangiki Wallet" height="50" class="d-inline-block" />
-                <span>Muhangiki Wallet</span>
+                <img src="{% static 'LOGO_MUHANGIKI_WALLET_PRINCIPALE.png' %}" alt="Logo Muhangiki Wallet" height="50" class="d-inline-block" />
                 </a>
             </div>
         
@@ -283,7 +280,7 @@
         
                 <li class="nav-item">
                 <a class="nav-link {% if '/contributions/' in request.path %}active{% endif %}" href="{% url 'membres:contributions' %}">
-                    <i class="fa fa-chart-pie me-2"></i> Investissements
+                    <i class="fa fa-chart-pie me-2"></i> Crowdlending
                 </a>
                 </li>
 
@@ -363,27 +360,45 @@
 
     <!-- Barre d'application en bas (pour mobile) -->
     {% if request.user.is_authenticated %}
-    <div class="bottom-app-bar">
-            <a href="{% url 'membres:home' %}" class="nav-link {% if request.path == '/membres/' %}active{% endif %}">
-                <i class="fa fa-home"></i>
-                <span>Accueil</span>
-            </a>
-            <a href="{% url 'membres:contributions' %}" class="nav-link {% if '/contributions/' in request.path %}active{% endif %}">
-                <i class="fa fa-donate"></i>
-                <span>Contributions</span>
-            </a>
-            <a href="{% url 'membres:objectifs' %}" class="nav-link {% if '/objectifs/' in request.path %}active{% endif %}">
-                <i class="fa fa-trophy"></i>
-                <span>Objectifs</span>
-            </a>
-            <a href="{% url 'membres:transactions' %}" class="nav-link {% if '/transactions/' in request.path %}active{% endif %}">
-                <i class="fa fa-exchange-alt"></i>
-                <span>Transactions</span>
-            </a>
-            <a href="{% url 'membres:parametres' %}" class="nav-link {% if '/parametres/' in request.path %}active{% endif %}">
-                <i class="fa fa-user-cog"></i>
-                <span>Paramètres</span>
-            </a>
+        <div class="bottom-app-bar">
+            <ul class="nav bottom-ul">
+                    {% if request.user.is_authenticated %}
+                    
+                    <li class="nav-item">
+                    <a class="nav-link {% if request.path == '/membres/' %}active{% endif %}" href="{% url 'membres:home' %}">
+                        <i class="fa fa-home me-2"></i> 
+                    </a>
+                    </li>
+
+                    <li class="nav-item">
+                    <a class="nav-link {% if '/balance/' in request.path %}active{% endif %}" href="{% url 'membres:balance' %}">
+                        <i class="fa fa-coins me-2"></i> 
+                    </a>
+                    </li>
+            
+                    <li class="nav-item">
+                    <a class="nav-link {% if '/contributions/' in request.path %}active{% endif %}" href="{% url 'membres:contributions' %}">
+                        <i class="fa fa-chart-pie me-2"></i> 
+                    </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link {% if '/demande_pret/' in request.path %}active{% endif %}" href="{% url 'membres:demande_pret' %}">
+                            <i class="fa fa-hand-holding-usd me-2"></i> 
+                        </a>
+                    </li>
+
+            
+                    <li class="nav-item">
+                    <a class="nav-link {% if '/objectifs/' in request.path %}active{% endif %}" href="{% url 'membres:objectifs' %}">
+                        <i class="fa fa-bullseye me-2"></i> 
+                    </a>
+                    </li>
+            
+                   
+
+                    {% endif %}
+            </ul>
         </div>
     {% endif %}
 

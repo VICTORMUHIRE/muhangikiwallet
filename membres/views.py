@@ -1,7 +1,7 @@
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned 
-import traceback
+import traceback, json
+
 from decimal import Decimal,InvalidOperation
-import json
 from django.db.models import Q
 from django.db import transaction 
 from django.contrib import messages
@@ -17,7 +17,7 @@ from django.template.defaultfilters import slugify
 from django.views.decorators.http import require_POST, require_GET
 from django.views.decorators.csrf import csrf_exempt
 from membres.service import benefices_actuelle, investissement_actuelle
-from membres.services import serdipay_service
+from membres.services.serdipay_service import SerdiPayService, SerdiPayServiceError
 from membres.tasks import partager_benefices
 from .models import Membres
 from .forms import MembresForm, ModifierMembresForm
@@ -56,7 +56,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework import status
 from rest_framework.permissions import AllowAny 
 from rest_framework.response import Response
-from .serializers import MembreRegistrationSerializer
+from .serializers import MembreRegistrationSerializer, RechargementSerializer
 
 def verifier_membre(func):
     def verify(request, *args, **kwargs):
@@ -1302,100 +1302,122 @@ def notifications(request):
     return render(request, "membres/notifications.html")
 
 
-@login_required
-@verifier_membre 
-def recharger_compte(request):
+from rest_framework.permissions import IsAuthenticated 
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@verifier_membre # Assurez-vous que ce décorateur fonctionne comme attendu et ne lève pas d'erreurs inattendues
+def api_recharger_compte(request):
+
+    serdipay_service = SerdiPayService()
+
+    if not hasattr(request.user, 'membre'):
+        return Response({'error': "Utilisateur non associé à un membre."}, status=status.HTTP_403_FORBIDDEN)
+    
     membre = request.user.membre
 
-    if request.method == 'POST' and request.headers.get('Content-Type') == 'application/json' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+    serializer = RechargementSerializer(data=request.data, context={'request': request})
+    
+    if serializer.is_valid():
+        montant_decimal = serializer.validated_data['montant']
+        devise_cleaned = serializer.validated_data['devise']
+        numero_cleaned = serializer.validated_data['account_sender']
+        fournisseur = serializer.validated_data['fournisseur']
+        
+        net_montant = montant_decimal 
+
+        if net_montant <= 0: 
+            return Response({'error': "Montant invalide ou résultant en un montant net négatif."}, status=status.HTTP_400_BAD_REQUEST)
+
         try:
-            data = json.loads(request.body.decode('utf-8'))
-            montant = data.get('montant')
-            devise = data.get('devise')
-            mot_de_passe = data.get('password')
-            numero = data.get('account_sender')
-            fournisseur = data.get('fournisseur')
+            serdipay_response = serdipay_service.recharge_account_c2b(
+                client_phone=numero_cleaned,
+                amount=float(montant_decimal), 
+                currency=devise_cleaned,
+                telecom_provider=fournisseur
+            )
 
-            if not check_password(mot_de_passe, request.user.password):
-                return JsonResponse({'error': "Mot de passe incorrect."}, status=401)
+            # Vérifiez la structure de serdipay_response avant d'y accéder
+            session_status = serdipay_response.get('payment', {}).get('sessionStatus')
+            serdipay_message = serdipay_response.get('message', 'Transaction SerdiPay traitée.')
 
-            # Assurez-vous que SoldeForm est correctement défini et importé
-            form = SoldeForm({'montant': montant, 'devise': devise, 'account_sender': numero})
-
-            if form.is_valid():
-                montant_decimal = form.cleaned_data['montant']
-                devise_cleaned = form.cleaned_data['devise']
-                numero_cleaned = form.cleaned_data['account_sender']
-                net_montant = montant_decimal 
-                
-                if montant_decimal <= 0:
-                    return JsonResponse({'error': "Montant invalide."}, status=400)
-                
-                try:
-                    serdipay_response = serdipay_service.recharge_account_c2b(
-                        client_phone=numero_cleaned,
-                        amount=float(montant_decimal), # L'API attend souvent un float
-                        currency=devise_cleaned,
-                        telecom_provider=fournisseur
+            if session_status == 2: # Succès immédiat
+                with db_transaction.atomic():
+                    transaction_obj = Transactions.objects.create(
+                        membre=membre,
+                        type="recharger_compte",
+                        montant=net_montant,
+                        devise=devise_cleaned,
+                        statut="Approuvé",
+                        date_approbation=timezone.now(),
+                        # serdipay_transaction_id=serdipay_response.get('transactionId') # Si disponible et utile
                     )
 
-                    session_status = serdipay_response.get('payment', {}).get('sessionStatus')
-                    serdipay_message = serdipay_response.get('message', 'Transaction SerdiPay traitée.')
+                    Solde.objects.create(
+                        transaction=transaction_obj,
+                        montant=net_montant,
+                        devise=devise_cleaned,
+                        account_sender=numero_cleaned,
+                        # frais_retrait=frais_retrait # Si vous voulez enregistrer les frais
+                    )
 
+                    if devise_cleaned == "USD":
+                        compte = membre.compte_USD
+                    else: # Assuming CDF
+                        compte = membre.compte_CDF
+                    
+                    compte.solde += net_montant
+                    compte.save()
 
-                    if session_status == 2: 
-                        with db_transaction.atomic():
-                            transaction = Transactions.objects.create(
-                                membre=membre,
-                                type="recharger_compte",
-                                montant=net_montant,
-                                devise=devise_cleaned,
-                                statut="Approuvé",
-                                date_approbation=timezone.now(),
-                            )
+                return Response(
+                    {'success': True, 'message': "Rechargement effectué avec succès."},
+                    status=status.HTTP_200_OK
+                )
 
-                            Solde.objects.create(
-                                transaction=transaction,
-                                montant=net_montant,
-                                devise=devise_cleaned,
-                                account_sender=numero_cleaned,
-
-                            )
-
-                            # Crédit du compte si le statut est un succès immédiat
-                            compte = membre.compte_USD if devise_cleaned == "USD" else membre.compte_CDF
-                            compte.solde += net_montant
-                            compte.save()
-
-                        return JsonResponse({'success': True, 'message': "Rechargement effectué avec succès."}, status=200)
-
-                    elif serdipay_response.get('message') == "Transaction in process (callback)":
-                         return JsonResponse({'success': True, 'message': "Rechargement en cours de traitement. Veuillez vérifier le statut dans un instant."}, status=202) 
-                    else:
-                        # Gérer les autres cas où l'API n'a pas renvoyé un succès clair
-                        error_from_serdipay = serdipay_response.get('message', 'Réponse SerdiPay inattendue.')
-                        return JsonResponse({'error': f"Échec du paiement: {error_from_serdipay}"}, status=500)
-
-                except serdipay_service.SerdiPayServiceError as e:
-                    # Capture les exceptions levées par le SerdiPayService
-                    return JsonResponse({'error': f"Erreur lors de l'appel SerdiPay: {str(e)}"}, status=500)
-                except Exception as e:
-                    # Toute autre erreur inattendue lors du traitement
-                    return JsonResponse({'error': f"Une erreur interne est survenue: {str(e)}"}, status=500)
+            elif serdipay_response.get('message') == "Transaction in process (callback)":
+                print("Statut SerdiPay: Transaction en cours (callback). Enregistrement en attente.")
+                with db_transaction.atomic():
+                    transaction_obj = Transactions.objects.create(
+                        membre=membre,
+                        type="recharger_compte",
+                        montant=net_montant,
+                        devise=devise_cleaned,
+                        statut="En attente",
+                        date_approbation=None,
+                        # serdipay_session_id=serdipay_response.get('sessionId') # Important pour le suivi
+                    )
+                print("Transaction DB en attente créée.")
+                return Response(
+                    {'success': True, 'message': "Rechargement en cours de traitement. Veuillez vérifier le statut dans un instant."},
+                    status=status.HTTP_202_ACCEPTED # 202 Accepted indique que la requête a été acceptée pour traitement
+                )
             else:
-                return JsonResponse({'errors': form.errors.as_json()}, status=400)
+                print("Statut SerdiPay: Réponse inattendue ou échec direct.")
+                error_from_serdipay = serdipay_response.get('message', 'Réponse SerdiPay inattendue.')
+                return Response(
+                    {'error': f"Échec du paiement: {error_from_serdipay}"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
 
-        except json.JSONDecodeError:
-            return JsonResponse({'error': "Données JSON invalides."}, status=400)
+        except SerdiPayServiceError as e:
+            return Response(
+                {'error': f"{str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
         except Exception as e:
-            return JsonResponse({'error': f"Une erreur inattendue s'est produite: {str(e)}"}, status=500)
-
+             return Response(
+                {'error': f"Une erreur interne est survenue: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
     else:
-        form = SoldeForm()
-        return render(request, "membres/balance.html", {
-            "form": form,
-            "membre": membre,
-        })
+        print(f"Serializer est INVALIDE. Erreurs : {serializer.errors}")
+        # Renvoie les erreurs de validation du serializer
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    
+
+
 
 
 # methodes api laravels

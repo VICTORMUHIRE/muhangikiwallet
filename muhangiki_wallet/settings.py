@@ -105,7 +105,8 @@ DATABASES = {
         'NAME': 'muhangiki_wallet',     
         'USER': 'django',                 
         'PASSWORD': '1234',                 
-        'HOST': '172.24.80.1',
+        # 'HOST': '172.24.80.1',
+        'HOST': 'localhost',
         'PORT': '3306',                 
         'OPTIONS': {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION'",
@@ -207,38 +208,23 @@ REST_FRAMEWORK = {
 
 #confugurations relative a celery
 
-CELERY_BROKER_URL = 'redis://localhost:6379/0'
-# Optionnel : Backend pour stocker les résultats des tâches
-# CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
-CELERY_ACCEPT_CONTENT = ['application/json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_SERIALIZER = 'json'
-CELERY_TIMEZONE = 'Africa/Lubumbashi'  # Ajustez votre timezone (pour Goma, pourrait être 'Africa/Lubumbashi' ou 'Africa/Kinshasa')
+# CELERY_BROKER_URL = 'redis://localhost:6379/0'
+# # Optionnel : Backend pour stocker les résultats des tâches
+# # CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+# CELERY_ACCEPT_CONTENT = ['application/json']
+# CELERY_TASK_SERIALIZER = 'json'
+# CELERY_RESULT_SERIALIZER = 'json'
+# CELERY_TIMEZONE = 'Africa/Lubumbashi'  # Ajustez votre timezone (pour Goma, pourrait être 'Africa/Lubumbashi' ou 'Africa/Kinshasa')
 
-from celery.schedules import crontab
+# from celery.schedules import crontab
 
-CELERY_BEAT_SCHEDULE = {
-    # 'remboursement_automatique_pret_every_midnight': {
-    #     'task': 'membres.tasks.remboursement_automatique_pret',
-    #     'schedule': crontab(hour=12, minute=0),
-    # },
-    'remboursement_automatique_pret': {
-        'task': 'membres.tasks.remboursement_automatique_pret',
-        'schedule': timedelta(seconds=120),
-    },
-}
-
-
-# # Load environment variables from .env file
-# load_dotenv(os.path.join(BASE_DIR, '.env'))
-
-
-# # Maintenant, vous pouvez accéder à vos variables comme ceci:
-# SERDIPAY_USERNAME = os.getenv('SERDIPAY_USERNAME')
-# SERDIPAY_PASSWORD = os.getenv('SERDIPAY_PASSWORD')
-# SERDIPAY_PIN = os.getenv('SERDIPAY_PIN')
-# SERDIPAY_API_ID = os.getenv('SERDIPAY_API_ID')
-
-# SERDIPAY_TOKEN_URL = os.getenv('SERDIPAY_TOKEN_URL')
-# SERDIPAY_C2B_URL = os.getenv('SERDIPAY_C2B_URL')
-# SERDIPAY_B2C_URL = os.getenv('SERDIPAY_B2C_URL')
+# CELERY_BEAT_SCHEDULE = {
+#     # 'remboursement_automatique_pret_every_midnight': {
+#     #     'task': 'membres.tasks.remboursement_automatique_pret',
+#     #     'schedule': crontab(hour=12, minute=0),
+#     # },
+#     'remboursement_automatique_pret': {
+#         'task': 'membres.tasks.remboursement_automatique_pret',
+#         'schedule': timedelta(seconds=120),
+#     },
+# }

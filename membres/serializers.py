@@ -1,9 +1,10 @@
+from decimal import Decimal
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from random import randint
 from django.utils import timezone
-
+from django.contrib.auth.hashers import check_password
 
 from .models import Membres, NumerosCompte
 from administrateurs.models import CodesReference, Users
@@ -91,3 +92,36 @@ class MembreRegistrationSerializer(serializers.ModelSerializer):
             DepotsInscription.objects.create(membre=membre)
 
             return membre
+
+
+class RechargementSerializer(serializers.Serializer):
+    """
+    Serializer pour valider les données de rechargement de compte.
+    """
+    montant = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=Decimal('0.01'))
+    devise = serializers.CharField(max_length=5) 
+    account_sender = serializers.CharField(max_length=20) 
+    fournisseur = serializers.CharField(max_length=10) 
+
+    def validate_devise(self, value):
+        if value.upper() not in ["USD", "CDF"]:
+            raise serializers.ValidationError("La devise doit être 'USD' ou 'CDF'.")
+        return value.upper()
+
+    def validate_fournisseur(self, value):
+        
+        allowed_providers = ["AM", "OM", "MP", "AF"]
+        if value.upper() not in allowed_providers:
+            raise serializers.ValidationError(f"Le fournisseur doit être l'un des suivants : {', '.join(allowed_providers)}.")
+        return value.upper()
+
+    def validate(self, data):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            user_password = request.data.get('mot_de_passe')
+
+            if not check_password(user_password, request.user.password):
+                raise serializers.ValidationError({"mot_de_passe": "Mot de passe incorrect."})
+        else:
+            raise serializers.ValidationError("Authentification requise.")
+        return data # N'oubliez pas de

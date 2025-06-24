@@ -19,6 +19,7 @@ urlpatterns = [
     path("api/inscription/", views.api_inscription_membre, name="api_inscription_membre"),
     path('api/logout/', views.api_logout_view, name='api_logout'),
     path('api/checkpwd/', views. api_check_pwd_by_id, name='checkpwd'),
+    path('api/recharger/', views.api_recharger_compte, name='recharge_api'),
 
     path("transaction/<int:transaction_id>", views.transaction_detail, name="transaction"),
     path("transactions/", views.transactions, name="transactions"),
@@ -44,5 +45,4 @@ urlpatterns = [
     path('get_quartiers/', views.get_quartiers, name='get_quartiers'),
     path('get_avenues/', views.get_avenues, name='get_avenues'),
     path("retirer_investissement/", views.retirer_investissement, name="retirer_investissement"),
-    path('recharger/', views.recharger_compte, name='rechargeCompte'),
 ]

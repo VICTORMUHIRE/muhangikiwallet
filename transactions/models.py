@@ -7,7 +7,7 @@ from objectifs.models import Objectifs
 from administrateurs.models import Users, Administrateurs
 from agents.models import Agents, NumerosAgent
 from django.utils.timezone import now
-
+from django.db.models.expressions import RawSQL
 # Définition des constantes
 
 DEVISE_CHOICES = [
@@ -59,7 +59,7 @@ class Transactions(models.Model):
     agent = models.ForeignKey(Agents, blank=True, null=True, on_delete=models.CASCADE, verbose_name="Agents")
     numero_agent = models.ForeignKey(NumerosAgent, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Numéro de l'agent")
     
-    montant = models.DecimalField(max_digits=10, decimal_places=5, verbose_name="Montant")
+    montant = models.DecimalField(max_digits=15, decimal_places=4, verbose_name="Montant")
     devise = models.CharField(max_length=3, choices=DEVISE_CHOICES, verbose_name="Devise")
 
     preuve = models.ImageField(upload_to="preuves/transactions/", blank=True, null=True, verbose_name="Preuve de transaction")
@@ -80,10 +80,9 @@ class Transactions(models.Model):
         verbose_name_plural = "Transactions"
 
 class BalanceAdmin(models.Model):
-    montant = models.DecimalField(max_digits=10, decimal_places=5, verbose_name="Montant du bénéfice")
+    montant = models.DecimalField(max_digits=15, decimal_places=4, verbose_name="Montant du bénéfice")
     devise = models.CharField(max_length=3, choices=DEVISE_CHOICES, verbose_name="Devise")
-
-    date = models.DateTimeField(auto_now_add=True, verbose_name="Date")
+    date = models.DateTimeField(verbose_name="Date")
     type = models.CharField(max_length=30, choices=[('pret', 'Pret'), ('depot_inscription', 'Dépôt inscription'), ('retrait', 'Retrait'), ('retrait_investissement', 'Retrait investissement'), ('annulation_objectif', 'Annulation objectif'), ('remboursement_pret', 'Remboursement pret')], verbose_name="Type de balance")
     statut = models.BooleanField(default=True, verbose_name="Statut")
     
@@ -95,7 +94,7 @@ class BalanceAdmin(models.Model):
         verbose_name_plural = "Balance Admin"
 
 class RetraitsAdmin(models.Model):
-    montant = models.FloatField(verbose_name="Montant")
+    montant = models.DecimalField(max_digits=15, decimal_places=4,verbose_name="Montant")
     devise = models.CharField(max_length=3, choices=DEVISE_CHOICES, verbose_name="Devise")
 
     date = models.DateTimeField(auto_now_add=True, verbose_name="Date")
@@ -117,12 +116,12 @@ class RetraitsAdmin(models.Model):
 class TypesPret(models.Model):
     nom = models.CharField(max_length=45,unique=True, verbose_name="Nom du type de pret")
     description = models.TextField(blank=True, null=True, verbose_name="Description")
-    taux_interet = models.DecimalField(max_digits=10, decimal_places=5, verbose_name="Taux d'intérêt (%)")
+    taux_interet = models.DecimalField(max_digits=15, decimal_places=4, verbose_name="Taux d'intérêt (%)")
     delais_traitement = models.IntegerField(default=24, verbose_name="Délai de traitement (heures)")
     delai_remboursement = models.IntegerField(verbose_name="Delai de remboursement(en mois)")
-    investissement_min = models.DecimalField(max_digits=10, decimal_places=5, null=True, blank=True, verbose_name="Investissement minimum")
-    montant_min = models.DecimalField(max_digits=10, decimal_places=5, null=True, blank=True, verbose_name="Montant minimum")
-    montant_max = models.DecimalField(max_digits=10, decimal_places=5, null=True, blank=True, verbose_name="Montant maximum")
+    investissement_min = models.DecimalField(max_digits=15, decimal_places=4, null=True, blank=True, verbose_name="Investissement minimum")
+    montant_min = models.DecimalField(max_digits=15, decimal_places=4, null=True, blank=True, verbose_name="Montant minimum")
+    montant_max = models.DecimalField(max_digits=15, decimal_places=4, null=True, blank=True, verbose_name="Montant maximum")
 
     def __str__(self):
         return self.nom
@@ -139,10 +138,10 @@ class Prets(models.Model):
     type_pret = models.ForeignKey(TypesPret, null=True, blank=True, on_delete=models.CASCADE, verbose_name="Type de pret")
     transaction = models.ForeignKey(Transactions, on_delete=models.CASCADE, blank=True, null=True, related_name="pret", verbose_name="Transaction")
 
-    montant = models.DecimalField(max_digits=10, decimal_places=5, verbose_name="Montant du pret")
-    montant_payer=models.DecimalField(max_digits=10, decimal_places=5,verbose_name="montant a payer", default= 0.0)
-    montant_remboursé = models.DecimalField(max_digits=10, decimal_places=5, verbose_name="Montant remboursé")
-    solde_remboursé = models.DecimalField(max_digits=10, decimal_places=5, default=0, verbose_name="Solde remboursé")
+    montant = models.DecimalField(max_digits=15, decimal_places=4, verbose_name="Montant du pret")
+    montant_payer=models.DecimalField(max_digits=15, decimal_places=4,verbose_name="montant a payer", default= 0.0)
+    montant_remboursé = models.DecimalField(max_digits=15, decimal_places=4, verbose_name="Montant remboursé")
+    solde_remboursé = models.DecimalField(max_digits=15, decimal_places=4, default=0, verbose_name="Solde remboursé")
     devise = models.CharField(max_length=3, choices=DEVISE_CHOICES, verbose_name="Devise")
     mode_payement = models.CharField(max_length=15, choices=MODE_PAYEMENT_CHOICES, verbose_name="mode payement", default="hebdomadaire")
     date_demande = models.DateTimeField(auto_now_add=True, verbose_name="Date de demande")
@@ -162,11 +161,11 @@ class EcheancePret(models.Model):
     pret = models.ForeignKey(Prets, on_delete=models.CASCADE, related_name="echeances")
     numero = models.PositiveIntegerField()
     date_echeance = models.DateTimeField()
-    montant = models.DecimalField(max_digits=12, decimal_places=5) # This stays the original amount
+    montant = models.DecimalField(max_digits=12, decimal_places=4) # This stays the original amount
 
     montant_du = models.DecimalField(
         max_digits=12,
-        decimal_places=5,
+        decimal_places=4,
         default=Decimal('0.00'), 
         help_text="Montant restant à payer pour cette échéance."
     )
@@ -179,7 +178,7 @@ class EcheancePret(models.Model):
         ("partiellement_payé", "Partiellement payé"), 
         ("en_retard", "En retard"), 
     ], default="en_attente")
-    penalite = models.DecimalField(max_digits=12, decimal_places=5, default=0)
+    penalite = models.DecimalField(max_digits=12, decimal_places=4, default=0)
     date_paiement = models.DateTimeField(null=True, blank=True)
     grace_jusqua = models.DateTimeField(null=True, blank=True)
 
@@ -197,7 +196,7 @@ class EcheancePret(models.Model):
 
 class RemboursementsPret(models.Model):
     pret = models.ForeignKey(Prets, on_delete=models.CASCADE, verbose_name="Pret")
-    montant = models.DecimalField(max_digits=10, decimal_places=5, verbose_name="Montant du remboursement")
+    montant = models.DecimalField(max_digits=15, decimal_places=4, verbose_name="Montant du remboursement")
     devise = models.CharField(max_length=3, choices=DEVISE_CHOICES, verbose_name="Devise")
     date = models.DateTimeField(auto_now_add=True, verbose_name="Date de remboursement")
     transaction = models.ForeignKey(Transactions, on_delete=models.CASCADE, blank=True, null=True, related_name="remboursement_pret", verbose_name="Transaction")
@@ -217,7 +216,7 @@ class Benefices(models.Model):
     remboursement = models.ForeignKey(RemboursementsPret, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Remboursement associé")
     membre = models.ForeignKey(Membres, blank=True, null=True, on_delete=models.CASCADE, verbose_name="Membre")
     
-    montant = models.DecimalField(max_digits=10, decimal_places=5, verbose_name="Montant du bénéfice")
+    montant = models.DecimalField(max_digits=15, decimal_places=4, verbose_name="Montant du bénéfice")
     devise = models.CharField(max_length=3, choices=DEVISE_CHOICES, verbose_name="Devise")
 
     date = models.DateTimeField(auto_now_add=True, verbose_name="Date du bénéfice")
@@ -225,7 +224,7 @@ class Benefices(models.Model):
 
 # Définition du modèle de contribution
 class Contributions(models.Model):
-    montant = models.FloatField(verbose_name="Montant")
+    montant = models.DecimalField(max_digits=15, decimal_places=4,verbose_name="Montant")
     devise = models.CharField(max_length=3, choices=DEVISE_CHOICES, verbose_name="Devise")
 
     date = models.DateTimeField(auto_now_add=True, verbose_name="Date")
@@ -247,7 +246,7 @@ class Contributions(models.Model):
 class DepotsObjectif(models.Model):
     objectif = models.ForeignKey(Objectifs, on_delete=models.SET_NULL, blank=True, null=True, verbose_name="Objectifs")
     
-    montant = models.FloatField(verbose_name="Montant")
+    montant = models.DecimalField(max_digits=15, decimal_places=4,verbose_name="Montant")
     devise = models.CharField(max_length=3, choices=DEVISE_CHOICES, verbose_name="Devise")
 
     date = models.DateTimeField(auto_now_add=True, verbose_name="Date")
@@ -270,9 +269,9 @@ class RetraitsObjectif(models.Model):
     membre = models.ForeignKey(Membres, on_delete=models.SET_NULL, blank=True, null=True, verbose_name="Membres")
     objectif = models.ForeignKey(Objectifs, on_delete=models.SET_NULL, blank=True, null=True, verbose_name="Objectifs")
     
-    montant = models.FloatField(verbose_name="Montant")
+    montant = models.DecimalField(max_digits=15, decimal_places=4,verbose_name="Montant")
     devise = models.CharField(max_length=3, choices=DEVISE_CHOICES, verbose_name="Devise")
-    frais = models.FloatField(null=True, blank=True, verbose_name="Frais")
+    frais = models.DecimalField(max_digits=15, decimal_places=4,null=True, blank=True, verbose_name="Frais")
 
     date = models.DateTimeField(auto_now_add=True, verbose_name="Date")
     date_approbation = models.DateTimeField(blank=True, null=True, verbose_name="Date d'approbation")
@@ -294,9 +293,9 @@ class AnnulationObjectif(models.Model):
     membre = models.ForeignKey(Membres, on_delete=models.SET_NULL, blank=True, null=True, verbose_name="Membres")
     objectif = models.ForeignKey(Objectifs, on_delete=models.SET_NULL, blank=True, null=True, verbose_name="Objectifs")
     
-    montant = models.FloatField(verbose_name="Montant")
+    montant = models.DecimalField(max_digits=15, decimal_places=4,verbose_name="Montant")
     devise = models.CharField(max_length=3, choices=DEVISE_CHOICES, verbose_name="Devise")
-    frais = models.FloatField(verbose_name="Frais",null=True, blank=True)
+    frais = models.DecimalField(max_digits=15, decimal_places=4,verbose_name="Frais",null=True, blank=True)
 
     date = models.DateTimeField(auto_now_add=True, verbose_name="Date")
     date_approbation = models.DateTimeField(blank=True, null=True, verbose_name="Date d'approbation")
@@ -315,10 +314,10 @@ class AnnulationObjectif(models.Model):
 
 class Retraits(models.Model):
     membre = models.ForeignKey(Membres, on_delete=models.CASCADE, verbose_name="Membres")
-    montant = models.FloatField(verbose_name="Montant")
-    montant_recu = models.FloatField(blank=True, null=True, verbose_name="Montant recus",)
+    montant =models.DecimalField(max_digits=15, decimal_places=4,verbose_name="Montant")
+    montant_recu = models.DecimalField(max_digits=15, decimal_places=4,blank=True, null=True, verbose_name="Montant recus",)
     devise = models.CharField(max_length=3, choices=DEVISE_CHOICES, verbose_name="Devise")
-    frais = models.FloatField(verbose_name="Frais")
+    frais = models.DecimalField(max_digits=15, decimal_places=4,verbose_name="Frais")
     date = models.DateTimeField(auto_now_add=True, verbose_name="Date")
     date_approbation = models.DateTimeField(blank=True, null=True, verbose_name="Date d'approbation")
 
@@ -339,7 +338,7 @@ class Retraits(models.Model):
 class DepotsInscription(models.Model):
     membre = models.ForeignKey(Membres, blank=True, null=True, on_delete=models.CASCADE, verbose_name="Membres")
 
-    montant = models.FloatField(verbose_name="Montant", default=10)
+    montant = models.DecimalField(max_digits=15, decimal_places=4, verbose_name="Montant", default=10)
     devise = models.CharField(max_length=3, choices=DEVISE_CHOICES, default="USD", verbose_name="Devise")
     preuve= models.ImageField(upload_to="preuves/depots_inscriptions/", blank=True, verbose_name="Preuve de depot")
 
@@ -364,7 +363,7 @@ class Transferts(models.Model):
     organisation_expeditrice = models.ForeignKey(Organisations, related_name= "organisations_expeditrices", blank=True, null=True, on_delete=models.CASCADE, verbose_name="Organisation")
     organisation_destinataire = models.ForeignKey(Organisations, related_name="organisations_destinataires", blank=True, null=True, on_delete=models.CASCADE, verbose_name="Organisation")
 
-    montant = models.FloatField(verbose_name="Montant")
+    montant = models.DecimalField(max_digits=15, decimal_places=4, verbose_name="Montant")
     devise = models.CharField(max_length=3, choices=DEVISE_CHOICES, verbose_name="Devise")
 
     date = models.DateTimeField(auto_now_add=True, verbose_name="Date")
@@ -421,10 +420,10 @@ class Fidelites(models.Model):
 
 class Solde(models.Model):
     transaction = models.ForeignKey(Transactions, on_delete=models.CASCADE)
-    montant = models.DecimalField(max_digits=10, decimal_places=4)
+    montant = models.DecimalField(max_digits=15, decimal_places=4)
     devise = models.CharField(max_length=3, choices=DEVISE_CHOICES, verbose_name="Devise")
     account_sender = models.CharField(max_length=15, verbose_name="Numéro de téléphone de l'expéditeur")
-    frais_retrait = models.DecimalField(max_digits=10,null=True, blank=True,decimal_places=4)
+    frais_retrait = models.DecimalField(max_digits=15,null=True, blank=True,decimal_places=4)
     date_created = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

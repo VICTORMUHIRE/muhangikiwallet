@@ -48,8 +48,6 @@
     border-radius: 0.5rem;
     overflow: hidden;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
-    min-height: 50vh;
-    max-height: 70vh;
     overflow-y: auto;
     padding: 1.5rem;
   }
@@ -235,7 +233,7 @@
 
 
 <div class="modal fade" id="transfertModal" tabindex="-1" aria-labelledby="transfertModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-md modal-fullscreen-sm-down">
+    <div class="modal-dialog modal-dialog-centered modal-md">
     <div class="modal-content">
         <form method="post" id="transferForm">
             {% csrf_token %}

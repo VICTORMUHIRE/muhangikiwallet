@@ -6,16 +6,16 @@
       grid-column-gap: 10px;
     }
   
-    /* Style pour les écrans plus petits (par défaut ou via media queries) */
+
   
     .total-item {
       border: 1px solid #e0e0e0;
       border-radius: 8px;
-      padding: 15px;
+      padding: 16px;
       text-decoration: none !important;
       color: inherit !important;
       transition: transform 0.1s ease-in-out, box-shadow 0.1s ease-in-out;
-      background-color: white; /* Assurez-vous d'avoir un fond blanc pour l'effet de survol */
+      background-color: white; 
     }
   
     .total-item:hover {
@@ -45,8 +45,8 @@
     }
   </style>
   
-  <div class="col-md-6">
-    <div class="card border-0 rounded-3 shadow-sm h-100">
+  <div class="col-md-6 mt-3 mt-md-0 rounded-3 border">
+    <div class="card border-0 ">
       <div class="card-header bg-white p-3 border-bottom">
         <h6 class="mb-0 fw-semibold"><i class="fas fa-chart-bar me-2 text-secondary"></i> Aperçu des activités</h6>
       </div>
@@ -54,8 +54,8 @@
         <div class="totals-grid">
           <a href="{% url "membres:contributions" %}" class="total-item">
             <div class="d-flex align-items-center">
-              <div class="icon-wrapper bg-success-subtle text-success">
-                <i class="fas fa-briefcase fa-sm"></i>
+              <div class="icon-wrapper d-none d-md-block bg-success-subtle text-success d-none d-md-block">
+                <i class="fas fa-briefcase  fa-sm"></i>
               </div>
               <div>
                 <div class="title">Investissement</div>
@@ -67,7 +67,7 @@
   
           <a href="{% url "membres:demande_pret" %}" class="total-item">
             <div class="d-flex align-items-center">
-              <div class="icon-wrapper bg-danger-subtle text-danger">
+              <div class="icon-wrapper d-none d-md-block bg-danger-subtle text-danger">
                 <i class="fas fa-hand-holding-usd fa-sm"></i>
               </div>
               <div>
@@ -80,7 +80,7 @@
   
           <a href="{% url "membres:benefices" %}" class="total-item">
             <div class="d-flex align-items-center">
-              <div class="icon-wrapper bg-info-subtle text-info">
+              <div class="icon-wrapper d-none d-md-block bg-info-subtle text-info">
                 <i class="fas fa-chart-line fa-sm"></i>
               </div>
               <div>
@@ -93,7 +93,7 @@
   
           <a href="membres:Objectifs" class="total-item">
             <div class="d-flex align-items-center">
-              <div class="icon-wrapper bg-primary-subtle text-primary">
+              <div class="icon-wrapper d-none d-md-block bg-primary-subtle text-primary">
                 <i class="fas fa-bullseye fa-sm"></i>
               </div>
               <div>

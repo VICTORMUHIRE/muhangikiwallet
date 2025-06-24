@@ -1,7 +1,7 @@
 from decimal import Decimal
-from celery import shared_task
+# from celery import shared_task
 
-from datetime import timedelta
+from datetime import datetime, timedelta
 from django.utils.timezone import now
 from django.db.models import Sum
 from membres.service import investissement_actuelle
@@ -48,8 +48,28 @@ def partager_benefices(pret, montant_remboursé):
                     devise=pret.devise
                 )
 
-@shared_task
+
+import logging
+
+# --- Configuration du logger dédié au scheduler ---
+logger = logging.getLogger("scheduler")
+logger.setLevel(logging.INFO)
+
+# Crée un gestionnaire de fichiers s'il n'est pas déjà là
+if not logger.handlers:
+    file_handler = logging.FileHandler("logs/scheduler.log")
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+
+
+
+# @shared_task
 def remboursement_automatique_pret():
+
+    print("remboursement commencement du remboursement automatique")
+    logger.info("commencement du remboursement automatique %s", datetime.now())
+
     echeances_a_traiter = EcheancePret.objects.filter(
         pret__statut="Approuvé", 
         statut__in=["en_attente", "échoué", "en_retard", "partiellement_payé"], 
@@ -139,3 +159,4 @@ def remboursement_automatique_pret():
                 pass # La tentative de paiement est gérée au début du bloc if compte.solde >= montant_du:
 
     print("remboursement_automatique_pret terminé.")
+    logger.info("remboursement_automatique_pret terminé %s", datetime.now())
