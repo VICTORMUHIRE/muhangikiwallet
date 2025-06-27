@@ -410,5 +410,9 @@
             document.getElementById("loader").style.display = "block"; // Afficher le loader avant le chargement de la page
         };
     </script>
+
+    {% block extra_js %}
+    {# Les scripts spécifiques à chaque page enfant seront insérés ici #}
+    {% endblock extra_js %}
 </body>
 </html>

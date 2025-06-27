@@ -1,4 +1,5 @@
 from decimal import Decimal
+from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.hashers import check_password
@@ -17,11 +18,11 @@ from .models import  NumerosCompte, Users, Constantes
 from agents.models import Agents, NumerosAgent
 from agents.forms import AgentsForm, ModifierAgentsForm
 from organisations.models import Organisations
-from transactions.models import  Retraits, Transactions, Prets, DepotsInscription, Benefices, RetraitsObjectif, AnnulationObjectif, RemboursementsPret, RetraitsAdmin, BalanceAdmin
+from transactions.models import  Retraits, Transactions, Prets, DepotsInscription, Benefices, RetraitsObjectif, AnnulationObjectif, RemboursementsPret, RetraitsAdmin, BalanceAdmin, TypesPret
 
 from .forms import AdministrateurForm, ConstantesForm
 from membres.forms import MembresForm, ModifierMembresForm
-from transactions.forms import TransactionsForm, PretsForm, DepotsInscriptionForm
+from transactions.forms import TransactionsForm, PretsForm, DepotsInscriptionForm, TypesPretForm
 from objectifs.models import Objectifs
 from django.utils import timezone
 from functools import wraps
@@ -939,3 +940,53 @@ def constantes(request):
         'settings': constantes,
         'form': form,
     })
+
+
+@login_required
+@verifier_admin
+def liste_types_pret(request):
+    types_pret = TypesPret.objects.all().values()
+    form = TypesPretForm() 
+
+    context = {
+        'types_pret_list_data': list(types_pret),
+        'form': form, 
+    }
+    return render(request, 'administrateurs/liste_types_pret.html', context)
+
+
+@login_required
+@verifier_admin
+def modifier_type_pret(request, pk):
+    type_pret = get_object_or_404(TypesPret, pk=pk)
+
+    if request.method == 'POST':
+        form = TypesPretForm(request.POST, instance=type_pret)
+        if form.is_valid():
+            type_pret = form.save()
+            message_text = f"Le type de prêt '{type_pret.nom}' a été mis à jour avec succès."
+
+            return JsonResponse({
+                'success': True,
+                'message': message_text,
+                'data': { # Renvoie les données mises à jour
+                    'pk': type_pret.pk,
+                    'nom': type_pret.nom,
+                    'description': type_pret.description,
+                    'taux_interet': str(type_pret.taux_interet), # DecimalField à string
+                    'delais_traitement': type_pret.delais_traitement,
+                    'delai_remboursement': type_pret.delai_remboursement,
+                    'investissement_min': str(type_pret.investissement_min) if type_pret.investissement_min is not None else None,
+                    'montant_min': str(type_pret.montant_min) if type_pret.montant_min is not None else None,
+                    'montant_max': str(type_pret.montant_max) if type_pret.montant_max is not None else None,
+                }
+            })
+        else:
+            message_text = "Veuillez corriger les erreurs dans le formulaire."
+            return JsonResponse({
+                'success': False,
+                'message': message_text,
+                'errors': form.errors
+            }, status=400)
+    
+    return JsonResponse({'message': 'Méthode non autorisée.'}, status=405)

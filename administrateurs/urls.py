@@ -42,5 +42,12 @@ urlpatterns = [
 
     path("demande_retrait_tout/<int:retrait_id>", views.demande_retrait_tout, name="demande_retrait_tout"),
     path("refuser_retrait_tout/<int:retrait_id>", views.refuser_retrait_tout, name="refuser_retrait_tout"),
-    path("constantes", views.constantes, name="constantes")
+
+
+    path("constantes", views.constantes, name="constantes"),
+
+    path('types_pret/', views.liste_types_pret, name='liste_types_pret'), 
+    path('types_pret/api/<int:pk>/modifier/', views.modifier_type_pret, name='modifier_type_pret_ajax'),
+
+
 ]

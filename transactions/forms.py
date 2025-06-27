@@ -45,11 +45,22 @@ class PretsForm(forms.ModelForm):
             'class': 'form-select'
         })
 
-# Formulaire de type de pret
 class TypesPretForm(forms.ModelForm):
     class Meta:
         model = TypesPret
-        fields = ["nom", "taux_interet", "delai_remboursement"]
+        fields = [
+            'taux_interet',
+            'delais_traitement',
+            'delai_remboursement',
+            'investissement_min',  
+            'montant_min',         
+            'montant_max',         
+            'description',         
+        ]
+       
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 4}), 
+        }
 
 class ContributionsForm(forms.ModelForm):
     class Meta:
