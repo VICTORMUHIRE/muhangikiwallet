@@ -502,6 +502,7 @@
 
         try {
             const apiUrl = `/membres/api/transactions/${currentTransactionId}/status/`;
+            
             const response = await fetch(apiUrl, {
                 method: 'GET',
                 headers: {

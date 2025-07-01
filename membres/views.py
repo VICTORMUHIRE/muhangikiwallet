@@ -1433,7 +1433,7 @@ def serdipay_callback(request):
                 transaction_obj.date_approbation = timezone.now()
                 
                 membre = transaction_obj.membre
-                compte = compte = membre.compte_USD if transaction_obj.devise == "USD" else compte = membre.compte_CDF
+                compte = membre.compte_USD if transaction_obj.devise == "USD" else membre.compte_CDF
 
                 compte.solde += transaction_obj.montant
                 compte.save()
@@ -1488,7 +1488,7 @@ def api_retirer_compte(request):
         fournisseur = serializer.validated_data['fournisseur']
 
         # Vérification du solde du compte avant le retrait
-        compte = membre.compte_USD if devise_cleaned == "USD" else compte == membre.compte_CDF
+        compte = membre.compte_USD if devise_cleaned == "USD" else membre.compte_CDF
         
         if compte.solde < montant_decimal:
             return Response({'error': "Solde insuffisant pour effectuer cette transaction."}, status=status.HTTP_400_BAD_REQUEST)
@@ -1499,7 +1499,8 @@ def api_retirer_compte(request):
                 account=serdipay_service.MERCHANT_CODE,
                 client_phone=recipient_phone,
                 amount=float(montant_decimal), 
-                currency=devise_cleaned
+                currency=devise_cleaned,
+                telecom_provider=fournisseur
             )
 
             if serdipay_response.get('message') == "Transaction in process (callback)":
