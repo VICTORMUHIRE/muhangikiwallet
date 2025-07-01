@@ -1,0 +1,449 @@
+{% load static %}
+<style>
+    /* Your existing CSS, unchanged */
+    .modal-content {
+        border-radius: .5rem;
+        overflow: hidden;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+        overflow-y: auto;
+        padding: 1.5rem;
+    }
+
+    .step-header {
+        display: flex !important;
+        align-items: center !important;
+        margin-bottom: 2rem;
+        justify-content: space-between; /* Aligner le titre et la croix */
+    }
+
+    .btn-link-back {
+        color: #718096;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        width: auto; /* Ajuster la largeur */
+        text-decoration: none;
+        background: none;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-link-back svg {
+        width: 1.2rem;
+        height: 1.2rem;
+        margin-right: 0.5rem;
+    }
+
+    .withdrawal-step {
+        transition: opacity 0.3s ease-in-out, transform 0.3s ease;
+        opacity: 0;
+        transform: translateX(10px);
+        display: none;
+    }
+
+    .withdrawal-step.active {
+        display: block;
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    .card-option {
+        cursor: pointer;
+        transition: all 0.2s ease-in-out;
+        border: 1px solid #e0e0e0;
+        border-radius: 0.75rem;
+        padding: 0rem;
+        height: 5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .card-option:hover {
+        background-color: #f5f5f5;
+        border-color: #ccc;
+        transform: scale(1.02);
+    }
+
+    .icon {
+        font-size: 1.2rem;
+        margin-right: 0.5rem;
+    }
+
+    .provider-logo {
+        max-height: 50px;
+        object-fit: contain;
+    }
+
+    .img-fluid {
+        max-width: 100%;
+        height: auto;
+    }
+
+    @media (max-width: 576px) {
+        h6,
+        .form-label {
+            font-size: 1rem;
+        }
+    }
+
+    .number-option {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem;
+        border-bottom: 1px solid #e0e0e0;
+        cursor: pointer;
+        transition: background-color 0.2s ease-in-out;
+    }
+
+    .number-option:last-child {
+        border-bottom: none;
+    }
+
+    .number-option:hover {
+        background-color: #f9f9f9;
+    }
+
+    .number-info {
+        display: flex;
+        align-items: center;
+    }
+
+    .number-icon {
+        width: 24px;
+        height: 24px;
+        margin-right: 0.75rem;
+        fill: #718096;
+    }
+
+    .number-details {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .number-details {
+        font-size: 0.8rem;
+        color: #a0aec0;
+    }
+
+    .arrow-icon {
+        width: 20px;
+        height: 20px;
+        fill: #718096;
+    }
+</style>
+
+<div class="modal fade" id="withdrawalModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-md ">
+        <div class="modal-content">
+            <form id="withdrawalForm" style="display: flex; flex-direction: column; justify-content: space-between; min-height : 60vh;">
+                {% csrf_token %} 
+                <div class="modal-header">
+                    <h6 class="fw-semibold modal-title">Retirer de mon compte</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="withdrawalStepsContainer">
+
+                        <div class="withdrawal-step active" data-step="1">
+                            <h6 class="fw-semibold">1. Choisir un fournisseur</h6>
+                            <div class="row row-cols-md-3 g-1 g-md-3 mt-3">
+                                <div class="col">
+                                    <button type="button" class="card card-option border rounded-3 d-flex align-items-center justify-content-center" onclick="selectWithdrawalProvider('AM'); goToWithdrawalStep(2)" data-provider="AM">
+                                        <img src="{% static "airtel.png" %}" alt="Airtel Money" class="img-fluid m-3 provider-logo">
+                                    </button>
+                                </div>
+                                <div class="col">
+                                    <button type="button" class="card card-option border rounded-3 d-flex align-items-center justify-content-center" onclick="selectWithdrawalProvider('MP'); goToWithdrawalStep(2)" data-provider="MP">
+                                        <img src="{% static "mpesa.png" %}" alt="M-PESA" class="img-fluid m-3 provider-logo">
+                                    </button>
+                                </div>
+                                <div class="col">
+                                    <button type="button" class="card card-option border rounded-3 d-flex align-items-center justify-content-center" onclick="selectWithdrawalProvider('OM'); goToWithdrawalStep(2)" data-provider="OM">
+                                        <img src="{% static "orange.png" %}" alt="Orange Money" class="img-fluid m-3 provider-logo">
+                                    </button>
+                                </div>
+                                <input type="hidden" name="fournisseur" id="withdrawalFournisseur">
+                            </div>
+
+                            <div id="withdrawalProviderError" class="text-danger mt-2 d-none">Veuillez choisir un fournisseur.</div>
+                        </div>
+
+                        <div class="withdrawal-step" data-step="2">
+                        <div class="step-header">
+                            <button type="button" class="btn-link-back" onclick="goToWithdrawalStep(1)">
+                            <i class="fa fa-arrow-left me-2"></i> Retour
+                            </button>
+                        </div>
+
+                        <h6 class="fw-semibold mb-3">2. Entrer les détails du retrait</h6>
+
+                        <div class="mb-3">
+                            <label class="form-label">Numéro de téléphone du bénéficiaire</label>
+                            <div class="input-group">
+                            <span class="input-group-text">+243</span>
+                            <input type="tel" class="form-control" id="withdrawalClientPhone" placeholder="Ex: 970000000" maxlength="9">
+                            </div>
+                            <small class="text-muted">Tapez uniquement les 9 chiffres après +243</small>
+                            <div id="withdrawalClientPhoneError" class="text-danger mt-2 d-none"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="withdrawalDevise" class="form-label">Devise</label>
+                            <select class="form-select" id="withdrawalDevise" name="devise">
+                            <option value="">Sélectionner une devise</option>
+                            <option value="CDF">CDF</option>
+                            <option value="USD">USD</option>
+                            </select>
+                            <div id="withdrawalDeviseError" class="text-danger mt-2 d-none"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="withdrawalMontant" class="form-label">Montant à retirer</label>
+                            <input type="number" step="0.01" class="form-control" id="withdrawalMontant" name="montant" placeholder="Ex: 100.00">
+                            <div id="withdrawalMontantError" class="text-danger mt-2 d-none"></div>
+                        </div>
+
+                        <button type="button" class="btn btn-primary w-100" onclick="validateWithdrawalDetails()">
+                            Suivant
+                        </button>
+                        </div>
+
+                        <div class="withdrawal-step" data-step="3">
+                            <div class="step-header">
+                                <button type="button" class="btn-link-back" onclick="goToWithdrawalStep(2)">
+                                    <i class="fa fa-arrow-left" style="margin-right: 5px;"></i>
+                                    Retour
+                                </button>
+                            </div>
+                            <div id="withdrawal-error-message" class="alert alert-danger mt-2 d-none"></div>
+                            <div id="withdrawal-success-message" class="alert alert-success mt-2 d-none"></div>
+                            <h6 class="fw-semibold mb-3">3. Confirmation de la transaction</h6>
+                            <div class="mb-3">
+                                <p>Vous allez retirer <strong id="withdrawalConfirmAmount"></strong> <span id="withdrawalConfirmCurrency"></span> vers <strong id="withdrawalConfirmNumber"></strong> via <strong id="withdrawalConfirmProvider"></strong>. </p>
+                            </div>
+                            <div class="mb-3">
+                                <label for="withdrawalPassword" class="form-label">Mot de passe</label>
+                                <input type="password" class="form-control" id="withdrawalPassword" name="password" placeholder="Votre mot de passe">
+                                <div id="withdrawalPasswordError" class="text-danger mt-2 d-none"></div>
+                            </div>
+
+                            <button type="button" class="btn btn-success w-100" id="confirmWithdrawalButton" onclick="confirmAndProcessWithdrawal()">Confirmer et procéder</button>
+                        </div>
+
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentWithdrawalStep = 1;
+    let selectedWithdrawalProvider = null;
+    let selectedWithdrawalNumero = null; 
+    let withdrawalTransactionAmount = 0;
+    let withdrawalTransactionCurrency = '';
+
+    function goToWithdrawalStep(step) {
+        document.querySelectorAll('.withdrawal-step').forEach((el) => {
+            el.classList.remove('active');
+        });
+        const target = document.querySelector(`.withdrawal-step[data-step="${step}"]`);
+        if (target) {
+            target.classList.add('active');
+            currentWithdrawalStep = step; 
+        }
+    }
+
+    function selectWithdrawalProvider(provider) {
+        selectedWithdrawalProvider = provider;
+        document.getElementById('withdrawalFournisseur').value = provider;
+        
+        let displayProvider = provider;
+        switch(provider) {
+            case 'AM': displayProvider = 'Airtel Money'; break;
+            case 'MP': displayProvider = 'M-PESA'; break;
+            case 'OM': displayProvider = 'Orange Money'; break;
+            case 'AF': displayProvider = 'Afrimoney'; break;
+        }
+        document.getElementById('withdrawalConfirmProvider').textContent = displayProvider;
+        document.getElementById('withdrawalProviderError').classList.add('d-none');
+    }
+
+    function validateWithdrawalDetails() {
+        const clientPhoneInput = document.getElementById('withdrawalClientPhone');
+        const amountInput = document.getElementById('withdrawalMontant');
+        const currencySelect = document.getElementById('withdrawalDevise');
+
+        const clientPhoneErrorDiv = document.getElementById('withdrawalClientPhoneError');
+        const montantErrorDiv = document.getElementById('withdrawalMontantError');
+        const deviseErrorDiv = document.getElementById('withdrawalDeviseError');
+
+        let isValid = true;
+
+        // Reset errors
+        clientPhoneErrorDiv.classList.add('d-none');
+        montantErrorDiv.classList.add('d-none');
+        deviseErrorDiv.classList.add('d-none');
+
+        const phoneDigits = clientPhoneInput.value.trim();
+        const fullNumber = `+243${phoneDigits}`;
+
+        // Valid prefixes by operator
+        const validPrefixes = {
+            'OM': ['80', '84', '85', '89', '88'], 
+            'AM': ['99', '97', '98'],     // Airtel
+            'MP': ['81', '82', '83', '86'],     // Vodacom
+        };
+
+        // Length validation
+        if (!/^\d{9}$/.test(phoneDigits)) {
+            clientPhoneErrorDiv.textContent = "Le numéro doit contenir exactement 9 chiffres après +243.";
+            clientPhoneErrorDiv.classList.remove('d-none');
+            isValid = false;
+        } else {
+            const prefix = phoneDigits.substring(0, 2);
+            const operatorPrefixes = validPrefixes[selectedWithdrawalProvider] || [];
+
+            if (!operatorPrefixes.includes(prefix)) {
+                const names = { AM: "Airtel", OM: "Orange", MP: "Vodacom" };
+                clientPhoneErrorDiv.textContent = `Ce numéro ne correspond pas au format attendu pour ${names[selectedWithdrawalProvider]}.`;
+                clientPhoneErrorDiv.classList.remove('d-none');
+                isValid = false;
+            }
+        }
+
+        if (!currencySelect.value) {
+            deviseErrorDiv.textContent = "Veuillez sélectionner une devise.";
+            deviseErrorDiv.classList.remove('d-none');
+            isValid = false;
+        }
+
+        const parsedAmount = parseFloat(amountInput.value);
+        if (isNaN(parsedAmount) || parsedAmount <= 0) {
+            montantErrorDiv.textContent = "Veuillez entrer un montant valide.";
+            montantErrorDiv.classList.remove('d-none');
+            isValid = false;
+        }
+
+        if (!isValid) return;
+
+        // Store values for step 3
+        selectedWithdrawalNumero = fullNumber;
+        withdrawalTransactionAmount = parsedAmount;
+        withdrawalTransactionCurrency = currencySelect.value;
+
+        document.getElementById('withdrawalConfirmAmount').textContent = withdrawalTransactionAmount.toFixed(2);
+        document.getElementById('withdrawalConfirmCurrency').textContent = withdrawalTransactionCurrency;
+        document.getElementById('withdrawalConfirmNumber').textContent = selectedWithdrawalNumero;
+
+        goToWithdrawalStep(3);
+    }
+
+    async function confirmAndProcessWithdrawal() {
+        const motDePasseInput = document.getElementById('withdrawalPassword');
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const confirmButton = document.getElementById('confirmWithdrawalButton'); // Get the button
+
+        const errorDiv = document.getElementById('withdrawal-error-message');
+        const successDiv = document.getElementById('withdrawal-success-message');
+        const passwordErrorDiv = document.getElementById('withdrawalPasswordError');
+
+        // Reset errors
+        errorDiv.classList.add('d-none');
+        successDiv.classList.add('d-none');
+        passwordErrorDiv.classList.add('d-none');
+        
+        // Disable button and show loading state
+        confirmButton.disabled = true;
+        confirmButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Traitement...';
+
+
+        const requestData = {
+            montant: withdrawalTransactionAmount, 
+            devise: withdrawalTransactionCurrency, 
+            mot_de_passe: motDePasseInput.value,
+            fournisseur: selectedWithdrawalProvider, 
+            account_sender: selectedWithdrawalNumero, // This is the recipient phone for withdrawal
+        };
+
+        try {
+            const apiUrl = "/membres/api/retirer/"; // New API endpoint for withdrawal
+
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken, 
+                },
+                body: JSON.stringify(requestData),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) { 
+                successDiv.textContent = data.message;
+                successDiv.classList.remove('d-none');
+                setTimeout(() => {
+                    const withdrawalModal = bootstrap.Modal.getInstance(document.getElementById('withdrawalModal'));
+                    if (withdrawalModal) {
+                        withdrawalModal.hide();
+                    }
+                    window.location.reload(); 
+                }, 2000);
+            } else {
+                if (data.errors) { 
+                    for (const field in data.errors) {
+                        const errorMessages = data.errors[field].join(', ');
+                        if (field === 'montant') {
+                            document.getElementById('withdrawalMontantError').textContent = errorMessages;
+                            document.getElementById('withdrawalMontantError').classList.remove('d-none');
+                        } else if (field === 'devise') {
+                            document.getElementById('withdrawalDeviseError').textContent = errorMessages;
+                            document.getElementById('withdrawalDeviseError').classList.remove('d-none');
+                        } else if (field === 'mot_de_passe') {
+                            passwordErrorDiv.textContent = errorMessages;
+                            passwordErrorDiv.classList.remove('d-none');
+                        } else if (field === 'account_sender') { // For withdrawal, this is clientPhone
+                             document.getElementById('withdrawalClientPhoneError').textContent = errorMessages;
+                             document.getElementById('withdrawalClientPhoneError').classList.remove('d-none');
+                        } else if (field === 'non_field_errors') {
+                            errorDiv.textContent = errorMessages;
+                            errorDiv.classList.remove('d-none');
+                        } else {
+                            errorDiv.textContent = `Erreur: ${errorMessages}`;
+                            errorDiv.classList.remove('d-none');
+                        }
+                    }
+                } else if (data.error) {
+                    if (data.error.includes("Mot de passe incorrect")) {
+                        passwordErrorDiv.textContent = data.error;
+                        passwordErrorDiv.classList.remove('d-none');
+                    } else {
+                        errorDiv.textContent = data.error;
+                        errorDiv.classList.remove('d-none');
+                    }
+                } else {
+                    errorDiv.textContent = "Une erreur est survenue lors du traitement. Veuillez réessayer.";
+                    errorDiv.classList.remove('d-none');
+                }
+            }
+        } catch (error) {
+            console.error('Erreur réseau ou parsing:', error);
+            errorDiv.textContent = 'Une erreur de communication est survenue. Veuillez réessayer.';
+            errorDiv.classList.remove('d-none');
+        } finally {
+            // Re-enable button and restore text
+            confirmButton.disabled = false;
+            confirmButton.innerHTML = 'Confirmer et procéder';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        goToWithdrawalStep(1);
+        const withdrawalModalElement = document.getElementById('withdrawalModal');
+        if (withdrawalModalElement && !bootstrap.Modal.getInstance(withdrawalModalElement)) {
+            new bootstrap.Modal(withdrawalModalElement);
+        }
+    });
+</script>

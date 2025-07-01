@@ -20,6 +20,11 @@ urlpatterns = [
     path('api/logout/', views.api_logout_view, name='api_logout'),
     path('api/checkpwd/', views. api_check_pwd_by_id, name='checkpwd'),
     path('api/recharger/', views.api_recharger_compte, name='recharge_api'),
+    path('api/retirer/', views.api_retirer_compte, name='retrait_api'),
+    path('api/transactions/<int:transaction_id>/status/', views.get_transaction_status, name='get_transaction_status'),
+
+    # callback serdipay
+    path('recharger/', views.serdipay_callback, name='serdipay_callback'),
 
     path("transaction/<int:transaction_id>", views.transaction_detail, name="transaction"),
     path("transactions/", views.transactions, name="transactions"),

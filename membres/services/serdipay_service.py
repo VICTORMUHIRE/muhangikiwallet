@@ -11,12 +11,12 @@ class SerdiPayService:
     def __init__(self):
         
         self.TOKEN_URL = os.getenv('SERDIPAY_TOKEN_URL') 
-        self.C2B_URL = os.getenv('SERDIPAY_C2B_URL')   
+        self.C2B_URL = os.getenv('SERDIPAY_C2B_URL')  
         self.B2C_URL = os.getenv('SERDIPAY_B2C_URL') 
         
-        self.USERNAME = os.getenv('SERDIPAY_USERNAME')   
-        self.PASSWORD = os.getenv('SERDIPAY_PASSWORD')   
-        self.PIN = os.getenv('SERDIPAY_PIN')             
+        self.USERNAME = os.getenv('SERDIPAY_USERNAME')  
+        self.PASSWORD = os.getenv('SERDIPAY_PASSWORD')  
+        self.PIN = os.getenv('SERDIPAY_PIN')         
         self.API_ID = os.getenv('SERDIPAY_API_ID')       
         
         self.MERCHANT_CODE = os.getenv('SERDIPAY_MERCHANT_CODE')       
@@ -48,7 +48,7 @@ class SerdiPayService:
                     
                     elif 'detail' in error_data and error_data['detail']:
                         error_message_from_api = error_data['detail']
-                    else:                        
+                    else:                         
                         error_message_from_api = f"Réponse d'erreur SerdiPay sans message spécifique (Statut: {response.status_code})."
                 except json.JSONDecodeError:
                     
@@ -56,7 +56,7 @@ class SerdiPayService:
                     
                     if response.text:
                         error_message_from_api += f" Corps: '{response.text[:200]}...'" 
-                except Exception as e_parse:                    
+                except Exception as e_parse:                         
                     error_message_from_api = f"Erreur inattendue lors de l'analyse de la réponse d'erreur SerdiPay (Statut: {response.status_code}, Erreur de parsing: {e_parse})."
                 
                 raise SerdiPayServiceError(f"Échec de l'authentification SerdiPay: {error_message_from_api}")
@@ -64,24 +64,24 @@ class SerdiPayService:
             data = response.json()
             token = data.get('access_token')
 
-            if not token:                
+            if not token:                 
                 raise ValueError(f"Token d'accès non reçu de SerdiPay. Réponse complète: {data}")
             
             self._access_token = token
             return token
 
-        except ConnectionError as e:            
+        except ConnectionError as e:             
             raise SerdiPayServiceError(f"Échec de connexion au serveur SerdiPay pour le token. Vérifiez votre connexion internet ou l'URL du service: {e}")
-        except Timeout as e:            
+        except Timeout as e:             
             raise SerdiPayServiceError(f"Délai d'attente dépassé lors de la récupération du token SerdiPay. Le serveur ne répond pas à temps: {e}")
-        except RequestException as e:            
+        except RequestException as e:             
             
             raise SerdiPayServiceError(f"Erreur réseau ou HTTP inattendue lors de la récupération du token SerdiPay: {e}")
-        except json.JSONDecodeError:            
+        except json.JSONDecodeError:             
             raise SerdiPayServiceError("Réponse JSON invalide de SerdiPay lors de la récupération du token. La réponse du succès n'était pas du JSON valide.")
         except ValueError as e: 
             raise SerdiPayServiceError(f"Erreur de données de token SerdiPay: {e}")
-        except Exception as e:            
+        except Exception as e:             
             raise SerdiPayServiceError(f"Une erreur système inattendue est survenue lors de la récupération du token SerdiPay: {e}")
 
     def recharge_account_c2b(self, client_phone, amount, currency, telecom_provider):
@@ -89,21 +89,6 @@ class SerdiPayService:
         Effectue un rechargement C2B (Customer to Business) via SerdiPay.
         Le client paie le compte du marchand.
         """
-        # Ces vérifications initiales sont bonnes, mais elles peuvent être centralisées dans __init__
-        # si vous préférez, comme dans l'exemple __init__ ci-dessus.
-        # Sinon, assurez-vous que toutes les vérifications nécessaires sont là.
-        if not self.MERCHANT_CODE:
-            raise SerdiPayServiceError("Le code marchand SerdiPay (SERDIPAY_MERCHANT_CODE) n'est pas configuré.")
-        if not self.API_ID:
-            raise SerdiPayServiceError("L'ID API SerdiPay (SERDIPAY_API_ID) n'est pas configuré.")
-        if not self.PIN:
-            raise SerdiPayServiceError("Le PIN marchand SerdiPay (SERDIPAY_PIN) n'est pas configuré.")
-        if not self.C2B_URL:
-            raise SerdiPayServiceError("L'URL C2B SerdiPay (SERDIPAY_C2B_URL) n'est pas configurée.")
-        if not self.PASSWORD: # Le mot de passe est utilisé dans le payload
-            raise SerdiPayServiceError("Le mot de passe SerdiPay (SERDIPAY_PASSWORD) n'est pas configuré.")
-
-
         try:
             access_token = self._get_access_token()
         except SerdiPayServiceError as e:
@@ -149,21 +134,79 @@ class SerdiPayService:
                     specific_error_message = f"Erreur inattendue lors de l'analyse de la réponse d'erreur SerdiPay (Statut: {response.status_code}, Erreur: {e_parse})."
                 
                 
-                raise SerdiPayServiceError(f"Échec du rechargement C2B: {specific_error_message}")           
+                raise SerdiPayServiceError(f"Échec du rechargement C2B: {specific_error_message}")         
 
             return response.json() 
 
-        except ConnectionError as e:            
+        except ConnectionError as e:             
             raise SerdiPayServiceError(f"Échec de connexion au serveur SerdiPay lors du rechargement C2B. Vérifiez votre connexion internet ou l'URL du service: {e}")
-        except Timeout as e:            
+        except Timeout as e:             
             raise SerdiPayServiceError(f"Délai d'attente dépassé lors du rechargement C2B SerdiPay. Le serveur ne répond pas à temps: {e}")
-        except RequestException as e:                         
+        except RequestException as e:                          
             raise SerdiPayServiceError(f"Erreur réseau inattendue lors du rechargement C2B SerdiPay: {e}")
-        except json.JSONDecodeError:            
+        except json.JSONDecodeError:             
             raise SerdiPayServiceError("Réponse JSON invalide lors du rechargement C2B SerdiPay. La réponse attendue pour le succès n'était pas du JSON valide.")
         except Exception as e:
             
             raise SerdiPayServiceError(f"Une erreur système inattendue est survenue lors du rechargement C2B: {e}")
+
+    def withdraw_b2c(self, account, client_phone, amount, currency):
+        """
+        Effectue un retrait B2C (Business to Customer) via SerdiPay.
+        Le marchand paie le client.
+        
+        """
+        try:
+            access_token = self._get_access_token()
+        except SerdiPayServiceError as e:
+            raise SerdiPayServiceError(f"Impossible d'obtenir le token pour le retrait B2C: {e}")
+
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {access_token}'
+        }
+
+        # The 'account' in the payload refers to the recipient's account in SerdiPay,
+        # which for B2C withdrawal will be the client's phone number,
+        # and 'clientPhone' refers to the phone number that is receiving the money.
+        payload = {
+            "account": account,
+            "clientPhone": client_phone,
+            "amount": amount,
+            "currency": currency
+        }
+
+        try:
+            response = requests.post(self.B2C_URL, json=payload, headers=headers, timeout=30)
+
+            if not response.ok:
+                specific_error_message = f"Statut HTTP {response.status_code}."
+                try:
+                    error_data = response.json()
+                    if 'message' in error_data and error_data['message']:
+                        specific_error_message = error_data['message']
+                    elif 'detail' in error_data and error_data['detail']:
+                        specific_error_message = error_data['detail']
+                    else:
+                        specific_error_message = f"Réponse d'erreur SerdiPay sans message spécifique (Statut: {response.status_code}, Corps: {json.dumps(error_data, ensure_ascii=False)[:200]}...)"
+                except json.JSONDecodeError:
+                    specific_error_message = f"Réponse d'erreur SerdiPay non JSON (Statut: {response.status_code}). Corps: '{response.text[:200]}...'"
+                except Exception as e_parse:
+                    specific_error_message = f"Erreur inattendue lors de l'analyse de la réponse d'erreur SerdiPay (Statut: {response.status_code}, Erreur: {e_parse})."
+                raise SerdiPayServiceError(f"Échec du retrait B2C: {specific_error_message}")
+
+            return response.json()
+
+        except ConnectionError as e:
+            raise SerdiPayServiceError(f"Échec de connexion au serveur SerdiPay lors du retrait B2C. Vérifiez votre connexion internet ou l'URL du service: {e}")
+        except Timeout as e:
+            raise SerdiPayServiceError(f"Délai d'attente dépassé lors du retrait B2C SerdiPay. Le serveur ne répond pas à temps: {e}")
+        except RequestException as e:
+            raise SerdiPayServiceError(f"Erreur réseau inattendue lors du retrait B2C SerdiPay: {e}")
+        except json.JSONDecodeError:
+            raise SerdiPayServiceError("Réponse JSON invalide lors du retrait B2C SerdiPay. La réponse attendue pour le succès n'était pas du JSON valide.")
+        except Exception as e:
+            raise SerdiPayServiceError(f"Une erreur système inattendue est survenue lors du retrait B2C: {e}")
 
 
 # Classe d'exception personnalisée pour le service SerdiPay

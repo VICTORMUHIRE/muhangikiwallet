@@ -53,6 +53,7 @@ from django.contrib.auth.hashers import check_password
 from django.contrib.auth import get_user_model
 
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated 
 from rest_framework import status
 from rest_framework.permissions import AllowAny 
 from rest_framework.response import Response
@@ -1213,6 +1214,28 @@ def transaction_detail(request, transaction_id):
     }
     return render(request, "membres/transaction.html", context)
 
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_transaction_status(request, transaction_id):
+    """
+    Retourne le statut d'une transaction spécifique.
+    Le frontend utilisera cet endpoint pour le polling.
+    """
+    try:
+        transaction = get_object_or_404(Transactions, id=transaction_id, membre=request.user.membre)
+
+        return Response({
+            'status': transaction.statut,
+            'amount': str(transaction.montant), # Convertir Decimal en string
+            'currency': transaction.devise,
+            'type': transaction.type,
+            'date': transaction.date.isoformat(),
+            'message': "Transaction retrieved successfully."
+        }, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_404_NOT_FOUND)
+
 # Vue pour la page de gestion des parametres du membre
 @login_required
 @verifier_membre
@@ -1302,14 +1325,15 @@ def notifications(request):
     return render(request, "membres/notifications.html")
 
 
-from rest_framework.permissions import IsAuthenticated 
-
-
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-@verifier_membre # Assurez-vous que ce décorateur fonctionne comme attendu et ne lève pas d'erreurs inattendues
+@verifier_membre
 def api_recharger_compte(request):
-
+    """
+    Gère la demande initiale de rechargement du compte d'un membre via SerdiPay.
+    Enregistre la transaction en attente dans la base de données.
+    Le solde du client sera mis à jour uniquement après la réception et le traitement du callback de SerdiPay.
+    """
     serdipay_service = SerdiPayService()
 
     if not hasattr(request.user, 'membre'):
@@ -1322,81 +1346,209 @@ def api_recharger_compte(request):
     if serializer.is_valid():
         montant_decimal = serializer.validated_data['montant']
         devise_cleaned = serializer.validated_data['devise']
-        numero_cleaned = serializer.validated_data['account_sender']
+        numero_cleaned = serializer.validated_data['account_sender'] # C'est le clientPhone pour SerdiPay
         fournisseur = serializer.validated_data['fournisseur']
         
-        net_montant = montant_decimal 
-
-        if net_montant <= 0: 
-            return Response({'error': "Montant invalide ou résultant en un montant net négatif."}, status=status.HTTP_400_BAD_REQUEST)
+        if montant_decimal <= 0: 
+            return Response({'error': "Le montant doit être positif."}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
+            # Appelle l'API SerdiPay pour initier le rechargement
             serdipay_response = serdipay_service.recharge_account_c2b(
                 client_phone=numero_cleaned,
-                amount=float(montant_decimal), 
+                amount=float(montant_decimal), # SerdiPay peut nécessiter un float
                 currency=devise_cleaned,
                 telecom_provider=fournisseur
             )
 
-            # Vérifiez la structure de serdipay_response avant d'y accéder
-            session_status = serdipay_response.get('payment', {}).get('sessionStatus')
-            serdipay_message = serdipay_response.get('message', 'Transaction SerdiPay traitée.')
+            payment_data = serdipay_response.get('payment', {})
+            session_id = payment_data.get('sessionId')
+            transaction_id = payment_data.get('transactionId') 
 
-            if session_status == 2: # Succès immédiat
+            with db_transaction.atomic():
+                transaction_obj = Transactions.objects.create(
+                    membre=membre,
+                    type="rechargement_compte", # Assurez-vous que ce type est dans TRANSACTION_CHOICES
+                    montant=montant_decimal,
+                    devise=devise_cleaned,
+                    statut="En attente", # Statut initial pour les transactions SerdiPay C2B
+                    date_approbation=None, # Pas encore approuvée
+                    client_phone=numero_cleaned, # Stocke le numéro du client
+                    serdipay_session_id=session_id,
+                    serdipay_transaction_id=transaction_id,
+                    serdipay_raw_response=serdipay_response # Stocker la réponse initiale pour le débogage
+                )
+            
+            return Response(
+                {'success': True, 'message': "Votre demande de rechargement a été envoyée. Veuillez confirmer la transaction sur votre téléphone mobile.", 'transaction_id': transaction_id},
+                status=status.HTTP_202_ACCEPTED 
+            )
+
+        except SerdiPayServiceError as e:
+            return Response(
+                {'error': f"Erreur SerdiPay lors de l'initiation du rechargement: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        except Exception as e:
+            return Response(
+                {'error': f"Une erreur interne estvenue lors du rechargement: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    else:
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# le callback de cerdipay
+@api_view(['POST'])
+@require_POST
+def serdipay_callback(request):
+    """
+    Endpoint pour recevoir les callbacks de SerdiPay concernant les transactions de rechargement C2B.
+    Met à jour le statut de la transaction et le solde du membre en fonction du callback.
+    """
+    try:
+        data = json.loads(request.body)
+        
+        payment_data = data.get('payment', {})
+        callback_status = payment_data.get('status')
+        session_id_from_callback = payment_data.get('sessionId') 
+        transaction_id_from_callback = payment_data.get('transactionId') 
+        if not transaction_id_from_callback:
+            return Response({'message': 'transactionId manquant, ignorer.'}, status=status.HTTP_200_OK)
+
+        with db_transaction.atomic():
+            try:
+                transaction_obj = Transactions.objects.select_for_update().get(
+                    serdipay_transaction_id=transaction_id_from_callback,
+                    type="rechargement_compte"
+                )
+            except Transactions.DoesNotExist:
+                return Response({'message': 'Transaction non trouvée dans notre système.'}, status=status.HTTP_200_OK)
+
+            if transaction_obj.statut in ["Approuvé", "Rejeté", "Échoué", "Annulé", "Remboursé"]:
+                return Response({'message': 'Callback déjà traité ou transaction dans un statut final.'}, status=status.HTTP_200_OK)
+
+            if callback_status == "success":
+                transaction_obj.statut = "Approuvé"
+                transaction_obj.date_approbation = timezone.now()
+                
+                membre = transaction_obj.membre
+                compte = compte = membre.compte_USD if transaction_obj.devise == "USD" else compte = membre.compte_CDF
+
+                compte.solde += transaction_obj.montant
+                compte.save()
+
+                Solde.objects.create(
+                    transaction=transaction_obj,
+                    montant=transaction_obj.montant,
+                    devise=transaction_obj.devise,
+                    account_sender=transaction_obj.client_phone, 
+                )
+
+            elif callback_status == "failed":
+                transaction_obj.statut = "Échoué" 
+            else:
+                transaction_obj.statut = f"SerdiPay: {callback_status}" 
+
+            transaction_obj.serdipay_raw_response = data 
+            transaction_obj.save()
+
+        return Response({'message': 'Callback reçu et traité avec succès.'}, status=status.HTTP_200_OK)
+
+    except json.JSONDecodeError:
+        print("Callback SerdiPay: Corps de requête JSON invalide.")
+        return Response({'error': 'Corps de requête JSON invalide.'}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response({'error': f'Erreur interne du serveur: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+# methode pour le retrait
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@verifier_membre
+def api_retirer_compte(request):
+    """
+    Gère la demande de retrait du compte d'un membre via l'API SerdiPay B2C.
+    
+    """
+    serdipay_service = SerdiPayService()
+
+    if not hasattr(request.user, 'membre'):
+        return Response({'error': "Utilisateur non associé à un membre."}, status=status.HTTP_403_FORBIDDEN)
+    
+    membre = request.user.membre
+
+    serializer = RechargementSerializer(data=request.data, context={'request': request})
+    
+    if serializer.is_valid():
+        montant_decimal = serializer.validated_data['montant']
+        devise_cleaned = serializer.validated_data['devise']
+        recipient_phone = serializer.validated_data['account_sender'] 
+        fournisseur = serializer.validated_data['fournisseur']
+
+        # Vérification du solde du compte avant le retrait
+        compte = membre.compte_USD if devise_cleaned == "USD" else compte == membre.compte_CDF
+        
+        if compte.solde < montant_decimal:
+            return Response({'error': "Solde insuffisant pour effectuer cette transaction."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+
+            serdipay_response = serdipay_service.withdraw_b2c(
+                account=serdipay_service.MERCHANT_CODE,
+                client_phone=recipient_phone,
+                amount=float(montant_decimal), 
+                currency=devise_cleaned
+            )
+
+            if serdipay_response.get('message') == "Transaction in process (callback)":
                 with db_transaction.atomic():
                     transaction_obj = Transactions.objects.create(
                         membre=membre,
-                        type="recharger_compte",
-                        montant=net_montant,
+                        type="retrait_compte", # Type de transaction changé pour retrait
+                        montant=montant_decimal,
+                        devise=devise_cleaned,
+                        statut="En attente",
+                        date_approbation=None,
+                        # serdipay_session_id=serdipay_response.get('sessionId') # If available and useful
+                    )
+
+                return Response(
+                    {'success': True, 'message': "Retrait en cours de traitement. Veuillez vérifier le statut dans un instant."},
+                    status=status.HTTP_202_ACCEPTED
+                )
+            elif  serdipay_response.get('message') == "Withdraw confirmed of the account":
+                with db_transaction.atomic():
+                    transaction_obj = Transactions.objects.create(
+                        membre=membre,
+                        type="retrait_compte",
+                        montant=montant_decimal,
                         devise=devise_cleaned,
                         statut="Approuvé",
                         date_approbation=timezone.now(),
-                        # serdipay_transaction_id=serdipay_response.get('transactionId') # Si disponible et utile
+                        # serdipay_transaction_id=serdipay_response.get('transactionId')
                     )
 
                     Solde.objects.create(
                         transaction=transaction_obj,
-                        montant=net_montant,
+                        montant=-montant_decimal, # Negative amount for withdrawal
                         devise=devise_cleaned,
-                        account_sender=numero_cleaned,
-                        # frais_retrait=frais_retrait # Si vous voulez enregistrer les frais
+                        account_sender=recipient_phone, # The recipient of the withdrawal
                     )
 
-                    if devise_cleaned == "USD":
-                        compte = membre.compte_USD
-                    else: # Assuming CDF
-                        compte = membre.compte_CDF
-                    
-                    compte.solde += net_montant
+                    compte.solde -= montant_decimal
                     compte.save()
 
                 return Response(
-                    {'success': True, 'message': "Rechargement effectué avec succès."},
+                    {'success': True, 'message': "Retrait effectué avec succès."},
                     status=status.HTTP_200_OK
                 )
-
-            elif serdipay_response.get('message') == "Transaction in process (callback)":
-                print("Statut SerdiPay: Transaction en cours (callback). Enregistrement en attente.")
-                with db_transaction.atomic():
-                    transaction_obj = Transactions.objects.create(
-                        membre=membre,
-                        type="recharger_compte",
-                        montant=net_montant,
-                        devise=devise_cleaned,
-                        statut="En attente",
-                        date_approbation=None,
-                        # serdipay_session_id=serdipay_response.get('sessionId') # Important pour le suivi
-                    )
-                print("Transaction DB en attente créée.")
-                return Response(
-                    {'success': True, 'message': "Rechargement en cours de traitement. Veuillez vérifier le statut dans un instant."},
-                    status=status.HTTP_202_ACCEPTED # 202 Accepted indique que la requête a été acceptée pour traitement
-                )
             else:
-                print("Statut SerdiPay: Réponse inattendue ou échec direct.")
-                error_from_serdipay = serdipay_response.get('message', 'Réponse SerdiPay inattendue.')
+                print("Statut SerdiPay: Réponse inattendue ou échec direct pour le retrait.")
+                error_from_serdipay = serdipay_response.get('message', 'Réponse SerdiPay inattendue pour le retrait.')
                 return Response(
-                    {'error': f"Échec du paiement: {error_from_serdipay}"},
+                    {'error': f"Échec du retrait: {error_from_serdipay}"},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
 
@@ -1406,15 +1558,13 @@ def api_recharger_compte(request):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
         except Exception as e:
-             return Response(
+            return Response(
                 {'error': f"Une erreur interne est survenue: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
     else:
         print(f"Serializer est INVALIDE. Erreurs : {serializer.errors}")
-        # Renvoie les erreurs de validation du serializer
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
     
 
 

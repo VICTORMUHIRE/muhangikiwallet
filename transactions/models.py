@@ -20,7 +20,8 @@ STATUS_CHOICES = [
     ('Approuvé', 'Approuvé'),
     ('Rejeté', 'Rejeté'),
     ('Remboursé', 'Remboursé'),
-    ('Annulé', 'Annulé')
+    ('Annulé', 'Annulé'),
+    ('Échoué', 'Échoué'), # Nouveau statut pour les échecs de SerdiPay
 ]
 
 OPERATEURS = [
@@ -70,7 +71,13 @@ class Transactions(models.Model):
     description = models.TextField(blank=True, null=True, verbose_name="Description")
     type = models.CharField(max_length=30, choices=TRANSACTION_CHOICES, verbose_name="Type de transaction")
 
-    statut = models.CharField(max_length=20, choices=STATUS_CHOICES, default="Demande", verbose_name="Statut")
+    statut = models.CharField(max_length=20, choices=STATUS_CHOICES, default="En attente", verbose_name="Statut")
+
+    # Nouveaux champs spécifiques à SerdiPay et au suivi
+    serdipay_session_id = models.CharField(max_length=100, null=True, blank=True, unique=True, verbose_name="ID Session SerdiPay") 
+    serdipay_transaction_id = models.CharField(max_length=100, null=True, blank=True, unique=True, verbose_name="ID Transaction SerdiPay") 
+    serdipay_raw_response = models.JSONField(null=True, blank=True, verbose_name="Réponse brute SerdiPay")
+    client_phone = models.CharField(max_length=20, null=True, blank=True, verbose_name="Numéro de téléphone du client") # Ajouté pour les rechargements C2B
 
     def __str__(self):
         return f"Transaction de {self.montant} {self.devise} - {self.type} - {self.date}"
@@ -78,6 +85,12 @@ class Transactions(models.Model):
     class Meta:
         verbose_name = "Transaction"
         verbose_name_plural = "Transactions"
+        # Ajout d'index pour des recherches plus rapides
+        indexes = [
+            models.Index(fields=['serdipay_session_id']),
+            models.Index(fields=['serdipay_transaction_id']),
+            models.Index(fields=['client_phone']),
+        ]
 
 class BalanceAdmin(models.Model):
     montant = models.DecimalField(max_digits=15, decimal_places=4, verbose_name="Montant du bénéfice")

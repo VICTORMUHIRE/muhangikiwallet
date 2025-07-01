@@ -13,7 +13,7 @@
         display: flex !important;
         align-items: center !important;
         margin-bottom: 2rem;
-        justify-content: space-between; /* Aligner le titre et la croix */
+        justify-content: space-between;
     }
 
     .btn-link-back {
@@ -21,7 +21,7 @@
         padding: 0;
         display: flex;
         align-items: center;
-        width: auto; /* Ajuster la largeur */
+        width: auto;
         text-decoration: none;
         background: none;
         border: none;
@@ -120,7 +120,7 @@
         flex-direction: column;
     }
 
-    .number-details  {
+    .number-details {
         font-size: 0.8rem;
         color: #a0aec0;
     }
@@ -130,6 +130,15 @@
         height: 20px;
         fill: #718096;
     }
+
+    /* Nouveau CSS pour l'étape de suivi */
+    .status-icon {
+        font-size: 3rem; /* Ajustez la taille de l'icône */
+        margin-bottom: 1rem;
+    }
+    .status-icon.pending { color: orange; }
+    .status-icon.success { color: green; }
+    .status-icon.failed { color: red; }
 </style>
 
 <div class="modal fade" id="depositModal" tabindex="-1" aria-hidden="true">
@@ -148,7 +157,7 @@
                             <h6 class="fw-semibold">1. Choisir un fournisseur</h6>
                             <div class="row row-cols-md-3 g-1 g-md-3 mt-3">
                                 <div class="col">
-                                    <button type="button" class="card card-option border rounded-3  d-flex align-items-center justify-content-center" onclick="selectProvider('AM'); goToStep(2)" data-provider="AM">
+                                    <button type="button" class="card card-option border rounded-3 d-flex align-items-center justify-content-center" onclick="selectProvider('AM'); goToStep(2)" data-provider="AM">
                                         <img src="{% static "airtel.png" %}" alt="Airtel Money" class="img-fluid m-3 provider-logo">
                                     </button>
                                 </div>
@@ -161,7 +170,7 @@
                                     <button type="button" class="card card-option border rounded-3 d-flex align-items-center justify-content-center" onclick="selectProvider('OM'); goToStep(2)" data-provider="OM">
                                         <img src="{% static "orange.png" %}" alt="Orange Money" class="img-fluid m-3 provider-logo">
                                     </button>
-                                </div>                            
+                                </div>
                                 <input type="hidden" name="fournisseur" id="fournisseur">
                             </div>
 
@@ -171,37 +180,41 @@
                         <div class="step" data-step="2">
                             <div class="step-header">
                                 <button type="button" class="btn-link-back" onclick="goToStep(1)">
-                                    <i class="fa fa-arrow-left" style="margin-right: 5px;"></i>
-                                    Retour
+                                <i class="fa fa-arrow-left me-2"></i> Retour
                                 </button>
                             </div>
 
-                            <div id="numeroError" class="text-danger mt-2 d-none">Veuillez sélectionner ou entrer un numéro de téléphone.</div>
+                            <h6 class="fw-semibold mb-3">2. Entrer les détails du paiement</h6>
 
-                            <h6 class="fw-semibold mb-3">2. Sélectionner votre numéro</h6>
-                            <div class="list-group">
-                                {# Utilisation de membre.numero_telephone pour le numéro principal #}
-                                <button type="button" class="number-option btn-link-back " onclick="selectNumero('{{ membre.numero_telephone }}'); goToStep(4);">
-                                    <div class="number-info">
-                                        <i class="fas fa-mobile-alt number-icon"></i>
-                                        <div class="number-details">
-                                            <span>{{ membre.numero_telephone }}</span>
-                                            <span class="primary">Numéro Principal</span>
-                                        </div>
-                                    </div>
-                                    <i class="fas fa-chevron-right arrow-icon"></i>
-                                </button>
-                                <button type="button" class="number-option btn-link-back" onclick="goToStep(3)">
-                                    <div class="number-info">
-                                        <i class="fas fa-plus-circle number-icon"></i>
-                                        <div class="number-details">
-                                            <span>Ajouter un autre numéro</span>
-                                        </div>
-                                    </div>
-                                    <i class="fas fa-chevron-right arrow-icon"></i>
-                                </button>
+                            <div class="mb-3">
+                                <label class="form-label">Numéro de téléphone</label>
+                                <div class="input-group">
+                                <span class="input-group-text">+243</span>
+                                <input type="tel" class="form-control" id="clientPhone" placeholder="Ex: 970000000" maxlength="9">
+                                </div>
+                                <small class="text-muted">Tapez uniquement les 9 chiffres après +243</small>
+                                <div id="clientPhone-error" class="text-danger mt-2 d-none"></div>
                             </div>
-                            <input type="hidden" name="account_sender" id="account_sender">
+
+                            <div class="mb-3">
+                                <label for="id_devise" class="form-label">Devise</label>
+                                <select class="form-select" id="id_devise" name="devise">
+                                <option value="">Sélectionner une devise</option>
+                                <option value="CDF">CDF</option>
+                                <option value="USD">USD</option>
+                                </select>
+                                <div id="id_devise-error" class="text-danger mt-2 d-none"></div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="id_montant" class="form-label">Montant</label>
+                                <input type="number" step="0.01" class="form-control" id="id_montant" name="montant" placeholder="Ex: 100.00">
+                                <div id="id_montant-error" class="text-danger mt-2 d-none"></div>
+                            </div>
+
+                            <button type="button" class="btn btn-primary w-100" onclick="validateCombinedStep2AndGoToNext()">
+                                Suivant
+                            </button>
                         </div>
 
                         <div class="step" data-step="3">
@@ -211,55 +224,11 @@
                                     Retour
                                 </button>
                             </div>
-                            <div id="newNumeroError" class="text-danger mt-2 d-none">Veuillez entrer un numéro de téléphone valide.</div>
-                            <h6 class="fw-semibold mb-3">3. Entrer un nouveau numéro</h6>
-                            <div class="mb-3">
-                                <label for="newNumber" class="form-label">Nouveau numéro</label>
-                                <input type="tel" class="form-control" id="newNumber" placeholder="Ex: +243970000000">
-                            </div>
-                            <button type="button" class="btn btn-primary w-100" onclick="validateNewNumeroAndGoToStep4()">Suivant</button>
-                        </div>
-
-                        <div class="step" data-step="4">
-                            <div class="step-header">
-                                <button type="button" class="btn-link-back" onclick="goToStep(2)">
-                                    <i class="fa fa-arrow-left" style="margin-right: 5px;"></i>
-                                    Retour
-                                </button>
-                            </div>
-                            <h6 class="fw-semibold mb-3">4. Choisir la devise et entrer le montant</h6>
-                            <div class="mb-3">
-                                <label for="id_devise" class="form-label">Devise</label>
-                                {# Remplace le form.devise de Django par un select HTML standard #}
-                                <select class="form-select" id="id_devise" name="devise">
-                                    <option value="">Sélectionner une devise</option>
-                                    <option value="CDF">CDF</option>
-                                    <option value="USD">USD</option>
-                                </select>
-                                <div id="id_devise-error" class="text-danger mt-2 d-none"></div>
-                            </div>
-                            <div id="montantDeviseError" class="text-danger mt-2 d-none">Veuillez choisir la devise et entrer un montant valide.</div>
-                            <div class="mb-3">
-                                <label for="id_montant" class="form-label">Montant</label>
-                                {# Remplace le form.montant de Django par un input HTML standard #}
-                                <input type="number" step="0.01" class="form-control" id="id_montant" name="montant" placeholder="Ex: 100.00">
-                                <div id="id_montant-error" class="text-danger mt-2 d-none"></div>
-                            </div>
-                            <button type="button" class="btn btn-primary w-100" onclick="validateAmountAndCurrency()">Suivant</button>
-                        </div>
-
-                        <div class="step" data-step="5">
-                            <div class="step-header">
-                                <button type="button" class="btn-link-back" onclick="goToStep(4)">
-                                    <i class="fa fa-arrow-left" style="margin-right: 5px;"></i>
-                                    Retour
-                                </button>
-                            </div>
                             <div id="deposit-error-message" class="alert alert-danger mt-2 d-none"></div>
                             <div id="deposit-success-message" class="alert alert-success mt-2 d-none"></div>
-                            <h6 class="fw-semibold mb-3">5. Confirmation de la transaction</h6>
+                            <h6 class="fw-semibold mb-3">3. Confirmation de la transaction</h6>
                             <div class="mb-3">
-                                <p>Vous allez recharger <strong id="confirmAmount"></strong>, <span id="confirmCurrency"> <br> </span> à partir de <strong id="confirmNumber"></strong> via <strong id="confirmProvider"></strong>. </p>
+                                <p>Vous allez recharger <strong id="confirmAmount"></strong> <span id="confirmCurrency"></span> à partir de <strong id="confirmNumber"></strong> via <strong id="confirmProvider"></strong>. </p>
                             </div>
                             <div class="mb-3">
                                 <label for="password" class="form-label">Mot de passe</label>
@@ -267,7 +236,20 @@
                                 <div id="password-error" class="text-danger mt-2 d-none"></div>
                             </div>
 
-                            <button type="button" class="btn btn-success w-100" onclick="effectuerDepotCompte()">Confirmer et procéder</button>
+                            <button type="button" class="btn btn-success w-100" id="confirmDepositBtn" onclick="effectuerDepotCompte()">Confirmer et procéder</button>
+                        </div>
+
+                        <div class="step text-center" data-step="4">
+                            <h6 class="fw-semibold mb-4">4. Suivi de votre rechargement</h6>
+                            <div id="transactionStatusDisplay">
+                                <i class="fa fa-spinner fa-spin status-icon pending" id="statusIcon"></i>
+                                <p class="lead" id="statusMessage">Initialisation de la demande...</p>
+                                <p class="text-muted" id="statusDetails">Veuillez confirmer la transaction sur votre mobile en entrant votre PIN. Ceci peut prendre quelques instants.</p>
+                                <div id="pollingErrorMessage" class="alert alert-warning d-none mt-3"></div>
+                            </div>
+                            <button type="button" class="btn btn-primary mt-4 d-none" id="closeModalAfterStatus" data-bs-dismiss="modal">Fermer</button>
+                            <button type="button" class="btn btn-secondary mt-4 d-none" id="retryDepositBtn">Réessayer</button>
+                            <button type="button" class="btn btn-info mt-4 d-none" id="viewHistoryBtn">Voir l'historique</button>
                         </div>
 
                     </div>
@@ -280,7 +262,21 @@
 <script>
     let currentStep = 1;
     let selectedProvider = null;
-    let selectedNumero = null;
+    let selectedNumero = null; 
+    let transactionAmount = 0;
+    let transactionCurrency = '';
+    let pollingInterval = null; // Pour stocker l'intervalle de polling
+    let currentTransactionId = null; // Pour stocker l'ID de la transaction côté backend
+
+    // Fonction utilitaire pour réinitialiser les messages d'erreur/succès
+    function resetMessages() {
+        document.getElementById('deposit-error-message').classList.add('d-none');
+        document.getElementById('deposit-success-message').classList.add('d-none');
+        document.getElementById('password-error').classList.add('d-none');
+        document.getElementById('clientPhone-error').classList.add('d-none');
+        document.getElementById('id_montant-error').classList.add('d-none');
+        document.getElementById('id_devise-error').classList.add('d-none');
+    }
 
     function goToStep(step) {
         document.querySelectorAll('.step').forEach((el) => {
@@ -289,116 +285,127 @@
         const target = document.querySelector(`.step[data-step="${step}"]`);
         if (target) {
             target.classList.add('active');
-            currentStep = step; // Mettre à jour l'étape courante
+            currentStep = step; 
+            // Cacher les boutons de fin de l'étape 4 par défaut
+            document.getElementById('closeModalAfterStatus').classList.add('d-none');
+            document.getElementById('retryDepositBtn').classList.add('d-none');
+            document.getElementById('viewHistoryBtn').classList.add('d-none');
+            // Réinitialiser les messages de l'étape 4
+            document.getElementById('statusIcon').className = 'fa fa-spinner fa-spin status-icon pending';
+            document.getElementById('statusMessage').textContent = 'Initialisation de la demande...';
+            document.getElementById('statusDetails').textContent = 'Veuillez confirmer la transaction sur votre mobile en entrant votre PIN. Ceci peut prendre quelques instants.';
+            document.getElementById('pollingErrorMessage').classList.add('d-none');
+
+            // Si on revient sur une étape précédente, arrêter le polling
+            if (step < 4 && pollingInterval) {
+                clearInterval(pollingInterval);
+                pollingInterval = null;
+            }
         }
     }
 
     function selectProvider(provider) {
         selectedProvider = provider;
         document.getElementById('fournisseur').value = provider;
-        // Adapter le nom affiché si les codes 'AM', 'MP', 'OM', 'AF' sont internes
+        
         let displayProvider = provider;
         switch(provider) {
             case 'AM': displayProvider = 'Airtel Money'; break;
             case 'MP': displayProvider = 'M-PESA'; break;
             case 'OM': displayProvider = 'Orange Money'; break;
             case 'AF': displayProvider = 'Afrimoney'; break;
+            default: displayProvider = provider; break; // Gérer les cas non prévus
         }
         document.getElementById('confirmProvider').textContent = displayProvider;
         document.getElementById('providerError').classList.add('d-none');
     }
 
-    function selectNumero(numero) {
-        selectedNumero = numero;
-        document.getElementById('account_sender').value = numero;
-        document.getElementById('confirmNumber').textContent = numero;
-        document.getElementById('numeroError').classList.add('d-none');
-        document.getElementById('newNumeroError').classList.add('d-none');
-    }
+    function validateCombinedStep2AndGoToNext() {
+        const clientPhoneInput = document.getElementById('clientPhone');
+        const amountInput = document.getElementById('id_montant');
+        const currencySelect = document.getElementById('id_devise');
 
-    // Cette fonction est renommée pour être plus explicite dans son rôle
-    function validateNewNumeroAndGoToStep4() {
-        const newNumberInput = document.getElementById('newNumber').value;
-        // Validation simple: doit commencer par '+' et avoir une certaine longueur
-        if (!newNumberInput || newNumberInput.length < 9 || !newNumberInput.startsWith('+')) {
-            document.getElementById('newNumeroError').classList.remove('d-none');
-            return false;
-        }
-        selectNumero(newNumberInput);
-        goToStep(4);
-        return true;
-    }
-
-
-    function validateAmountAndCurrency() {
-        const amountInput = document.getElementById('id_montant').value;
-        const currencySelect = document.getElementById('id_devise').value;
+        const clientPhoneErrorDiv = document.getElementById('clientPhone-error');
         const montantErrorDiv = document.getElementById('id_montant-error');
         const deviseErrorDiv = document.getElementById('id_devise-error');
 
         let isValid = true;
 
-        // Clear previous errors
-        montantErrorDiv.classList.add('d-none');
-        deviseErrorDiv.classList.add('d-none');
-        document.getElementById('montantDeviseError').classList.add('d-none');
+        resetMessages(); // Réinitialiser tous les messages d'erreur
 
-        if (!currencySelect) {
+        const phoneDigits = clientPhoneInput.value.trim();
+        const fullNumber = `+243${phoneDigits}`;
+
+        const validPrefixes = {
+            'OM': ['80', '84', '85', '89', '88'], 
+            'AM': ['99', '97', '98'], 
+            'MP': ['81', '82', '83', '86'], 
+        };
+
+        // Validation longueur et format
+        if (!/^\d{9}$/.test(phoneDigits)) {
+            clientPhoneErrorDiv.textContent = "Le numéro doit contenir exactement 9 chiffres après +243.";
+            clientPhoneErrorDiv.classList.remove('d-none');
+            isValid = false;
+        } else {
+            const prefix = phoneDigits.substring(0, 2);
+            const operatorPrefixes = validPrefixes[selectedProvider] || [];
+
+            if (!operatorPrefixes.includes(prefix)) {
+                const names = { AM: "Airtel", OM: "Orange", MP: "Vodacom" };
+                clientPhoneErrorDiv.textContent = `Ce numéro (${fullNumber}) ne correspond pas au format attendu pour ${names[selectedProvider]}.`;
+                clientPhoneErrorDiv.classList.remove('d-none');
+                isValid = false;
+            }
+        }
+
+        if (!currencySelect.value) {
             deviseErrorDiv.textContent = "Veuillez sélectionner une devise.";
             deviseErrorDiv.classList.remove('d-none');
             isValid = false;
         }
 
-        const parsedAmount = parseFloat(amountInput);
+        const parsedAmount = parseFloat(amountInput.value);
         if (isNaN(parsedAmount) || parsedAmount <= 0) {
-            montantErrorDiv.textContent = "Veuillez entrer un montant valide et positif.";
+            montantErrorDiv.textContent = "Veuillez entrer un montant valide.";
             montantErrorDiv.classList.remove('d-none');
             isValid = false;
         }
 
-        if (!isValid) {
-            document.getElementById('montantDeviseError').classList.remove('d-none'); // Erreur générale
-            return false;
-        }
+        if (!isValid) return;
 
-        document.getElementById('confirmAmount').textContent = parsedAmount.toFixed(2); // Formatage pour l'affichage
-        document.getElementById('confirmCurrency').textContent = currencySelect;
-        goToStep(5);
-        return true;
+        // Stocker les valeurs pour étape 3
+        selectedNumero = fullNumber;
+        transactionAmount = parsedAmount;
+        transactionCurrency = currencySelect.value;
+
+        document.getElementById('confirmAmount').textContent = transactionAmount.toFixed(2);
+        document.getElementById('confirmCurrency').textContent = transactionCurrency;
+        document.getElementById('confirmNumber').textContent = selectedNumero;
+
+        goToStep(3);
     }
 
     async function effectuerDepotCompte() {
-        const montantInput = document.getElementById('id_montant');
-        const deviseInput = document.getElementById('id_devise');
         const motDePasseInput = document.getElementById('password');
-        const fournisseurInput = document.getElementById('fournisseur');
-        const numeroInput = document.getElementById('account_sender');
         const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const confirmBtn = document.getElementById('confirmDepositBtn');
 
-        const errorDiv = document.getElementById('deposit-error-message');
-        const successDiv = document.getElementById('deposit-success-message');
-        const deviseErrorDiv = document.getElementById('id_devise-error');
-        const montantErrorDiv = document.getElementById('id_montant-error');
-        const passwordErrorDiv = document.getElementById('password-error');
+        resetMessages();
+        
+        // Désactiver le bouton et montrer un indicateur de chargement
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = 'Envoi en cours...';
 
-        // Réinitialiser les messages d'erreur et de succès
-        errorDiv.classList.add('d-none');
-        successDiv.classList.add('d-none');
-        deviseErrorDiv.classList.add('d-none');
-        montantErrorDiv.classList.add('d-none');
-        passwordErrorDiv.classList.add('d-none');
-
-        // Collecter les données
         const requestData = {
-            montant: parseFloat(montantInput.value),
-            devise: deviseInput.value,
+            montant: transactionAmount, 
+            devise: transactionCurrency, 
             mot_de_passe: motDePasseInput.value,
-            fournisseur: fournisseurInput.value,
-            account_sender: numeroInput.value,
+            fournisseur: selectedProvider, 
+            account_sender: selectedNumero, 
         };
 
         try {
-
             const apiUrl = "/membres/api/recharger/"; 
 
             const response = await fetch(apiUrl, {
@@ -413,71 +420,209 @@
             const data = await response.json();
 
             if (response.ok) { 
-                successDiv.textContent = data.message;
-                successDiv.classList.remove('d-none');
-                setTimeout(() => {
-                    const depositModal = bootstrap.Modal.getInstance(document.getElementById('depositModal'));
-                    if (depositModal) {
-                        depositModal.hide();
-                    }
-                    window.location.reload(); 
-                }, 2000);
+                currentTransactionId = data.transaction_id; 
+
+                goToStep(4);
+                startPolling(); 
+                
+                document.getElementById('statusMessage').textContent = data.message;
+                document.getElementById('statusDetails').textContent = "Nous attendons la confirmation de votre mobile. Gardez cette fenêtre ouverte.";
+
             } else {
-                if (data.errors) { // Erreurs de validation du serializer
+                // Réactiver le bouton et afficher les erreurs
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = 'Confirmer et procéder';
+
+                if (data.errors) { 
                     for (const field in data.errors) {
                         const errorMessages = data.errors[field].join(', ');
                         if (field === 'montant') {
-                            montantErrorDiv.textContent = errorMessages;
-                            montantErrorDiv.classList.remove('d-none');
+                            document.getElementById('id_montant-error').textContent = errorMessages;
+                            document.getElementById('id_montant-error').classList.remove('d-none');
                         } else if (field === 'devise') {
-                            deviseErrorDiv.textContent = errorMessages;
-                            deviseErrorDiv.classList.remove('d-none');
-                        } else if (field === 'mot_de_passe') { // Le serializer utilise 'mot_de_passe'
-                            passwordErrorDiv.textContent = errorMessages;
-                            passwordErrorDiv.classList.remove('d-none');
-                        } else if (field === 'account_sender') {
-                            // Si vous avez un champ d'erreur pour account_sender dans l'UI
-                            const accountSenderErrorDiv = document.getElementById('account_sender-error'); // Créez cette div si nécessaire
-                            if(accountSenderErrorDiv) {
-                                accountSenderErrorDiv.textContent = errorMessages;
-                                accountSenderErrorDiv.classList.remove('d-none');
-                            }
+                            document.getElementById('id_devise-error').textContent = errorMessages;
+                            document.getElementById('id_devise-error').classList.remove('d-none');
+                        } else if (field === 'mot_de_passe') {
+                            document.getElementById('password-error').textContent = errorMessages;
+                            document.getElementById('password-error').classList.remove('d-none');
+                        } else if (field === 'account_sender') { // C'est account_sender dans la réponse du backend
+                             document.getElementById('clientPhone-error').textContent = errorMessages;
+                             document.getElementById('clientPhone-error').classList.remove('d-none');
+                        } else if (data.message) { // Cas où il y a un message général de succès
+                            document.getElementById('deposit-success-message').textContent = data.message;
+                            document.getElementById('deposit-success-message').classList.remove('d-none');
                         }
-                        // Gérer les erreurs non spécifiques aux champs
                         else if (field === 'non_field_errors') {
-                            errorDiv.textContent = errorMessages;
-                            errorDiv.classList.remove('d-none');
+                            document.getElementById('deposit-error-message').textContent = errorMessages;
+                            document.getElementById('deposit-error-message').classList.remove('d-none');
                         } else {
-                            errorDiv.textContent = `Erreur: ${errorMessages}`;
-                            errorDiv.classList.remove('d-none');
+                            document.getElementById('deposit-error-message').textContent = `Erreur: ${errorMessages}`;
+                            document.getElementById('deposit-error-message').classList.remove('d-none');
                         }
                     }
-                } else if (data.error) { // Erreur générale (ex: mot de passe incorrect de votre vue)
-                    if (data.error.includes("Mot de passe incorrect")) { // Plus robuste
-                        passwordErrorDiv.textContent = data.error;
-                        passwordErrorDiv.classList.remove('d-none');
+                } else if (data.error) { // Cas d'une erreur générale non liée à un champ spécifique
+                    if (data.error.includes("Mot de passe incorrect")) {
+                        document.getElementById('password-error').textContent = data.error;
+                        document.getElementById('password-error').classList.remove('d-none');
                     } else {
-                        errorDiv.textContent = data.error;
-                        errorDiv.classList.remove('d-none');
+                        document.getElementById('deposit-error-message').textContent = data.error;
+                        document.getElementById('deposit-error-message').classList.remove('d-none');
                     }
                 } else {
-                    errorDiv.textContent = data.error;
-                    errorDiv.classList.remove('d-none');
+                    document.getElementById('deposit-error-message').textContent = "Une erreur est survenue lors du traitement. Veuillez réessayer.";
+                    document.getElementById('deposit-error-message').classList.remove('d-none');
                 }
             }
         } catch (error) {
             console.error('Erreur réseau ou parsing:', error);
-            errorDiv.textContent = 'Une erreur de communication est survenue. Veuillez réessayer.';
-            errorDiv.classList.remove('d-none');
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = 'Confirmer et procéder';
+            document.getElementById('deposit-error-message').textContent = 'Une erreur de communication est survenue. Veuillez réessayer.';
+            document.getElementById('deposit-error-message').classList.remove('d-none');
         }
     }
 
+
+    const POLLING_INTERVAL_MS = 5000; 
+    const POLLING_MAX_ATTEMPTS = 24; // Maximum 2 minutes (24 * 5s)
+    let pollingAttempts = 0;
+
+    async function pollTransactionStatus() {
+        if (!currentTransactionId) {
+            console.warn("Polling tenté sans Transaction ID.");
+            stopPolling();
+            return;
+        }
+
+        pollingAttempts++;
+        const statusIcon = document.getElementById('statusIcon');
+        const statusMessage = document.getElementById('statusMessage');
+        const statusDetails = document.getElementById('statusDetails');
+        const pollingErrorMessage = document.getElementById('pollingErrorMessage');
+
+        try {
+            const apiUrl = `/membres/api/transactions/${currentTransactionId}/status/`;
+            const response = await fetch(apiUrl, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error(`Erreur HTTP: ${response.status}`);
+            }
+
+            const data = await response.json();
+            const transactionStatus = data.status;
+
+            switch (transactionStatus) {
+                case 'Approuvé':
+                    statusIcon.className = 'fa fa-check-circle status-icon success';
+                    statusMessage.textContent = 'Rechargement réussi !';
+                    statusDetails.textContent = `Votre compte a été crédité de ${data.amount} ${data.currency}.`;
+                    pollingErrorMessage.classList.add('d-none'); // Cacher tout message d'erreur précédent
+                    stopPolling();
+                    // Optionnel: Mettre à jour le solde affiché sur la page principale sans recharger
+                    // Ex: document.getElementById('mainBalance').textContent = nouveauSolde;
+                    document.getElementById('closeModalAfterStatus').classList.remove('d-none');
+                    document.getElementById('viewHistoryBtn').classList.remove('d-none');
+                    break;
+                case 'Rejeté': // Ou "Échoué"
+                case 'Échoué':
+                    statusIcon.className = 'fa fa-times-circle status-icon failed';
+                    statusMessage.textContent = 'Rechargement échoué !';
+                    statusDetails.textContent = "La transaction a été rejetée ou a échoué. Veuillez vérifier les détails et réessayer.";
+                    pollingErrorMessage.classList.add('d-none');
+                    stopPolling();
+                    document.getElementById('closeModalAfterStatus').classList.remove('d-none');
+                    document.getElementById('retryDepositBtn').classList.remove('d-none');
+                    break;
+                case 'En attente':
+                    // Toujours en attente, continue le polling
+                    if (pollingAttempts >= POLLING_MAX_ATTEMPTS) {
+                        statusIcon.className = 'fa fa-exclamation-triangle status-icon pending';
+                        statusMessage.textContent = 'Vérification en cours depuis trop longtemps.';
+                        statusDetails.textContent = "Le rechargement prend plus de temps que prévu. Vérifiez votre historique de transactions ultérieurement ou contactez le support.";
+                        pollingErrorMessage.classList.remove('d-none');
+                        pollingErrorMessage.textContent = "Le délai maximal de vérification est atteint. Veuillez consulter l'historique des transactions.";
+                        stopPolling();
+                        document.getElementById('closeModalAfterStatus').classList.remove('d-none');
+                        document.getElementById('viewHistoryBtn').classList.remove('d-none');
+                    } else {
+                        // Pas de changement d'UI pour 'En attente' si pas de timeout
+                        console.log(`Transaction ${currentTransactionId} toujours en attente... Tentative ${pollingAttempts}/${POLLING_MAX_ATTEMPTS}`);
+                    }
+                    break;
+                default:
+                    // Gérer d'autres statuts inattendus
+                    statusIcon.className = 'fa fa-question-circle status-icon pending';
+                    statusMessage.textContent = 'Statut inconnu.';
+                    statusDetails.textContent = "Un statut inattendu a été reçu. Veuillez contacter le support.";
+                    pollingErrorMessage.classList.remove('d-none');
+                    stopPolling();
+                    document.getElementById('closeModalAfterStatus').classList.remove('d-none');
+                    break;
+            }
+
+        } catch (error) {
+            console.error('Erreur lors du polling:', error);
+            statusIcon.className = 'fa fa-exclamation-triangle status-icon failed';
+            statusMessage.textContent = 'Erreur de connexion !';
+            statusDetails.textContent = 'Impossible de vérifier le statut. Veuillez réessayer plus tard ou contacter le support.';
+            pollingErrorMessage.classList.remove('d-none');
+            pollingErrorMessage.textContent = "Une erreur est survenue lors de la vérification. Merci de contacter le support si le problème persiste.";
+            stopPolling();
+            document.getElementById('closeModalAfterStatus').classList.remove('d-none');
+            document.getElementById('viewHistoryBtn').classList.remove('d-none');
+        }
+    }
+
+    function startPolling() {
+        pollingAttempts = 0;
+        stopPolling(); // S'assurer qu'aucun autre polling n'est en cours
+        pollingInterval = setInterval(pollTransactionStatus, POLLING_INTERVAL_MS);
+        pollTransactionStatus(); // Exécuter une fois immédiatement
+    }
+
+    function stopPolling() {
+        if (pollingInterval) {
+            clearInterval(pollingInterval);
+            pollingInterval = null;
+        }
+    }
+
+    document.getElementById('retryDepositBtn').addEventListener('click', () => {
+        goToStep(2); 
+    });
+
+    // Gérer le bouton Voir l'historique de l'étape 4
+    document.getElementById('viewHistoryBtn').addEventListener('click', () => {
+        // Optionnel: Rediriger vers la page d'historique des transactions
+        // window.location.href = '/membres/historique-transactions/'; 
+        const depositModal = bootstrap.Modal.getInstance(document.getElementById('depositModal'));
+        if (depositModal) {
+            depositModal.hide();
+        }
+        // Recharger la page principale si l'historique est sur la même page ou pour mettre à jour le solde
+        window.location.reload(); 
+    });
+
+
     document.addEventListener('DOMContentLoaded', () => {
-        goToStep(1);
-        // Initialiser le modal Bootstrap manuellement si non déjà fait
+        goToStep(1); // Assurez-vous que l'étape 1 est active au chargement du modal
         const depositModalElement = document.getElementById('depositModal');
-        if (depositModalElement && !bootstrap.Modal.getInstance(depositModalElement)) {
+        // Initialiser le modal si Bootstrap est utilisé
+        if (depositModalElement && typeof bootstrap !== 'undefined' && !bootstrap.Modal.getInstance(depositModalElement)) {
             new bootstrap.Modal(depositModalElement);
         }
+
+        // Écouter l'événement de fermeture du modal pour arrêter le polling
+        depositModalElement.addEventListener('hidden.bs.modal', () => {
+            stopPolling();
+            resetMessages(); // Réinitialiser les messages quand le modal se ferme
+            goToStep(1); // Retour à la première étape pour la prochaine ouverture
+        });
     });
 </script>

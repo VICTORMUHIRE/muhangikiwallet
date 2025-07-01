@@ -79,7 +79,8 @@
                         type="button"
                         class="btn btn-outline-dark btn-sm rounded py-2 px-3 shadow-sm"
                         data-bs-toggle="modal"
-                        data-bs-target="#withdrawModal"
+                        data-bs-target="#withdrawalModal"
+                        aria-label="Retrait du compte"
                     >
                         <i class="fas fa-arrow-down me-2"></i>Retirer
                     </button>
@@ -116,4 +117,5 @@
 </div>
 
 {% include "membres/components/modalpayement.html" %}
+{% include "membres/components/modalRetrait.html" %}
 {% endblock %}

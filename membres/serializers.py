@@ -108,12 +108,37 @@ class RechargementSerializer(serializers.Serializer):
             raise serializers.ValidationError("La devise doit être 'USD' ou 'CDF'.")
         return value.upper()
 
-    def validate_fournisseur(self, value):
-        
-        allowed_providers = ["AM", "OM", "MP", "AF"]
-        if value.upper() not in allowed_providers:
-            raise serializers.ValidationError(f"Le fournisseur doit être l'un des suivants : {', '.join(allowed_providers)}.")
-        return value.upper()
+    def validate_account_sender(self, value):
+        fournisseur = self.initial_data.get('fournisseur', '').upper()
+        numero = value.strip().replace(' ', '').replace('+', '')
+    
+        if not numero.startswith('243') or len(numero) != 12 or not numero.isdigit():
+            raise serializers.ValidationError("Le numéro doit être au format +243 suivi de 9 chiffres, ex: +243970000000")
+    
+        prefix = numero[3:5]  # 2 premiers chiffres après 243
+    
+        prefix_mapping = {
+            '0M': ['80', '84', '85', '89', '88'], 
+            'AM': ['99', '97', '98'],    
+            'MP': ['81', '82', '83', '86'],  
+        }
+    
+        if fournisseur in prefix_mapping:
+            if prefix not in prefix_mapping[fournisseur]:
+                operateurs = {
+                    'AM': 'Airtel',
+                    'OM': 'Orange',
+                    'MP': 'Vodacom',
+                    'AF': 'Afrimoney'
+                }
+                raise serializers.ValidationError(
+                    f"Le numéro ne correspond pas à {operateurs[fournisseur]}. Préfixes valides: {', '.join(prefix_mapping[fournisseur])}."
+                )
+        else:
+            raise serializers.ValidationError("Fournisseur non reconnu pour la validation du numéro.")
+    
+        return numero
+
 
     def validate(self, data):
         request = self.context.get('request')
