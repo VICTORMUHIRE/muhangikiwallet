@@ -1,6 +1,6 @@
 from rest_framework import serializers
-from .models import User
-from .models import Membres, CodesReference, Users
+from administrateurs.models import Users, CodesReference
+from membres.models import Membres
 from django.contrib.auth.password_validation import validate_password
 
 class MembreSerializer(serializers.ModelSerializer):

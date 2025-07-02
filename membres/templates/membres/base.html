@@ -32,7 +32,6 @@
     <link rel="apple-touch-icon-precomposed" href="{% static 'LOGO_MUHANGIKI_WALLET_PRINCIPALE.png' %}">
     <link rel="shortcut icon" href="{% static 'LOGO_MUHANGIKI_WALLET_PRINCIPALE.png' %}" type="image/x-icon">
     <link rel="manifest" href="{% static 'manifest.json' %}">
-    <link rel="stylesheet" href="{% static 'css/membre/payement.css' %}">
 
     <title>{% block title %}Muhangiki Wallet{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'css/bootstrap/bootstrap.min.css' %}">
@@ -250,7 +249,9 @@
         {% endif %}
     </div>
 
+
     <div class="d-flex flex-grow-1" style="min-height: 100vh;">
+        {% if request.user.is_authenticated %}
         <!-- sidebar -->
         <nav  id="sidebar" class="d-none d-md-block bg-white border-end" style="width: 250px; flex-shrink: 0; position:fixed">
             <div class="position-sticky pt-3 px-2">
@@ -264,12 +265,12 @@
         
             <!-- Menu Principal -->
             <ul class="nav flex-column mb-2 mt-3">
-                {% if request.user.is_authenticated %}
+                
                 
                 <li class="nav-item">
-                <a class="nav-link {% if request.path == '/membres/' %}active{% endif %}" href="{% url 'membres:home' %}">
-                    <i class="fa fa-home me-2"></i> Accueil
-                </a>
+                    <a class="nav-link {% if request.path == '/membres/' %}active{% endif %}" href="{% url 'membres:home' %}">
+                        <i class="fa fa-home me-2"></i> Accueil
+                    </a>
                 </li>
 
                 <li class="nav-item">
@@ -313,7 +314,7 @@
                 </a>
                 </li>
 
-                {% endif %}
+                
             </ul>
         
             <!-- Section Support -->
@@ -334,7 +335,7 @@
             </ul>
             </div>
         </nav>
-        
+        {% endif %}
 
         <main class="flex-grow-1 p-0 p-md-3  ms-desktop-250 ms-0 mt-md-0" style="background-color: #f8f9fa; overflow-y: auto; ">
             <!-- le loader doit se stopper apres chargement -->
@@ -357,6 +358,8 @@
             {% endblock %}
         </main>
     </div>
+
+
 
     <!-- Barre d'application en bas (pour mobile) -->
     {% if request.user.is_authenticated %}

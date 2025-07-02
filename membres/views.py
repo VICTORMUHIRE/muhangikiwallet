@@ -17,11 +17,11 @@ from django.template.defaultfilters import slugify
 from django.views.decorators.http import require_POST, require_GET
 from django.views.decorators.csrf import csrf_exempt
 from membres.service import benefices_actuelle, investissement_actuelle
-from membres.services.serdipay_service import SerdiPayService, SerdiPayServiceError
+from membres.services.serdipay_service import SerdiPayService
 from membres.tasks import partager_benefices
 from .models import Membres
 from .forms import MembresForm, ModifierMembresForm
-from administrateurs.models import Users, NumerosCompte,Villes, Communes, Quartiers, Avenues
+from administrateurs.models import Provinces, Users, NumerosCompte,Villes, Communes, Quartiers, Avenues
 from objectifs.models import Objectifs
 from objectifs.forms import ObjectifsForm
 from django.contrib.auth.forms import PasswordChangeForm
@@ -69,6 +69,11 @@ def verifier_membre(func):
         else: return redirect("index")
 
     return wraps(func)(verify)
+
+def get_provinces(request):
+    provinces = Provinces.objects.all().values('id', 'nom')
+    print(f"{provinces}")
+    return JsonResponse(list(provinces), safe=False)
 
 def get_villes(request):
     province_id = request.GET.get('province_id')
@@ -1361,6 +1366,10 @@ def api_recharger_compte(request):
                 telecom_provider=fournisseur
             )
 
+            if 'error' in serdipay_response:
+                return Response({'error': serdipay_response['error']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
             payment_data = serdipay_response.get('payment', {})
             session_id = payment_data.get('sessionId')
             transaction_id = payment_data.get('transactionId') 
@@ -1384,11 +1393,6 @@ def api_recharger_compte(request):
                 status=status.HTTP_202_ACCEPTED 
             )
 
-        except SerdiPayServiceError as e:
-            return Response(
-                {'error': f"Erreur SerdiPay lors de l'initiation du rechargement: {str(e)}"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
         except Exception as e:
             return Response(
                 {'error': f"Une erreur interne estvenue lors du rechargement: {str(e)}"},
@@ -1503,6 +1507,9 @@ def api_retirer_compte(request):
                 telecom_provider=fournisseur
             )
 
+            if 'error' in serdipay_response:
+                return Response({'error': serdipay_response['error']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
             if serdipay_response.get('message') == "Transaction in process (callback)":
                 with db_transaction.atomic():
                     transaction_obj = Transactions.objects.create(
@@ -1546,25 +1553,18 @@ def api_retirer_compte(request):
                     status=status.HTTP_200_OK
                 )
             else:
-                print("Statut SerdiPay: Réponse inattendue ou échec direct pour le retrait.")
                 error_from_serdipay = serdipay_response.get('message', 'Réponse SerdiPay inattendue pour le retrait.')
                 return Response(
                     {'error': f"Échec du retrait: {error_from_serdipay}"},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
-
-        except SerdiPayServiceError as e:
-            return Response(
-                {'error': f"{str(e)}"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            
         except Exception as e:
             return Response(
                 {'error': f"Une erreur interne est survenue: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
     else:
-        print(f"Serializer est INVALIDE. Erreurs : {serializer.errors}")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 
