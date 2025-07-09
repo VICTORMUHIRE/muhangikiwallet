@@ -72,7 +72,6 @@ def verifier_membre(func):
 
 def get_provinces(request):
     provinces = Provinces.objects.all().values('id', 'nom')
-    print(f"{provinces}")
     return JsonResponse(list(provinces), safe=False)
 
 def get_villes(request):

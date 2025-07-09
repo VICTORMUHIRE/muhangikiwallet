@@ -45,10 +45,5 @@ urlpatterns = [
     path("profile/", views.profile, name="profile"),
     path("notifications/", views.notifications, name="notifications"),
     path("parametres/", views.parametres, name="parametres"),
-    path('provinces/', views.get_provinces, name='get_provinces'),
-    path('villes/', views.get_villes, name='get_villes'),
-    path('communes/', views.get_communes, name='get_communes'),
-    path('quartiers/', views.get_quartiers, name='get_quartiers'),
-    path('avenues/', views.get_avenues, name='get_avenues'),
     path("retirer_investissement/", views.retirer_investissement, name="retirer_investissement"),
 ]

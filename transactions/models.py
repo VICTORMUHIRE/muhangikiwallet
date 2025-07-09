@@ -351,7 +351,7 @@ class Retraits(models.Model):
 class DepotsInscription(models.Model):
     membre = models.ForeignKey(Membres, blank=True, null=True, on_delete=models.CASCADE, verbose_name="Membres")
 
-    montant = models.DecimalField(max_digits=15, decimal_places=4, verbose_name="Montant", default=10)
+    montant = models.DecimalField(max_digits=15, decimal_places=4, verbose_name="Montant", default=0)
     devise = models.CharField(max_length=3, choices=DEVISE_CHOICES, default="USD", verbose_name="Devise")
     preuve= models.ImageField(upload_to="preuves/depots_inscriptions/", blank=True, verbose_name="Preuve de depot")
 
@@ -435,7 +435,7 @@ class Solde(models.Model):
     transaction = models.ForeignKey(Transactions, on_delete=models.CASCADE)
     montant = models.DecimalField(max_digits=15, decimal_places=4)
     devise = models.CharField(max_length=3, choices=DEVISE_CHOICES, verbose_name="Devise")
-    account_sender = models.CharField(max_length=15, verbose_name="Numéro de téléphone de l'expéditeur")
+    account_sender = models.CharField(max_length=15, null=True, blank=True, verbose_name="Numéro de téléphone de l'expéditeur")
     frais_retrait = models.DecimalField(max_digits=15,null=True, blank=True,decimal_places=4)
     date_created = models.DateTimeField(auto_now_add=True)
 

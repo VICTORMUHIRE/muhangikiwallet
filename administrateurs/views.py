@@ -632,131 +632,12 @@ def rejeter_pret(request, pret_id):
     messages.success(request, "Le pret a été rejeté avec succès")
     return redirect("administrateurs:home")
 
-@login_required
-@verifier_admin
-def voir_retrait_objectif(request, retrait_objectif_id):
-    retrait_objectif = get_object_or_404(RetraitsObjectif, pk=retrait_objectif_id)
-    membre = retrait_objectif.membre
 
-    reseaux = NumerosAgent.objects.values_list('reseau', flat=True).distinct()
-    numeros_categories = {reseau: [] for reseau in reseaux}
-    for reseau in reseaux:
-        for numero_agent in NumerosAgent.objects.filter(reseau=reseau):
-            numeros_categories[reseau].append((numero_agent.numero, numero_agent.pk))
-
-    if request.method == "POST":
-        mot_de_passe = request.POST.get("password")
-        transaction_form = TransactionsForm(request.POST, instance=retrait_objectif.transaction)
-
-        if check_password(mot_de_passe, request.user.password):
-            if transaction_form.is_valid():
-                retrait_objectif.date_approbation = timezone.now()
-                retrait_objectif.statut = "Approuvé"
-
-                transaction = transaction_form.save(commit=False)
-
-                transaction.membre = membre
-                transaction.agent = transaction.numero_agent.agent
-                transaction.statut = "En attente"
-
-                transaction.save()
-                retrait_objectif.save()
-                messages.success(request, "Le retrait a été approuvé avec succès")
-                return redirect("administrateurs:home")
-            
-            else:
-                messages.error(request, "Veuillez corriger les erreurs du formulaire")
-        else:
-            messages.error(request, "Mot de passe incorrect")
-
-    context = {
-        "form": TransactionsForm(instance=retrait_objectif.transaction),
-        "numeros_categories": numeros_categories,
-        "retrait_objectif": retrait_objectif,
-        "membre": membre,
-        "pourcentage_retrait": retrait_objectif.frais * 100,
-        "frais_retrait": retrait_objectif.montant * retrait_objectif.frais,
-        "montant_à_retirer": retrait_objectif.transaction.montant
-    }
-
-    return render(request, "administrateurs/voir_retrait_objectif.html", context)
-
-@login_required
-@verifier_admin
-def rejeter_retrait_objectif(request, retrait_objectif_id):
-    retrait_objectif = get_object_or_404(RetraitsObjectif, pk=retrait_objectif_id)
-    retrait_objectif.statut = retrait_objectif.transaction.statut = "Rejeté"
-    retrait_objectif.date = timezone.now()
-
-    retrait_objectif.transaction.save()
-    retrait_objectif.save()
-    messages.success(request, "Le retrait a été rejeté avec succès")
-    return redirect("administrateurs:home")
-
-@login_required
-@verifier_admin
-def voir_annulation_objectif(request, annulation_objectif_id):
-    annulation_objectif = get_object_or_404(AnnulationObjectif, pk=annulation_objectif_id)
-    membre = annulation_objectif.membre
-
-    reseaux = NumerosAgent.objects.values_list('reseau', flat=True).distinct()
-    numeros_categories = {reseau: [] for reseau in reseaux}
-    for reseau in reseaux:
-        for numero_agent in NumerosAgent.objects.filter(reseau=reseau):
-            numeros_categories[reseau].append((numero_agent.numero, numero_agent.pk))
-
-    if request.method == "POST":
-        mot_de_passe = request.POST.get("password")
-        transaction_form = TransactionsForm(request.POST, instance=annulation_objectif.transaction)
-
-        if check_password(mot_de_passe, request.user.password):
-            if transaction_form.is_valid():
-                annulation_objectif.date_approbation = timezone.now()
-                annulation_objectif.statut = "Approuvé"
-
-                transaction = transaction_form.save(commit=False)
-
-                transaction.membre = membre
-                transaction.agent = transaction.numero_agent.agent
-                transaction.statut = "En attente"
-
-                transaction.save()
-                annulation_objectif.save()
-                messages.success(request, "L'annulation a été approuvée avec succès")
-                return redirect("administrateurs:home")
-            else:
-                messages.error(request, "Veuillez corriger les erreurs du formulaire")
-        else:
-            messages.error(request, "Mot de passe incorrect")
-
-    context = {
-        "form": TransactionsForm(instance=annulation_objectif.transaction),
-        "numeros_categories": numeros_categories,
-        "annulation_objectif": annulation_objectif,
-        "membre": membre,
-        "pourcentage_retrait": annulation_objectif.frais * 100,
-        "frais_retrait": annulation_objectif.montant * annulation_objectif.frais,
-        "montant_à_retirer": annulation_objectif.transaction.montant
-    }
-
-    return render(request, "administrateurs/voir_annulation_objectif.html", context)
-
-@login_required
-@verifier_admin
-def rejeter_annulation_objectif(request, annulation_objectif_id):
-    annulation_objectif = get_object_or_404(AnnulationObjectif, pk=annulation_objectif_id)
-    annulation_objectif.statut = annulation_objectif.transaction.statut = "Rejeté"
-    annulation_objectif.date = timezone.now()
-
-    annulation_objectif.transaction.save()
-    annulation_objectif.save()
-    messages.success(request, "L'annulation a été rejetée avec succès")
-    return redirect("administrateurs:home")
 
 @login_required
 @verifier_admin
 def valider_retrait_investissement(request, retrait_id):
-    retrait = get_object_or_404(RetraitContributions, pk=retrait_id)    
+    retrait = get_object_or_404(Retraits, pk=retrait_id)    
     solde_total_entreprise = solde_entreprise(retrait.devise)
     membre = retrait.membre
 
@@ -766,7 +647,7 @@ def valider_retrait_investissement(request, retrait_id):
 
         if check_password(mot_de_passe, request.user.password):
             if transaction_form.is_valid():
-                if retrait.montant < solde_entreprise:
+                if retrait.montant < solde_total_entreprise:
                         
                     retrait.date_approbation = timezone.now()
                     retrait.statut = "Approuvé"

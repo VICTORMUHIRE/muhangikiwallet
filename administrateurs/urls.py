@@ -31,12 +31,6 @@ urlpatterns = [
     path("prets/<int:pret_id>", views.voir_pret, name="voir_pret"),
     path("rejeter_pret/<int:pret_id>", views.rejeter_pret, name="rejeter_pret"),
 
-    path("voir_retrait_objectif/<int:retrait_objectif_id>", views.voir_retrait_objectif, name="voir_retrait_objectif"),
-    path("rejeter_retrait_objectif/<int:retrait_objectif_id>", views.rejeter_retrait_objectif, name="rejeter_retrait_objectif"),
-    
-    path("voir_annulation_objectif/<int:annulation_objectif_id>", views.voir_annulation_objectif, name="voir_annulation_objectif"),
-    path("rejeter_annulation_objectif/<int:annulation_objectif_id>", views.rejeter_annulation_objectif, name="rejeter_annulation_objectif"),
-
     path("retraits/<int:retrait_id>", views.valider_retrait_investissement, name="voir_retrait"),
     path("rejeter_retrait/<int:retrait_id>", views.rejeter_retrait, name="rejeter_retrait"),
 

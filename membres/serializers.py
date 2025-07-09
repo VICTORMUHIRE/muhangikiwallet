@@ -19,13 +19,27 @@ class MembreRegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Membres
         fields = [
-            "nom", "postnom", "prenom", "sexe", "lieu_naissance", "date_naissance",
-            "etat_civil", "type_carte_identite", "num_carte_identite",
-            "carte_identite_copy", "photo_profile",
-            "province_residence", "ville_residence", "commune_residence",
-            "quartier_residence", "avenue_residence", "numero_residence",
-            "numero_telephone", "invitation_code",
-            "mot_de_passe", "confirmation_mot_de_passe",
+            "nom", 
+            "postnom",
+            "prenom", 
+            "carte_identite_copy", 
+            # "sexe", 
+            # "lieu_naissance", 
+            # "date_naissance",
+            # "etat_civil", 
+            # "type_carte_identite", 
+            # "num_carte_identite",
+            # "photo_profile",
+            # "province_residence", 
+            # "ville_residence", 
+            # "commune_residence",
+            # "quartier_residence", 
+            # "avenue_residence", 
+            # "numero_residence",
+            # "invitation_code",
+            "numero_telephone", 
+            "mot_de_passe", 
+            "confirmation_mot_de_passe",
         ]
         read_only_fields = ['user', 'compte_CDF', 'compte_USD']
 
