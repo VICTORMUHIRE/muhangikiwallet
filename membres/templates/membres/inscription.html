@@ -722,6 +722,8 @@
                 const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
                 const url = "/membres/api/inscription/"; // Using a variable for the form action URL
                 
+                console.log(formData);
+                
 
                 try {
                     const response = await fetch(url, { // Use the url variable for the fetch request

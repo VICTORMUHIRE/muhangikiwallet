@@ -164,14 +164,13 @@ AUTH_USER_MODEL = 'administrateurs.Users'
 # Configuration de l'email
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
+# Static files (CSS, JavaScript, Images)
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles' 
+
 # Media files (Uploads)
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'staticfiles' / 'media'
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.1/howto/static-files/
-
-STATIC_URL = '/static/'
+MEDIA_ROOT = BASE_DIR / 'media' 
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 

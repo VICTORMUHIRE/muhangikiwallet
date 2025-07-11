@@ -15,23 +15,11 @@ class MembresForm(forms.ModelForm):
             "nom",
             "postnom",
             "prenom",
-            # "sexe",
-            # "lieu_naissance",
-            # "date_naissance",
-            # "etat_civil",
-            # "type_carte_identite",
-            # "num_carte_identite",
-            "carte_identite_copy",
-            # "photo_profile",
-            # "province_residence",
-            # "ville_residence",
-            # "commune_residence",
-            # "quartier_residence",
-            # "avenue_residence",
-            # "numero_residence",
             "numero_telephone",
-            # "contribution_mensuelle",
-            # "invitation_code",
+            "carte_identite_copy",
+            "photo_profile",
+            "numero_telephone",
+
         ]
 
         widgets = {

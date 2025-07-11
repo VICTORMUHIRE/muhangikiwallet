@@ -271,55 +271,18 @@ def supprimer_membre(request, membre_id):
 def accepter_membre(request, membre_id):
     membre=get_object_or_404(Membres, pk=membre_id)
 
-    if request.method == "POST":
-        form = DepotsInscriptionForm(
-            request.POST,
-            instance=get_object_or_404(
-                DepotsInscription,
-                membre=membre
-            )
-        )
+    membre.status = True  
+    membre.save()
 
-        if form.is_valid():
-            depot = form.save(commit=False)
-            depot.statut = "Approuvé"
-            depot.date = timezone.now()
-            membre.status = True
-
-            if "payé" in request.POST and request.POST.get("payé") == "on":
-                depot.transaction = Transactions.objects.create(
-                    admin=request.user.admin,
-                    montant=depot.montant,
-                    devise=depot.devise,
-                    membre=membre,
-                    statut="Approuvé",
-                    type="depot_inscription"
-                )
-
-                BalanceAdmin.objects.create(
-                    montant=depot.montant,
-                    devise=depot.devise,
-                    type="depot_inscription"
-                )
-
-            membre.save()
-            depot.save()
-
-            messages.success(request, "Le membre a été accepté avec succès")
-            return redirect("administrateurs:home")
+    messages.success(request, "Le membre a été accepté avec succès")
+    return redirect("administrateurs:home")
         
-        else:
-            messages.error(request, "Veuillez corriger les erreurs du formulaire")
-            return redirect("administrateurs:accepter_membre", membre_id)
 
 @login_required
 @verifier_admin
 def refuser_membre(request, membre_id):
     membre = get_object_or_404(Membres, pk=membre_id)
 
-    depot=DepotsInscription.objects.get(membre=membre)
-    depot.statut = "Rejeté"
-    depot.save()
     membre.status = False
     membre.save()
 

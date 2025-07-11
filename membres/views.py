@@ -57,7 +57,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from rest_framework.permissions import AllowAny 
 from rest_framework.response import Response
-from .serializers import MembreRegistrationSerializer, RechargementSerializer
+from .serializers import MembreInscriptionSerializer, RechargementSerializer
 
 def verifier_membre(func):
     def verify(request, *args, **kwargs):
@@ -70,158 +70,35 @@ def verifier_membre(func):
 
     return wraps(func)(verify)
 
-def get_provinces(request):
-    provinces = Provinces.objects.all().values('id', 'nom')
-    return JsonResponse(list(provinces), safe=False)
 
-def get_villes(request):
-    province_id = request.GET.get('province_id')
-    villes = Villes.objects.filter(province_id=province_id).values('id', 'nom', 'type')
-    return JsonResponse(list(villes), safe=False)
-
-def get_communes(request):
-    ville_id = request.GET.get('ville_id')
-    communes = Communes.objects.filter(ville_id=ville_id).values('id', 'nom')
-    return JsonResponse(list(communes), safe=False)
-
-def get_quartiers(request):
-    commune_id = request.GET.get('commune_id')
-    quartiers = Quartiers.objects.filter(commune_id=commune_id).values('id', 'nom')
-    return JsonResponse(list(quartiers), safe=False)
-
-def get_avenues(request):
-    quartier_id = request.GET.get('quartier_id')
-    avenues = Avenues.objects.filter(quartier_id=quartier_id).values('id', 'nom')
-    return JsonResponse(list(avenues), safe=False)
 
 @login_required
 def statut(request):
-    depot_inscription = DepotsInscription.objects.filter(membre=request.user.membre).first()
-
-    if request.method == 'POST':
-        form = TransactionsForm(request.POST, request.FILES)
-        membre_form = ModifierMembresForm(request.POST, request.FILES, instance=request.user.membre)     
-        
-        mot_de_passe = request.POST.get('mot_de_passe')
-        if form.is_valid():
-            if check_password(mot_de_passe, request.user.password):
-                transaction = form.save(commit=False)
-
-                transaction.devise = depot_inscription.devise
-                transaction.montant = depot_inscription.montant
-                transaction.agent = transaction.numero_agent.agent
-                transaction.membre=request.user.membre
-                transaction.type="depot_inscription"
-                transaction.statut = "En attente"
-
-                depot_inscription.date = timezone.now()
-                depot_inscription.transaction = transaction
-                
-                transaction.save()
-                depot_inscription.save()
-
-                messages.success(request, "Votre dépot d'inscription a été soumise avec succès !")
-                return redirect('membres:home')
-            
-            else:
-                messages.error(request, "Mot de passe incorrect")
-
-        elif membre_form.is_valid():
-            membre_form.save()
-
-            depot_inscription.statut = "En attente"
-            depot_inscription.save()
-
-            messages.success(request, "Vos informations ont été modifiées avec succès !")
-            return redirect('membres:home')
-        
-        else:
-            messages.error(request, "Veuillez corriger les erreurs du formulaire")
-
-    else:
-        form = TransactionsForm(initial={"montant": depot_inscription.montant, "devise": depot_inscription.devise})
-        membre_form = ModifierMembresForm(instance=request.user.membre)
-
-    context = {
-        'form': form,
-        'membre_form': membre_form,
-        "depot_inscription": depot_inscription
-    }
-
-    return render(request, 'membres/statut.html', context) 
-
-
-@api_view(['POST']) 
-@permission_classes([AllowAny])
-def api_inscription_membre(request):
-
-    if request.method == 'POST':
-        serializer = MembreRegistrationSerializer(data=request.data)
-        
-        if serializer.is_valid():
-            try:
-                membre = serializer.save() 
-                
-                return Response(
-                    {"message": "Inscription réussie.", "membre_id": membre.id, "username": membre.user.username},
-                    status=status.HTTP_201_CREATED
-                )
-            except Exception as e:
-                return Response(
-                    {"error": f"Une erreur est survenue lors de l'inscription: {str(e)}"},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                )
-        else:
-            # Renvoie les erreurs de validation du serializer
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+    return render(request, 'membres/statut.html') 
 
 # Vue pour la page d'inscription des membres
-def inscription(request):
-    if request.user.is_authenticated:
-        return redirect("membres:home")
+def inscription(request):   
+    return render(request, "membres/inscription.html")
 
-    if request.method == "POST":
-        form = MembresForm(request.POST, request.FILES)
+@api_view(['POST']) 
+def inscription_api_view(request):
 
-        if form.is_valid():
-            membre = form.save(commit=False)
+    serializer = MembreInscriptionSerializer(data=request.data)
 
-            membre.user = Users.objects.create_user(
-                username=form.cleaned_data['numero_telephone'],
-                password=form.cleaned_data['mot_de_passe'],
-                first_name=form.cleaned_data['nom'],
-                last_name=form.cleaned_data['prenom'] or form.cleaned_data['postnom'],
-                type="membre"
-            )
+    if serializer.is_valid(raise_exception=True):
+        membre = serializer.save()
 
-            def generate_unique_numero():
-                while True:
-                    numero = f"MW-{str(randint(1000, 9999)).ljust(4, '0')}-{str(randint(1000, 9999)).ljust(4, '0')}-{str(randint(1, 99)).ljust(2, '0')}"
-                    if not NumerosCompte.objects.filter(numero=numero).exists(): break
-                return numero
-        
-            membre.compte_CDF = NumerosCompte.objects.create(numero=generate_unique_numero(), devise="CDF")
-            membre.compte_USD = NumerosCompte.objects.create(numero=generate_unique_numero(), devise="USD")
-            
-            membre.save()
-            
-            membre.mois_contribution = timezone.now().replace(day=15)
-            membre.save()
-
-            DepotsInscription.objects.create(membre=membre)
-
-            login(request, membre.user)
-            return redirect("login")
-        
-        else:
-            messages.error(request, "Veuillez corriger les erreurs du formulaire")
-
-    else: form = MembresForm()
+        return Response(
+            {"message": "Inscription réussie !", "membre_id": membre.user.pk},
+            status=status.HTTP_201_CREATED
+        )
     
-    return render(request, "membres/inscription.html", {"form": form})
+    return Response(
+        {"error": f"{serializer.errors}"}, 
+        status=status.HTTP_400_BAD_REQUEST
+    )
 
-# Vue pour la page de changement de mot de passe des membres
+
 def password_reset(request):
     if request.method == "POST":
         form = PasswordChangeForm(request.user, request.POST)

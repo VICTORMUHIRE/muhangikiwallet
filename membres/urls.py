@@ -16,7 +16,7 @@ urlpatterns = [
 
     # Routes API sous le préfixe /api/
     path('api/login/', views.api_login_view, name='api_login'),
-    path("api/inscription/", views.api_inscription_membre, name="api_inscription_membre"),
+    path("api/inscription/", views.inscription_api_view, name="api_inscription_membre"),
     path('api/logout/', views.api_logout_view, name='api_logout'),
     path('api/checkpwd/', views. api_check_pwd_by_id, name='checkpwd'),
     path('api/recharger/', views.api_recharger_compte, name='recharge_api'),

@@ -31,7 +31,7 @@ class Membres(models.Model):
     avenue_residence = models.ForeignKey(Avenues, null=True,blank=True, on_delete=models.CASCADE, verbose_name="Avenue de résidence")
     numero_residence = models.IntegerField(null=True,blank=True, verbose_name="Numéro de résidence")
     
-    numero_telephone = models.CharField(max_length=20, unique=True, validators=[RegexValidator(regex=r'^(\+243|0)\d{9}$', message="Format valide : (+243 ou 0) 996437657")], verbose_name="Numéro de téléphone")
+    numero_telephone = models.CharField(max_length=20,unique=True,validators=[RegexValidator(regex=r'^243\d{9}$', message="Le numéro de téléphone doit commencer par '243' et être suivi de 9 chiffres (ex: 243992131675).")],verbose_name="Numéro de téléphone")
     
     reference_code = models.OneToOneField(CodesReference, on_delete=models.CASCADE, max_length=20, unique=True, verbose_name="Code de référence", blank=True, null=True)
     invitation_code = models.CharField(null=True, blank=True, max_length=20, verbose_name="Code d'invitation")
