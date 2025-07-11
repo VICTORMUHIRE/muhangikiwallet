@@ -1,297 +1,787 @@
-{% extends 'membres/base.html' %}
 {% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="msapplication-TileImage" content="{% static 'LOGO_MUHANGIKI_WALLET_PRINCIPALE.png' %}">
 
-{% block title %}Inscription{% endblock %}
+    <title>{% block title %}Muhangiki Wallet - Inscription{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/bootstrap/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css" rel="stylesheet">
 
-{% block content %}
-<div class="container-fluid container-md py-5 bg-light rounded-4 shadow-sm">
-    <div class="row justify-content-center">
-        <div class="card shadow-sm">
-            <div class="card-body p-4">
-                <div class="text-center mb-4">
-                    <img src="{% static 'LOGO_MUHANGIKI_WALLET_PRINCIPALE.png' %}" alt="Logo Muhangiki Wallet" height="120">
+    <link rel="manifest" href="{% static 'manifest.json' %}">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <script src="{% static 'js/bootstrap/bootstrap.bundle.min.js' %}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
+
+
+<style>
+    :root {
+        --primary-color: #f99a18;
+        --primary-color-light: #fceacc;
+        --success-color: #198754;
+        --success-color-light: #d1e7dd;
+        --gray-color: #6c757d;
+        --light-gray-color: #f8f9fa;
+        --border-color: #dee2e6;
+        --body-bg: #f0f2f5;
+    }
+
+.form-step {
+    display: none;
+    animation: fadeInUp 0.4s ease-out;
+}
+.form-step.active {
+    display: block;
+}
+
+#imageCropModal .modal-body {
+    padding: 0; /* Important: Supprimez tout padding du modal-body pour maximiser l'espace */
+    display: flex; /* Utilisez flexbox pour centrer l'image */
+    align-items: center;
+    justify-content: center;
+    min-height: 300px; /* Augmentez cette hauteur pour donner plus d'espace au cropper */
+    background-color: #f0f0f0; /* Un fond clair pour le modal-body */
+}
+
+#imageCropModal .modal-body > div {
+    /* Le conteneur de l'image à recadrer */
+    width: 100%; /* S'assure qu'il prend toute la largeur disponible */
+    height: 100%; /* S'assure qu'il prend toute la hauteur disponible */
+    display: flex; /* Assure que l'image à l'intérieur est centrée */
+    align-items: center;
+    justify-content: center;
+
+}
+
+#imageToCrop {
+    display: block;
+    max-width: 100%; /* S'assure que l'image ne dépasse pas la largeur du conteneur */
+    max-height: 100%; /* S'assure que l'image ne dépasse pas la hauteur du conteneur */
+    /* Ne pas forcer width: 100% ou height: 100% directement sur #imageToCrop, */
+    /* car Cropper.js gère sa taille interne. max-width/height suffit. */
+    object-fit: contain; /* Assure que l'image entière est visible */
+}
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+.btn {
+    transition: all 0.2s ease-in-out;
+}
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+/* --- STEPPER VERTICAL (Desktop) --- */
+.stepper-wrapper {
+    display: flex;
+    flex-direction: column;
+    padding-left: 5px;
+}
+.stepper-item {
+    display: flex;
+    align-items: center; /* Centré verticalement */
+    position: relative;
+    padding: 1.25rem 0; /* Espacement ajusté */
+    opacity: 0.8;
+    transition: opacity 0.3s ease-in-out;
+}
+.stepper-item:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: 19px;
+    top: 55px; /* Ajusté */
+    width: 2px;
+    height: 100%;
+    background-color: var(--border-color);
+    z-index: 1;
+}
+
+.stepper-item.active .step-title {
+    color: var(--primary-color);
+}
+.stepper-item.completed .step-title {
+    color: var(--success-color);
+}
+.stepper-item.completed .step-counter span {
+    display: none; /* Cache le numéro quand c'est complété */
+}
+.step-counter {
+    height: 40px;
+    width: 40px;
+    display: grid;
+    place-items: center;
+    background-color: #fff;
+    border: 2px solid var(--border-color);
+    border-radius: 50%;
+    font-size: 1rem;
+    font-weight: 500;
+    margin-right: 15px;
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+    z-index: 2;
+    position: relative; /* Pour le pseudo-élément */
+}
+.stepper-item.active .step-counter {
+    border-color: var(--primary-color);
+    background-color: var(--primary-color-light);
+    color: var(--primary-color);
+    transform: scale(1.1);
+}
+.stepper-item.completed .step-counter {
+    border-color: var(--success-color);
+    background-color: var(--success-color);
+    color: #fff;
+}
+.stepper-item.active {
+    opacity: .95;
+    font-weight: 400;
+}
+
+/* --- AMÉLIORATION : Icône de validation (Checkmark) --- */
+.stepper-item.completed .step-counter::before {
+    content: '✓';
+    font-size: 1.5rem; /* Taille de l'icône */
+    font-weight: bold;
+    color: #fff;
+    position: absolute;
+}
+.stepper-item.completed .step-counter span {
+    display: none; /* Cache le numéro quand c'est complété */
+}
+
+/* --- NOUVEAU : Stepper Horizontal (Mobile) --- */
+.mobile-stepper-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    margin-bottom: 2rem;
+}
+.mobile-stepper-wrapper .stepper-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0;
+    opacity: 1;
+}
+.mobile-stepper-wrapper .step-counter {
+    margin-right: 0;
+    position: relative;
+}
+.mobile-stepper-wrapper .step-counter::after {
+    content: attr(data-step-text); /* Affiche le texte sous le cercle */
+    position: absolute;
+    top: -24px;
+    font-size: 0.75rem;
+    color: var(--gray-color);
+    width: 70px; /* Assure que le texte ne déborde pas trop */
+    text-align: center;
+}
+.mobile-stepper-wrapper .stepper-item.active .step-counter::after {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+.mobile-stepper-wrapper .stepper-item.completed .step-counter::after {
+    color: var(--success-color);
+}
+.stepper-line {
+    flex-grow: 1;
+    height: 2px;
+    background-color: var(--border-color);
+    margin: 0 -10px; /* Pour toucher les cercles */
+    transition: background-color 0.4s ease;
+}
+.stepper-line.completed {
+    background-color: var(--success-color);
+}
+
+/* Styles pour l'aperçu de l'image */
+.image-preview-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 15px;
+    margin-bottom: 15px;
+}
+.image-preview {
+    width: 150px;
+    height: 150px;
+    border: 2px dashed #ccc;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    margin-bottom: 10px;
+    position: relative;
+}
+.image-preview img {
+    max-width: 100%;
+    max-height: 100%;
+    display: block;
+    object-fit: cover;
+}
+.image-preview .placeholder-icon {
+    font-size: 3rem;
+    color: #ccc;
+}
+.image-preview-actions {
+    display: flex;
+    gap: 10px;
+}
+.image-preview-actions .btn {
+    font-size: 0.85rem;
+    padding: 5px 10px;
+}
+/* Cropper.js specific style for the modal image */
+#imageToCrop {
+    display: block;
+    height: 100%;
+    max-width: 100%;
+}
+</style>
+
+</head>
+<body class="d-flex align-items-center justify-content-center" style="background-color: var(--body-bg);">
+
+<div class="container p-3 p-md-4 rounded-3" style="background-color: #fff; max-width: 900px;">
+    <div class="d-flex bg-white shadow rounded-4 overflow-hidden">
+
+        <div class="col-lg-4 d-none d-md-flex flex-column p-4" style="background-color: #fafbfc;">
+            <div class="text-center mb-4">
+                 <img src="{% static 'LOGO_MUHANGIKI_WALLET_PRINCIPALE.png' %}" alt="Logo" height="90">
+            </div>
+            <div class="stepper-wrapper">
+                <div class="stepper-item active">
+                    <div class="step-counter"><span>1</span></div>
+                    <div class="step-name">
+                        <div class="step-title">Identité Personnelle</div>
+                        <div class="step-subtitle">Qui êtes-vous ?</div>
+                    </div>
                 </div>
-
-                <h2 class="mw-color text-center mb-4">Création de compte</h2>
-                {% for message in messages %}
-                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}warning{% endif %} fade show" role="alert">
-                    {{ message }}
+                <div class="stepper-item">
+                    <div class="step-counter"><span>2</span></div>
+                    <div class="step-name">
+                        <div class="step-title">Contact & Compte</div>
+                        <div class="step-subtitle">Vos accès et infos clés</div>
+                    </div>
                 </div>
-                {% endfor %}
+                <div class="stepper-item">
+                    <div class="step-counter"><span>3</span></div>
+                    <div class="step-name">
+                        <div class="step-title">Vérification</div>
+                        <div class="step-subtitle">Finalisez votre compte</div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-                <form method="post" enctype="multipart/form-data">
-                    {% csrf_token %}
+        <div class="col-lg-8 col-md-12 p-4 p-md-5">
+            <div class="mobile-stepper-wrapper px-3 pt-4 d-md-none">
+                <div class="stepper-item active" style="width: 2px;">
+                    <div class="step-counter" data-step-text="Identité"><span>1</span></div>
+                </div>
+                <div class="stepper-line"></div>
+                <div class="stepper-item">
+                    <div class="step-counter" data-step-text="Compte"><span>2</span></div>
+                </div>
+                <div class="stepper-line"></div>
+                <div class="stepper-item">
+                    <div class="step-counter" data-step-text="Vérif."><span>3</span></div>
+                </div>
+            </div>
+
+            <form id="multiStepForm" method="post" enctype="multipart/form-data" novalidate>
+                {% csrf_token %}
+
+                <div class="form-step active pt-4">
+                    <h3 class="mb-1">Identité Personnelle</h3>
+                    <p class="mb-4 text-muted">Veuillez renseigner vos informations.</p>
                     <div class="row">
-                        {% for field in form %}
-                        {% if field.field.widget.input_type == 'file' %}
-                        <div class="col-md-4 mb-3 d-flex flex-column align-items-center">
-                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                            <input type="file" class="form-control d-none {% if field.errors %}is-invalid{% endif %}" id="{{ field.id_for_label }}" name="{{ field.name }}" value="{{ field.value|default:'' }}" accept="image/*" onchange="previewImage(this);" required>
+                        <div class="col-12 mb-3 text-center">
+                            <label for="id_photo_profile" class="form-label">Photo passeport (Profil)</label>
+                            <input type="file" class="form-control" id="id_photo_profile" name="photo_profile_original" accept="image/* " required style="display: none;">
+                            <input type="hidden" id="cropped_photo_profile_data" name="photo_profile"> 
 
-                            <div id="imagePreview" class="image-preview text-center" onclick="document.getElementById('{{ field.id_for_label}}').click();">
-                                {% if field.value %}
-                                <img src="{{field.value.url}}" alt="Aperçu de la {{ field.label }}" class="img-fluid rounded" style="max-height: 200px; object-fit: cover;">
-                                {% else %}
-                                <label for="{{ field.id_for_label }}" class="upload-icon">
-                                    <i class="fas fa-image"></i>
-                                </label>
-                                {% endif %}
+                            <div class="image-preview-container" id="photoProfilePreviewContainer">
+                                <div class="image-preview" style="cursor: pointer;" onclick="document.getElementById('id_photo_profile').click()">
+                                    <i class="fa-solid fa-user-circle placeholder-icon"></i> <img id="photoProfilePreview" src="#" alt="Aperçu Photo Profil" style="display: none;">
+                                </div>
+                                <div class="image-preview-actions">
+                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="document.getElementById('id_photo_profile').click()">
+                                        <i class="fa-solid fa-pencil-alt me-1"></i> Modifier
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" id="clearPhotoProfile">
+                                        <i class="fa-solid fa-times-circle me-1"></i> Supprimer
+                                    </button>
+                                </div>
                             </div>
-                            {% if field.errors %}
-                            <div class="invalid-feedback">
-                                {{ field.errors }}
-                            </div>
-                            {% endif %}
-                        </div>
-                        {% else %}
+                            <div class="invalid-feedback"></div> </div>
                         <div class="col-md-4 mb-3">
-                            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
-
-                            {% if field.name == 'province_residence' %}
-                                <select class="form-select {% if field.errors %}is-invalid{% endif %}" id="id_province_residence" name="{{ field.name }}">
-                                    <option value="" disabled selected>-- Selectionnez une province --</option>
-                                    {% for option in field.field.choices %}
-                                        {% if option.0 %}<option value="{{ option.0 }}" {% if field.value|lower == option.0|lower %}selected{% endif %}>{{ option.1 }}</option>{% endif %}
-                                    {% endfor %}
-                                </select>
-                            {% elif field.name == 'ville_residence' %}
-                            <select class="form-select" id="id_ville_residence" name="ville_residence" disabled>
-                                {% for option in field.field.choices %}
-                                    {% if option.0 and field.value|lower == option.0|lower %}<option value="{{ option.0 }}">{{ option.1 }}</option> {% endif %}
-                                {% endfor %}
-                            </select>
-                            {% elif field.name == 'commune_residence' %}
-                            <select class="form-select" id="id_commune_residence" name="commune_residence" disabled>
-                                {% for option in field.field.choices %}
-                                    {% if option.0 and field.value|lower == option.0|lower %}<option value="{{ option.0 }}">{{ option.1 }}</option> {% endif %}
-                                {% endfor %}
-                            </select>
-                            {% elif field.name == 'quartier_residence' %}
-                            <select class="form-select" id="id_quartier_residence" name="quartier_residence" disabled>
-                                {% for option in field.field.choices %}
-                                    {% if option.0 and field.value|lower == option.0|lower %}<option value="{{ option.0 }}">{{ option.1 }}</option> {% endif %}
-                                {% endfor %}
-                            </select>
-                            {% elif field.name == 'avenue_residence' %}
-                            <select class="form-select" id="id_avenue_residence" name="avenue_residence" disabled>
-                                {% for option in field.field.choices %}
-                                    {% if option.0 and field.value|lower == option.0|lower %}<option value="{{ option.0 }}">{{ option.1 }}</option> {% endif %}
-                                {% endfor %}
-                            </select>
-                            {% else %}
-                                {% if field.field.widget.input_type == 'radio' %}
-                                    <div class="form-check">
-                                        {% for radio in field %}
-                                            <input type="{{ radio.field.widget.input_type }}" class="form-check-input {% if radio.errors %}is-invalid{% endif %}" id="{{ radio.id_for_label }}" name="{{ radio.html_name }}" value="{{ radio.choice_value }}"
-                                            {% if radio.data == radio.choice_value %}checked{% endif %}>
-                                            <label class="form-check-label" for="{{ radio.id_for_label }}">{{ radio.choice_label }}</label><br>
-                                        {% endfor %}
-                                    </div>
-                                {% elif field.field.widget.input_type == 'select' %}
-                                    <select class="form-select {% if field.errors %}is-invalid{% endif %}" id="{{ field.id_for_label }}" name="{{ field.name }}">
-                                        <option value="" disabled selected>-- Selectionnez une option --</option>
-                                        {% for option in field.field.choices %}
-                                            {% if option.0 %}<option value="{{ option.0 }}" {% if field.value|lower == option.0|lower %}selected{% endif %}>{{ option.1 }}</option>{% endif %}
-                                        {% endfor %}
-                                    </select>
-                                {% elif field.field.widget.input_type == 'checkbox' %}
-                                <div class="form-check">
-                                    <input type="{{ field.field.widget.input_type }}" class="form-check-input {% if field.errors %}is-invalid{% endif %}" id="{{ field.id_for_label }}" name="{{ field.name }}" {% if field.value %}checked{% endif %}>
-                                    <label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-                                </div>
-                                {% else %}
-                                <input type="{{ field.field.widget.input_type }}" class="form-control {% if field.errors %}is-invalid{% endif %}" id="{{ field.id_for_label }}" name="{{ field.name }}" value="{{ field.value|default:'' }}" placeholder="{{ field.field.widget.attrs.placeholder|default:'' }}" required>
-                                {% endif %}
-                            {% endif %}
-                            {% if field.errors %}
-                                <div class="invalid-feedback">
-                                    {{ field.errors }}
-                                </div>
-                            {% endif %}
+                            <label for="id_prenom" class="form-label">Prénom</label>
+                            <input type="text" class="form-control" id="id_prenom" name="prenom" required>
                         </div>
-
-                        {% endif %}
-                        {% endfor %}
-                        <div class="col-md-12 mb-3 form-check">
-                            <input type="checkbox" class="form-check-input" id="terms-conditions" required>
-                            <label class="form-check-label" for="terms-conditions">J'accepte les <a href="{% url 'membres:termes_et_conditions' %}" target="_blank">Conditions Générales d'Utilisation</a></label>
+                        <div class="col-md-4 mb-3">
+                            <label for="id_nom" class="form-label">Nom</label>
+                            <input type="text" class="form-control" id="id_nom" name="nom" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="id_postnom" class="form-label">Post-nom</label>
+                            <input type="text" class="form-control" id="id_postnom" name="postnom" required>
                         </div>
                     </div>
+                </div>
+
+                <div class="form-step">
+                    <h3 class="mb-1">Contact & Compte</h3>
+                    <p class="mb-4 text-muted">Renseignez votre numéro de téléphone, email et définissez votre mot de passe.</p>
                     <div class="row">
-                        <div class="col-md-12">
-                            <button type="submit" class="btn btn-mw text-white w-100" id="create-account-button" disabled>Créer mon compte</button>
+                         <div class="col-md-12 mb-3">
+                            <label for="id_numero_telephone" class="form-label">Numéro de téléphone</label>
+                            <input type="tel" class="form-control" id="id_numero_telephone" name="numero_telephone" placeholder="+243..." required>
+                        </div>
+                        <div class="col-md-12 mb-3">
+                            <label for="id_email" class="form-label">Adresse Email</label>
+                            <input type="email" class="form-control" id="id_email" name="email" placeholder="example@example.com" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="id_mot_de_passe" class="form-label">Mot de passe</label>
+                            <input type="password" class="form-control" id="id_mot_de_passe" name="mot_de_passe" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="id_confirmation_mot_de_passe" class="form-label">Confirmer le mot de passe</label>
+                            <input type="password" class="form-control" id="id_confirmation_mot_de_passe" name="confirmation_mot_de_passe" required>
                         </div>
                     </div>
-                </form>
-                <p class="text-center mt-3">Déjà un compte? <a href="{% url 'login' %}">Connectez-vous</a></p>
+                </div>
+                
+                <div class="form-step">
+                    <h3 class="mb-1">Vérification d'Identité</h3>
+                    <p class="mb-4 text-muted">Une dernière étape pour sécuriser votre compte.</p>
+                     <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label for="id_carte_identite_copy" class="form-label">Photo de la pièce d'identité (Recto)</label>
+                            <input type="file" class="form-control" id="id_carte_identite_copy" name="carte_identite_copy_original" accept="image/*,application/pdf" required style="display: none;">
+                            /*  */
+                            <input type="hidden" id="cropped_carte_identite_data" name="carte_identite_copy">
+
+                            <div class="image-preview-container" id="carteIdentitePreviewContainer">
+                                <div class="image-preview" style="cursor: pointer;" onclick="document.getElementById('id_carte_identite_copy').click()">
+                                    <i class="fa-solid fa-file-image placeholder-icon"></i> <img id="carteIdentitePreview" src="#" alt="Aperçu Pièce d'Identité" style="display: none;">
+                                </div>
+                                <div class="image-preview-actions">
+                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="document.getElementById('id_carte_identite_copy').click()">
+                                        <i class="fa-solid fa-pencil-alt me-1"></i> Modifier
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" id="clearCarteIdentite">
+                                        <i class="fa-solid fa-times-circle me-1"></i> Supprimer
+                                    </button>
+                                </div>
+                            </div>
+                             <div class="invalid-feedback"></div> </div>
+                     </div>
+                </div>
+
+                <div class="d-flex justify-content-between pt-4">
+                    <button type="button" class="btn btn-outline-secondary" id="prevBtn" style="display: none;">Précédent</button>
+                    <button type="button" class="btn btn-primary" id="nextBtn">Suivant</button>
+                    <button type="submit" class="btn btn-success" id="submitBtn" style="display: none;">Créer mon compte</button>
+                </div>
+                 <p class="text-center mt-4">Déjà un compte? <a href="{% url 'login' %}">Connectez-vous</a></p>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="imageCropModal" tabindex="-1" aria-labelledby="imageCropModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="imageCropModalLabel">Recadrer l'image</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div>
+                    <img id="imageToCrop" src="" alt="Image à recadrer">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-sm btn-primary" id="cropAndSave">Recadrer et Enregistrer</button>
             </div>
         </div>
     </div>
 </div>
 
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        let currentStep = 0;
+        const formSteps = document.querySelectorAll('.form-step');
+        const stepperItems = document.querySelectorAll('.stepper-item');
+        const nextBtn = document.getElementById('nextBtn');
+        const prevBtn = document.getElementById('prevBtn');
+        const submitBtn = document.getElementById('submitBtn');
+        const form = document.getElementById('multiStepForm');
+        
+        // --- Éléments pour l'aperçu des images ---
+        const photoProfileInput = document.getElementById('id_photo_profile');
+        const photoProfilePreview = document.getElementById('photoProfilePreview');
+        const photoProfilePlaceholder = document.querySelector('#photoProfilePreviewContainer .placeholder-icon');
+        const clearPhotoProfileBtn = document.getElementById('clearPhotoProfile');
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script><script>
-    const termsCheckbox = document.getElementById('terms-conditions');
-    const createAccountButton = document.getElementById('create-account-button');
+        const carteIdentiteInput = document.getElementById('id_carte_identite_copy');
+        const carteIdentitePreview = document.getElementById('carteIdentitePreview');
+        const carteIdentitePlaceholder = document.querySelector('#carteIdentitePreviewContainer .placeholder-icon');
+        const clearCarteIdentiteBtn = document.getElementById('clearCarteIdentite');
+        const imageCropModalEl = document.getElementById('imageCropModal');
 
-    termsCheckbox.addEventListener('change', function() {
-        createAccountButton.disabled = !termsCheckbox.checked;
-    });
+        // --- Cropper Variables ---
+        let cropper;
+        let currentImageInput; // To track which input triggered the modal
+        const imageCropModal = new bootstrap.Modal(document.getElementById('imageCropModal'));
+        const imageToCrop = document.getElementById('imageToCrop');
+        const cropAndSaveBtn = document.getElementById('cropAndSave');
 
-    function previewImage(input) {
-        const previewContainer = input.parentElement.querySelector('#imagePreview');
 
-        if (input.files && input.files[0]) {
-            var reader = new FileReader();
+        function updateUI() {
+            // 1. Mettre à jour l'étape active du formulaire
+            formSteps.forEach((step, index) => {
+                step.classList.toggle('active', index === currentStep);
+            });
 
-            reader.onload = function(e) {
-                previewContainer.innerHTML = `<img src="${e.target.result}" style="max-width: 200px; max-height: 200px;" alt="Image Preview">`;
+            // 2. Mettre à jour le stepper vertical (Desktop)
+            const desktopSteppers = document.querySelectorAll('.d-lg-flex .stepper-item');
+            desktopSteppers.forEach((step, index) => {
+                step.classList.remove('active', 'completed');
+                if (index < currentStep) {
+                    step.classList.add('completed');
+                } else if (index === currentStep) {
+                    step.classList.add('active');
+                }
+            });
+            
+            // 3. NOUVEAU : Mettre à jour le stepper horizontal (Mobile)
+            const mobileSteppers = document.querySelectorAll('.mobile-stepper-wrapper .stepper-item');
+            const mobileLines = document.querySelectorAll('.mobile-stepper-wrapper .stepper-line');
+            
+            mobileSteppers.forEach((step, index) => {
+                step.classList.remove('active', 'completed');
+                if (index < currentStep) {
+                    step.classList.add('completed');
+                } else if (index === currentStep) {
+                    step.classList.add('active');
+                }
+            });
+
+            mobileLines.forEach((line, index) => {
+                line.classList.toggle('completed', index < currentStep);
+            });
+
+            // 4. Mettre à jour les boutons de navigation
+            prevBtn.style.display = currentStep > 0 ? 'inline-block' : 'none';
+            nextBtn.style.display = currentStep < formSteps.length - 1 ? 'inline-block' : 'none';
+            submitBtn.style.display = currentStep === formSteps.length - 1 ? 'inline-block' : 'none';
+        }
+        function handleFileSelect() {
+            currentImageInput = this; // 'this' est l'input qui a déclenché l'événement
+            if (this.files && this.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    imageToCrop.src = e.target.result;
+                    imageCropModal.show(); // Affiche la modale
+                };
+                reader.readAsDataURL(this.files[0]);
+            }
+        }
+
+        // 2. On initialise Cropper SEULEMENT quand la modale est pleinement visible
+        imageCropModalEl.addEventListener('shown.bs.modal', function() {
+            const aspectRatio = (currentImageInput === carteIdentiteInput) ? 16 / 10 : 1;
+            cropper = new Cropper(imageToCrop, {
+                aspectRatio: aspectRatio,
+                viewMode: 1,
+                autoCropArea: 1,
+                responsive: true,
+                movable: true,
+                zoomable: true,
+            });
+        });
+
+        // 3. On détruit l'instance de Cropper quand la modale se ferme pour nettoyer
+        imageCropModalEl.addEventListener('hidden.bs.modal', function() {
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+        });
+
+        // 4. On attache l'événement 'change' aux deux inputs de fichier
+        photoProfileInput.addEventListener('change', handleFileSelect);
+        carteIdentiteInput.addEventListener('change', handleFileSelect);
+
+
+        cropAndSaveBtn.addEventListener('click', function() {
+            if (!cropper) return;
+
+            let targetCanvas, hiddenInput, previewElement, placeholderElement;
+
+            if (currentImageInput === photoProfileInput) {
+                targetCanvas = cropper.getCroppedCanvas({ width: 500, height: 500 });
+                hiddenInput = document.getElementById('cropped_photo_profile_data');
+                previewElement = photoProfilePreview;
+                placeholderElement = photoProfilePlaceholder;
+            } else {
+                targetCanvas = cropper.getCroppedCanvas({ width: 800, height: 450 });
+                hiddenInput = document.getElementById('cropped_carte_identite_data');
+                previewElement = carteIdentitePreview;
+                placeholderElement = carteIdentitePlaceholder;
             }
 
-            reader.readAsDataURL(input.files[0]);
-        } else {
-            previewContainer.innerHTML = '<span class="upload-icon"><i class="fas fa-upload"></i></span>';
+            const croppedImageDataURL = targetCanvas.toDataURL('image/jpeg', 0.9);
+            previewElement.src = croppedImageDataURL;
+            previewElement.style.display = 'block';
+            placeholderElement.style.display = 'none';
+            hiddenInput.value = croppedImageDataURL;
+
+            imageCropModal.hide();
+        });
+
+
+        // --- Validation (Modified for images and general fields) ---
+        function validateStep(stepIndex) {
+            let isValid = true;
+            const currentFormStep = formSteps[stepIndex];
+
+            // Clear previous validation messages
+            currentFormStep.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+            currentFormStep.querySelectorAll('.invalid-feedback').forEach(el => el.textContent = '');
+
+            // Validate all visible and relevant required inputs
+            currentFormStep.querySelectorAll('input[required]:not([type="file"]), select[required]').forEach(input => {
+                if (!input.value.trim()) {
+                    isValid = false;
+                    input.classList.add('is-invalid');
+                    let feedbackDiv = input.parentNode.querySelector('.invalid-feedback');
+                    if (!feedbackDiv) {
+                        feedbackDiv = document.createElement('div');
+                        feedbackDiv.className = 'invalid-feedback';
+                        input.parentNode.appendChild(feedbackDiv);
+                    }
+                    feedbackDiv.textContent = 'Ce champ est requis.';
+                }
+            });
+
+            // Validate hidden cropped image data (which is required)
+            if (stepIndex === 0) { // Step 1: Personal Identity
+                const croppedPhotoProfile = document.getElementById('cropped_photo_profile_data');
+                if (!croppedPhotoProfile.value) {
+                    isValid = false;
+                    croppedPhotoProfile.classList.add('is-invalid'); // Mark the hidden field
+                    // Display error on the associated visible feedback div
+                    const photoProfileErrorDiv = photoProfileInput.closest('.col-12').querySelector('.invalid-feedback');
+                    if (photoProfileErrorDiv) {
+                        photoProfileErrorDiv.textContent = 'La photo de profil est requise.';
+                    }
+                }
+            } else if (stepIndex === 2) { // Step 3: Verification
+                const croppedCarteIdentite = document.getElementById('cropped_carte_identite_data');
+                if (!croppedCarteIdentite.value) {
+                    isValid = false;
+                    croppedCarteIdentite.classList.add('is-invalid'); // Mark the hidden field
+                    // Display error on the associated visible feedback div
+                    const carteIdentiteErrorDiv = carteIdentiteInput.closest('.col-md-12').querySelector('.invalid-feedback');
+                    if (carteIdentiteErrorDiv) {
+                        carteIdentiteErrorDiv.textContent = 'La copie de la pièce d\'identité est requise.';
+                    }
+                }
+            }
+
+            // Validation spécifique de l'email
+            const emailInput = document.getElementById('id_email');
+            if (emailInput && currentFormStep.contains(emailInput)) { // Check if email input is in current step
+                if (emailInput.value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInput.value)) {
+                    isValid = false;
+                    emailInput.classList.add('is-invalid');
+                    let errorDiv = emailInput.parentNode.querySelector('.invalid-feedback');
+                    if (!errorDiv) {
+                        errorDiv = document.createElement('div');
+                        errorDiv.className = 'invalid-feedback';
+                        emailInput.parentNode.appendChild(errorDiv);
+                    }
+                    errorDiv.textContent = 'Veuillez entrer une adresse email valide.';
+                }
+            }
+
+            // Validation spécifique du mot de passe
+            if (stepIndex === 1) { // Étape 2 "Contact & Compte"
+                const password = document.getElementById('id_mot_de_passe');
+                const confirmPassword = document.getElementById('id_confirmation_mot_de_passe');
+
+                // Clear previous error messages for password fields
+                password.classList.remove('is-invalid');
+                confirmPassword.classList.remove('is-invalid');
+                password.parentNode.querySelector('.invalid-feedback')?.remove();
+                confirmPassword.parentNode.querySelector('.invalid-feedback')?.remove();
+
+                if (password.value.length < 8) {
+                    isValid = false;
+                    password.classList.add('is-invalid');
+                    let errorDiv = document.createElement('div');
+                    errorDiv.className = 'invalid-feedback';
+                    errorDiv.textContent = 'Le mot de passe doit contenir au moins 8 caractères.';
+                    password.parentNode.appendChild(errorDiv);
+                }
+                
+                // Only check confirmation if password itself is valid and not empty
+                if (password.value && password.value !== confirmPassword.value) {
+                    isValid = false;
+                    confirmPassword.classList.add('is-invalid');
+                    let errorDiv = document.createElement('div');
+                    errorDiv.className = 'invalid-feedback';
+                    errorDiv.textContent = 'Les mots de passe ne correspondent pas.';
+                    confirmPassword.parentNode.appendChild(errorDiv);
+                }
+            }
+            return isValid;
         }
-    }
 
-    $(document).ready(function() {
-        $("#id_province_residence").change(function() {
-        var provinceId = $(this).val();
-        $.ajax({
-            url: "{% url 'membres:get_villes' %}",  // Replace with the actual URL
-            type: "GET",
-            data: {
-            'province_id': provinceId
-            },
-            dataType: "json",
-            success: function(data) {
-                $("#id_ville_residence").html("<option value='' disabled selected>-- Selectionnez une ville --</option>");
-                $("#id_ville_residence").prop('disabled', false);
 
-                $.each(data, function(key, value) {
-                    $("#id_ville_residence").append("<option value=" + value["id"] + " type=" + value["type"] + ">" + value["nom"] + "</option>");
+        // --- Gestion des événements ---
+        nextBtn.addEventListener('click', () => {
+            if (validateStep(currentStep)) {
+                currentStep++;
+                updateUI();
+            }
+        });
+
+        prevBtn.addEventListener('click', () => {
+            currentStep--;
+            updateUI();
+        });
+        
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault(); 
+
+            if (validateStep(currentStep)) {
+                submitBtn.disabled = true; // Disable button to prevent multiple submissions
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Envoi...';
+
+                const formData = new FormData();
+
+                // Function to convert Data URL to Blob
+                function dataURLtoBlob(dataurl) {
+                    const arr = dataurl.split(',');
+                    const mime = arr[0].match(/:(.*?);/)[1];
+                    const bstr = atob(arr[1]);
+                    let n = bstr.length;
+                    const u8arr = new Uint8Array(n);
+                    while (n--) {
+                        u8arr[n] = bstr.charCodeAt(n);
+                    }
+                    return new Blob([u8arr], {type: mime});
+                }
+
+                // Append text and other non-file/non-cropped-image fields
+                formSteps.forEach(step => {
+                    step.querySelectorAll('input:not([type="file"]):not([id^="cropped_"]), select').forEach(input => {
+                        if (input.name) { // Ensure input has a name
+                            formData.append(input.name, input.value);
+                        }
+                    });
                 });
 
-                // Clear Quartier and Avenue selections
-                $("#id_commune_residence").html("<option value='' disabled selected>-- Selectionnez une commune --</option>");
-                $("#id_commune_residence").prop('disabled', true);
-                $("#id_quartier_residence").html("<option value='' disabled selected>-- Selectionnez un quartier --</option>");
-                $("#id_quartier_residence").prop('disabled', true);
-                $("#id_avenue_residence").html("<option value='' disabled selected>-- Selectionnez une avenue --</option>");
-                $("#id_avenue_residence").prop('disabled', true);
+                // Handle cropped photo profile
+                const croppedPhotoProfileData = document.getElementById('cropped_photo_profile_data').value;
+                if (croppedPhotoProfileData) {
+                    const photoProfileBlob = dataURLtoBlob(croppedPhotoProfileData);
+                    // Use the expected field name for your backend, e.g., 'photo_profile'
+                    formData.append('photo_profile', photoProfileBlob, 'photo_profile.jpeg'); 
+                }
+
+                // Handle cropped carte identite
+                const croppedCarteIdentiteData = document.getElementById('cropped_carte_identite_data').value;
+                if (croppedCarteIdentiteData) {
+                    const carteIdentiteBlob = dataURLtoBlob(croppedCarteIdentiteData);
+                    // Use the expected field name for your backend, e.g., 'carte_identite_copy'
+                    formData.append('carte_identite_copy', carteIdentiteBlob, 'carte_identite.jpeg'); 
+                }
+
+                // Get CSRF token
+                const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                const url = "/membres/api/inscription/"; // Using a variable for the form action URL
+                
+
+                try {
+                    const response = await fetch(url, { // Use the url variable for the fetch request
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': csrftoken,
+                        },
+                        body: formData,
+                    });
+
+                    const result = await response.json(); // Assuming JSON response from Django
+
+                    if (response.ok) {
+                        alert('Inscription réussie ! Redirection...');
+                        window.location.href = '{% url "login" %}'; // Redirect to login page
+                    } else {
+                        // Handle server-side validation errors or other issues
+                        console.error('Erreur lors de l\'inscription:', result);
+                        let errorMessage = 'Une erreur est survenue lors de l\'inscription.';
+                        if (result.errors) {
+                            errorMessage += '\n';
+                            // Iterate over errors and display them (simple alert for now)
+                            for (const field in result.errors) {
+                                // Find the relevant input or its parent to display error more specifically
+                                const inputElement = document.getElementById(`id_${field}`);
+                                if (inputElement) {
+                                    inputElement.classList.add('is-invalid');
+                                    let feedbackDiv = inputElement.parentNode.querySelector('.invalid-feedback');
+                                    if (!feedbackDiv) {
+                                        feedbackDiv = document.createElement('div');
+                                        feedbackDiv.className = 'invalid-feedback';
+                                        inputElement.parentNode.appendChild(feedbackDiv);
+                                    }
+                                    feedbackDiv.textContent = result.errors[field].join(' ');
+                                } else {
+                                    errorMessage += `${field}: ${result.errors[field].join(', ')}\n`;
+                                }
+                            }
+                            alert(errorMessage); // Fallback alert for general errors or fields not found
+                        } else if (result.message) {
+                            errorMessage = result.message;
+                            alert(errorMessage);
+                        } else {
+                            alert(errorMessage); // Generic error if no specific message
+                        }
+                    }
+                } catch (error) {
+                    console.error('Erreur réseau ou inattendue:', error);
+                    alert('Impossible de communiquer avec le serveur. Veuillez réessayer.');
+                } finally {
+                    submitBtn.disabled = false; // Re-enable button
+                    submitBtn.innerHTML = 'Créer mon compte'; // Restore button text
+                }
             }
         });
-        });
 
-        $("#id_ville_residence").change(function() {
-            var villeId = $(this).val();
-
-            // Recupere le type de la ville dans l'option selectionnnéee
-            selectedOption = $(this).find(':selected');
-            console.log(selectedOption.attr('type'));
-            
-            switch (selectedOption.attr('type')) {
-                case 'Territoire':
-                    $("#id_ville_residence").parent().find('label').text('Territoire de résidence');
-                    $("#id_commune_residence").parent().find('label').text('Secteur ou Chefferie de résidence' );
-                    $("#id_quartier_residence").parent().find('label').text('Groupement de résidence');
-                    $("#id_avenue_residence").parent().find('label').text('Village de résidence');
-                    break;
-                default:
-                    $("#id_ville_residence").parent().find('label').text('Ville de résidence');
-                    $("#id_commune_residence").parent().find('label').text('Commune de résidence');
-                    $("#id_quartier_residence").parent().find('label').text('Quartier de résidence');
-                    $("#id_avenue_residence").parent().find('label').text('Avenue de résidence');
-            }
-
-            $.ajax({
-                url: "{% url 'membres:get_communes' %}",
-                type: "GET",
-                data: {
-                    'ville_id': villeId
-                },
-                dataType: "json",
-                success: function(data) {
-                    $("#id_commune_residence").html("<option value='' disabled selected>-- Selectionnez une commune --</option>");
-                    $("#id_commune_residence").prop('disabled', false);
-
-                    $.each(data, function(key, value) {
-                        $("#id_commune_residence").append("<option value=" + value["id"] + ">" + value["nom"] + "</option>");
-                    });
-
-                    // Clear Quartier and Avenue selections
-                    $("#id_quartier_residence").html("<option value='' disabled selected>-- Selectionnez un quartier --</option>");
-                    $("#id_quartier_residence").prop('disabled', true);
-                    $("#id_avenue_residence").html("<option value='' disabled selected>-- Selectionnez une avenue --</option>");
-                    $("#id_avenue_residence").prop('disabled', true);
-                }
-            });
-        });
-
-        $("#id_commune_residence").change(function() {
-            var communeId = $(this).val();
-            $.ajax({
-                url: "{% url 'membres:get_quartiers' %}",
-                type: "GET",
-                data: {
-                    'commune_id': communeId
-                },
-                dataType: "json",
-                success: function(data) {
-                    $("#id_quartier_residence").html("<option value='' disabled selected>-- Selectionnez un quartier --</option>");
-                    $("#id_quartier_residence").prop('disabled', false);
-                    $.each(data, function(key, value) {
-                        $("#id_quartier_residence").append("<option value=" + value["id"] + ">" + value["nom"] + "</option>");
-                    });
-
-                    // Clear Avenue selection
-                    $("#id_avenue_residence").html("<option value='' disabled selected>-- Selectionnez une avenue --</option>");
-                    $("#id_avenue_residence").prop('disabled', true);
-                }
-            });
-        });
-
-        $("#id_quartier_residence").change(function() {
-            var quartierId = $(this).val();
-            $.ajax({
-                url: "{% url 'membres:get_avenues' %}",
-                type: "GET",
-                data: {
-                    'quartier_id': quartierId
-                },
-                dataType: "json",
-                success: function(data) {
-                    $("#id_avenue_residence").html("<option value='' disabled selected>-- Selectionnez une avenue --</option>");
-                    $("#id_avenue_residence").prop('disabled', false);
-                    $.each(data, function(key, value) {
-                        $("#id_avenue_residence").append("<option value=" + value["id"] + ">" + value["nom"] + "</option>");
-                    });
-                }
-            });
-        });
+        // Initialisation de l'UI au chargement de la page
+        updateUI();
     });
 
 </script>
-
-<style>
-    .image-preview {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        width: 200px;
-        height: 200px;
-        border: 1px dashed #ccc;
-        margin-top: 10px;
-    }
-
-    .upload-icon {
-        font-size: 3em;
-        color: #ccc;
-    }
-
-    .image-preview img {
-        max-width: 100%;
-        max-height: 100%;
-    }
-</style>
-{% endblock %}
+</body>
+</html>

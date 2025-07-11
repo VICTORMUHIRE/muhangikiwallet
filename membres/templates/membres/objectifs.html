@@ -1,165 +1,426 @@
 {% extends 'membres/base.html' %}
+{% load humanize %}
+{% load objectifFilter %} {# Assurez-vous que ce filtre est bien défini #}
 
 {% block title %}Mes Objectifs{% endblock %}
 
 {% block content %}
 
-    <div class="row justify-content-center mt-5 mt-sm-0 mb-5">
-        {% for message in messages %}
-            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{message.tags}}{% endif %} alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        {% endfor %}
+<style>
+    
+    .progress-circle-container {
+        width: 50px;
+        height: 50px;
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
 
-        <div class="col-md-8 text-center">
-            <div class="mb-4">
-                <div class="card-header bg-white">
-                    <h3 class="">Mes Objectifs</h3>
-                </div>
-                <div class="card-body text-enter">
-                    <p class="fs-5 mb-0">Solde total</p>
-                    <h4 class="mb-3 fw-bolder fs-5">{{ solde_objectifs_CDF|stringformat:".2f" }} FC - {{ solde_objectifs_USD|stringformat:".2f" }} $</h4>
+    .progress-circle {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background: conic-gradient(
+            #feaf3d var(--progress-percentage),
+            #d3d3d3 var(--progress-percentage) 100%
+        );
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 0.8rem;
+        font-weight: bold;
+        color: #6c757d;
+        z-index: 10;
+    }
+
+    .progress-circle::before {
+        content: "";
+        position: absolute;
+        top: 5px;
+        left: 5px;
+        width: calc(100% - 10px);
+        height: calc(100% - 10px);
+        border-radius: 50%;
+        background-color: #fafbfc;
+        z-index: -1;
+    }
+
+    .objectif-item {
+        border: 1px solid #dee2e6;
+        border-radius: 0.25rem;
+        margin-bottom: 0.5rem;
+        overflow: hidden;
+    }
+
+    .objectif-header {
+        background-color: #fafbfc;
+        padding: .5rem 1.25rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+    }
+
+    .objectif-header:hover {
+        background-color: #e9ecef;
+    }
+
+    .objectif-actions a,
+    .objectif-actions button {
+        margin-left: 0.5rem;
+    }
+
+    .objectif-details {
+        padding: 1rem;
+        background-color: #fff;
+    }
+
+    
+    .objectif-item.retire {
+        opacity: 0.7; 
+        border-color: #6c757d; 
+    }
+
+    .objectif-header.retire {
+        background-color: #e9ecef; 
+        color: #6c757d; 
+        text-decoration: line-through; 
+    }
+
+    .progress-circle-container.retire {
+        display: none; 
+    }
+
+    .fa-chevron-down.retire {
+        opacity: 0.5; 
+    }
+    
+    .nav-tabs .nav-link {
+        color: #6c757d; 
+        font-weight: 500;
+        border: none; 
+        border-bottom: 3px solid transparent; 
+        padding-bottom: 0.75rem;
+    }
+
+    .nav-tabs{
+        display: flex;
+ 
+    }
+    .nav-tabs .nav-link.active {
+        color: #007bff; 
+        border-bottom-color: #007bff; 
+        background-color: transparent; 
+    }
+
+    .nav-tabs .nav-link:hover {
+        border-bottom-color: #007bff; 
+    }
+</style>
+
+<div class="container-fluid p-3 p-md-4 rounded-3" style="background-color: #fff; min-height: 100%">
+    {% for message in messages %}
+    <div
+        class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show"
+        role="alert"
+    >
+        {{ message }}
+        <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="alert"
+            aria-label="Close"
+        ></button>
+    </div>
+    {% endfor %}
+
+    <div class="mb-4">
+        <div class="card rounded p-4 border">
+            <div class="row align-items-end">
+                <div class="col-md-8">
+                    <h5 class="mb-2 fw-semibold text-dark">Aperçu de mes Objectifs</h5>
                     
-                    <button type="button" class="btn btn-sm  btn-mw text-white" data-bs-toggle="modal" data-bs-target="#ajouterObjectifModal">
-                        Ajouter un objectif
+                    <div class="d-flex flex-column align-items-md-baseline me-md-2">
+                    <p class="mb-0 mt-2 fs-6 text-muted">
+                        Objectifs :
+                        <strong class="fw-bold">{{ objectifs|length }}</strong> actifs,
+                        <strong class="fw-bold">{{ objectifs|objectif_statut_count:'Atteint' }}</strong> atteints,
+                        <strong class="fw-bold">{{ objectifs|objectif_statut_count:'Archivé' }}</strong> Archivés,
+                        <strong class="fw-bold">{{ objectifs|objectif_statut_count:'Retiré' }}</strong> retirés
+                    </p>
+                    </div>
+                </div>
+
+                <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                    <button
+                        type="button"
+                        class="btn btn-mw btn-sm rounded py-2 px-3 shadow-sm text-white"
+                        data-bs-toggle="modal"
+                        data-bs-target="#ajouterObjectifModal"
+                    >
+                        <i class="fas fa-plus me-2"></i>Nouveau objectif
                     </button>
                 </div>
             </div>
         </div>
+    </div>
 
+    <ul class="nav nav-tabs mb-4" id="objectifStatusTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="en-cours-tab" data-bs-toggle="tab" data-bs-target="#en-cours" type="button" role="tab" aria-controls="en-cours" aria-selected="true" data-status="En cours">En cours</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="atteint-tab" data-bs-toggle="tab" data-bs-target="#atteint" type="button" role="tab" aria-controls="atteint" aria-selected="false" data-status="Atteint">Atteints</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="archive-tab" data-bs-toggle="tab" data-bs-target="#archive" type="button" role="tab" aria-controls="archive" aria-selected="false" data-status="Archivé">Archivés</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="retire-tab" data-bs-toggle="tab" data-bs-target="#retire" type="button" role="tab" aria-controls="retire" aria-selected="false" data-status="Retiré">Retirés</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="all-tab" data-bs-toggle="tab" data-bs-target="#tous" type="button" role="tab" aria-controls="all" aria-selected="false" data-status="Tous">Tous</button>
+        </li>
+    </ul>
 
-        <div class="col-md-8">
-            {% for objectif in objectifs %}
-            <div class="card shadow-sm mb-3 {% if objectif.statut == 'Epuisé' %}border-danger{% endif %}">  <!-- Card for each goal -->
-                <div class="card-header bg-white text-center">
-                    <h5 class="card-title mb-0">{{ objectif.type }}</h5>
-                </div>
-                <div class="card-body">
-                    <div class="progress position-relative mb-3" style="height: 25px;">  <!-- Enhanced progress bar -->
-                        <div class="progress-bar progress-bar-animated bg-{% if  objectif.statut == 'Annulé' %}danger{% elif  objectif.pourcentage < 85 and objectif.pourcentage >= 70 %}info{% elif  objectif.pourcentage < 70 and objectif.pourcentage >= 50 %}mw btn-mw{% elif  objectif.pourcentage < 50 and objectif.pourcentage >= 30 %}warning{% elif  objectif.pourcentage < 30 %}danger{% else %}success{% endif %}"
-                            role="progressbar" style="width: {{ objectif.pourcentage|stringformat:'.2f' }}%" aria-valuenow="{{ objectif.montant }}" aria-valuemin="0" aria-valuemax="{{ objectif.montant_cible }}"></div>
-                        <span class="position-absolute top-50 start-50 translate-middle fw-bold text-white">{{ objectif.pourcentage|stringformat:".2f" }}%</span>
-                    </div>
-
-                    <!-- Clearer display of amounts and date -->
-                    <p class="card-text">Montant cible : <span class="fw-bold">{{ objectif.montant_cible|stringformat:".2f" }} {{ objectif.devise }}</span></p>
-                    <p class="card-text">Montant déposé : <span class="fw-bold">{{ objectif.montant|stringformat:".2f" }} {{ objectif.devise }}</span></p>
-                    <p class="card-text">Date de création : <span class="fw-bold">{{ objectif.date_creation|date:"d/m/Y" }}</span></p>
-                    <p class="card-text">Date d'échéance : <span class="fw-bold">{{ objectif.date_fin|date:"d/m/Y" }}</span></p>
-                    <p class="card-text">Statut : <span class="badge {% if objectif.statut == 'Atteint' %}bg-success{% elif objectif.statut == 'En cours' %}bg-warning{% else %}bg-danger{% endif %}">{{ objectif.statut }}</span></p>
-                    
-
-                    <div class="text-center mt-2"> <!-- Centered Deposit button -->
-                        <!-- <a href="{% url 'membres:objectif' objectif.id %}" class="btn btn-secondary btn-sm">Détails</a> -->
-                        {% if objectif.statut not in 'Atteint Retiré Annulé' %}
-                            <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#AnnulereObjectifModalLabel{{ objectif.id }}">
-                                Annuler
-                            </button>
-                            
-                            <!-- Modal retrait objectif -->
-                            <div class="modal fade" id="AnnulereObjectifModalLabel{{ objectif.id }}" tabindex="-1" aria-labelledby="AnnulereObjectifModalLabel{{ objectif.id }}" aria-hidden="true">
-                                <div class="modal-dialog">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title" id="retraitObjectifModalLabel{{ objectif.id }}">Retrait de l'objectif "{{ objectif.type }}"</h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                        </div>
-                                        <div class="modal-body">
-                                            <p>Êtes-vous sûr de vouloir annuler l'objectif <strong>{{ objectif.type }}</strong> de <strong>{{ objectif.montant_cible|stringformat:".2f" }} {{ objectif.devise }}</strong> ? Un frais de retrait de 10% sera appliqué sur votre solde</p>
-                                            <form method="post" action="{% url 'membres:annulation_objectif' objectif.id %}">
-                                                {% csrf_token %}
-                                                <div class="mb-3">
-                                                    <input type="password" class="form-control" id="password{{ objectif.id }}" name="password" placeholder="Entrez votre mot de passe" required>
-                                                </div>
-                                                <button type="submit" class="btn btn-sm btn-danger">Confirmer</button>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        {% endif %}
-                        {% if objectif.statut == 'En cours' %}
-                        <a href="{% url 'membres:depot_objectif' objectif.id %}" class="btn btn-primary btn-sm">Déposer</a>
-                        {% elif objectif.statut == 'Atteint' %}
-                            <button type="button" class="btn btn-mw btn-sm" data-bs-toggle="modal" data-bs-target="#retraitObjectifModal{{ objectif.id }}">
-                                Retirer
-                            </button>
-                            
-                            <!-- Modal retrait objectif -->
-                            <div class="modal fade" id="retraitObjectifModal{{ objectif.id }}" tabindex="-1" aria-labelledby="retraitObjectifModalLabel{{ objectif.id }}" aria-hidden="true">
-                                <div class="modal-dialog">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title" id="retraitObjectifModalLabel{{ objectif.id }}">Retrait de l'objectif "{{ objectif.type }}"</h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                        </div>
-                                        <div class="modal-body">
-                                            <p>Êtes-vous sûr de vouloir retirer le montant de <strong>{{ objectif.montant_cible|stringformat:".2f" }} {{ objectif.devise }}</strong> pour l'objectif <strong>{{ objectif.type }}</strong>?</p>
-                                            <form method="post" action="{% url 'membres:retrait_objectif' objectif.id %}">
-                                                {% csrf_token %}
-                                                <div class="mb-3">
-                                                    <input type="password" class="form-control" id="password{{ objectif.id }}" name="password" placeholder="Entrez votre mot de passe" required>
-                                                </div>
-                                                <button type="submit" class="btn btn-sm btn-success">Confirmer le retrait</button>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
+    <div class="tab-content" id="objectifTabContent">
+        <div class="tab-pane fade show active" id="en-cours" role="tabpanel" aria-labelledby="en-cours-tab">
+            <div id="objectifsList-en-cours">
+              <div class="text-center text-muted py-5" id="loading-spinner">
+                  <div class="spinner-border text-primary" role="status">
+                      <span class="visually-hidden">Chargement...</span>
+                  </div>
+                  <p class="mt-2">Chargement des objectifs...</p>
+              </div>
             </div>
-            {% empty %}
-                <div class="card shadow-sm">
-                    <div class="card-body text-center">
-                        <p>Aucun objectif pour le moment</p>
-                    </div>
-                </div>
-            {% endfor %}
+        </div>
+        <div class="tab-pane fade" id="atteint" role="tabpanel" aria-labelledby="atteint-tab">
+            <div id="objectifsList-atteint">
 
-        </div> <!-- End of goals display column -->
-    </div> <!-- End of outer row -->
+            </div>
+        </div>
+        <div class="tab-pane fade" id="archive" role="tabpanel" aria-labelledby="archive-tab">
+            <div id="objectifsList-archivé">
+                                
+            </div>
+        </div>
+        <div class="tab-pane fade" id="retire" role="tabpanel" aria-labelledby="retire-tab">
+            <div id="objectifsList-retiré">
+                
+            </div>
+        </div>
+        <div class="tab-pane fade" id="tous" role="tabpanel" aria-labelledby="all-tab">
+            <div id="objectifsList-tous">
 
-
-    <!-- Modal d'ajout d'objectif -->
-    <div class="modal fade" id="ajouterObjectifModal" tabindex="-1" aria-labelledby="ajouterObjectifModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="ajouterObjectifModalLabel">Ajouter un nouvel objectif</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form method="post" action="{% url 'membres:objectifs' %}">
-                        {% csrf_token %}
-                        {% for field in form %}
-                            <div class="mb-3">
-                                <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}:</label>
-                                {% if field.field.widget.input_type == 'select' %}
-                                    <select class="form-select {% if field.errors %}is-invalid{% endif %}" id="{{ field.id_for_label }}" name="{{ field.name }}">
-                                        {% for option in field.field.choices %}
-                                            {% if option.0 %}<option value="{{ option.0 }}" {% if field.value|lower == option.0|lower %}selected{% endif %}>{{ option.1 }}</option>{% endif %}
-                                        {% endfor %}
-                                    </select>
-                                {% elif field.name == "description" %}
-                                    <textarea class="form-control {% if field.errors %}is-invalid{% endif %}" id="{{ field.id_for_label }}" name="{{ field.name }}"></textarea>
-                                {% else %}
-                                    <input type="{{ field.field.widget.input_type }}" class="form-control {% if field.errors %}is-invalid{% endif %}" id="{{ field.id_for_label }}" name="{{ field.name }}" value="{% if field.field.widget.input_type == 'date' %}{{ field.value|date:'Y-m-d' }}{% else %}{{ field.value|default:'' }}{% endif %}" placeholder="{{ field.field.widget.attrs.placeholder|default:'' }}">
-                                {% endif %}
-                                {% if field.errors %}
-                                    <div class="invalid-feedback">
-                                        {{ field.errors }}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        {% endfor %}
-                        <button type="submit" class="btn btn-primary w-100">Ajouter</button>
-                    </form>
-                </div>
             </div>
         </div>
     </div>
+
+</div>
+
+{% include "membres/components/ajouter_objectif.html" with form=form %}
+{% for objectif in objectifs %} {# You need to iterate over all objectives to generate modals for each #}
+    {% include "membres/components/depot_objectif.html" with objectif=objectif %}
+    {% include "membres/components/archiver_0bjectif.html" with objectif=objectif %}
+    {% include "membres/components/retrait_objectif.html" with objectif=objectif %}
+    {% include "membres/components/retrait_partiel_objectif.html" with objectif=objectif %}
+{% include "membres/components/reactiver_objectif.html" with objectif=objectif %}
+                        
+{% endfor %}
+
+
+<script>
+    // Fonction pour charger les objectifs via AJAX
+    function loadObjectifsByStatus(status) {
+        const targetDivId = `objectifsList-${status.replace(/\s/g, '-').toLowerCase()}`;
+        const targetDiv = document.getElementById(targetDivId);
+        const spinner = document.getElementById('loading-spinner');
+
+
+        if (targetDiv) {
+            targetDiv.innerHTML = `<h6 class="mb-3 fw-semibold">
+                                     <i class="fas fa-list-ul me-2 text-dark"></i> Objectifs ${status}
+                                 </h6>
+                                 <div class="text-center text-muted py-5">
+                                     <div class="spinner-border text-primary" role="status">
+                                         <span class="visually-hidden">Chargement...</span>
+                                     </div>
+                                     <p class="mt-2">Chargement des objectifs...</p>
+                                 </div>`;
+        }
+
+
+        fetch(`/membres/api/objectifs/?statut=${encodeURIComponent(status)}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}', 
+            },
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(errorData => Promise.reject(errorData));
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (targetDiv) {
+                let objectifsHtml = ``;
+               
+                if (data.objectifs && data.objectifs.length > 0) {
+                    data.objectifs.forEach(objectif => {
+                        const progressPercentage = ((objectif.montant / objectif.montant_cible) * 100).toFixed(0);
+                        let progressColor = 'red';
+                        if (progressPercentage >= 100) {
+                            progressColor = 'green';
+                        } else if (progressPercentage > 50) {
+                            progressColor = 'orange';
+                        }
+
+                        const isRetire = objectif.statut === 'Retiré';
+                        const objectifItemClass = `objectif-item mb-3 ${isRetire ? 'retire' : ''}`;
+                        const objectifHeaderClass = `objectif-header d-flex justify-content-between align-items-center ${isRetire ? 'retire' : ''}`;
+                        const progressContainerClass = `d-flex align-items-center gap-3 ${isRetire ? 'retire' : ''}`;
+                        const chevronClass = `fas fa-chevron-down text-muted ${isRetire ? 'retire' : ''}`;
+
+                        let iconClass;
+                        if (objectif.statut === 'Atteint') iconClass = 'fas fa-check-circle text-success';
+                        else if (objectif.statut === 'En cours') iconClass = 'fas fa-hourglass-half text-warning';
+                        else if (objectif.statut === 'Archivé' || objectif.statut === 'Epuisé') iconClass = 'fas fa-times-circle text-danger';
+                        else if (objectif.statut === 'Retiré') iconClass = 'fas fa-box-open text-secondary';
+                        else iconClass = 'fas fa-flag-checkered text-primary';
+
+                        objectifsHtml += `
+                            <div class="${objectifItemClass}">
+                                <div class="${objectifHeaderClass}"
+                                    data-bs-toggle="collapse"
+                                    href="#collapse${objectif.id}" {# Utilisez objectif.id pour l'unicité #}
+                                    role="button"
+                                    aria-expanded="false"
+                                    aria-controls="collapse${objectif.id}"
+                                    style="cursor: pointer"
+                                >
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i class="${iconClass}"></i>
+                                        <span class="fw-semibold">${objectif.nom}</span>
+                                        <small class="text-muted">(${objectif.montant.toLocaleString('fr-FR')} / ${objectif.montant_cible.toLocaleString('fr-FR')} ${objectif.devise})</small>
+                                    </div>
+                                    <div class="${progressContainerClass}">
+                                        ${!isRetire ? `
+                                        <div class="progress-circle-container">
+                                            <div class="progress-circle"
+                                                style="--progress-percentage: ${progressPercentage}%; --progress-color: ${progressColor};"
+                                            >
+                                                ${progressPercentage}%
+                                            </div>
+                                        </div>
+                                        ` : ''}
+                                        <i class="${chevronClass}"></i>
+                                    </div>
+                                </div>
+                                <div class="collapse" id="collapse${objectif.id}" data-bs-parent="#${targetDivId}">
+                                    <div class="objectif-details">
+                                        <ul class="mb-0 text-muted">
+                                            <li><small><strong>Montant cible :</strong> ${objectif.montant_cible.toLocaleString('fr-FR')} ${objectif.devise}</small></li>
+                                            <li><small><strong>Montant déposé :</strong> ${objectif.montant.toLocaleString('fr-FR')} ${objectif.devise}</small></li>
+                                            <li><small><strong>Date de création :</strong> ${new Date(objectif.date_creation).toLocaleDateString('fr-FR')}</small></li>
+                                            <li><small><strong>Date d'échéance :</strong> ${new Date(objectif.date_fin).toLocaleDateString('fr-FR')}</small></li>
+                                            ${objectif.description ? `<li><small><strong>Description :</strong> ${objectif.description}</small></li>` : ''}
+                                            <li>
+                                                <small><strong>Statut :</strong>
+                                                    <span class="badge ${
+                                                        objectif.statut === 'Atteint' ? 'bg-success' :
+                                                        objectif.statut === 'En cours' ? 'bg-warning' :
+                                                        (objectif.statut === 'Archivé' || objectif.statut === 'Epuisé') ? 'bg-danger' :
+                                                        objectif.statut === 'Retiré' ? 'bg-secondary' : 'bg-info'
+                                                    } rounded-pill">
+                                                        ${objectif.statut}
+                                                    </span>
+                                                </small>
+                                            </li>
+                                        </ul>
+                                        <div class="d-flex justify-content-end gap-2 mt-3 objectif-actions">
+                      
+                                            ${(() => { // Fonction auto-exécutante pour encapsuler la logique des boutons
+                                                let buttonsHtml = '';
+                                                if (objectif.statut === 'En cours') {
+                                                    if (objectif.montant <= 0) {
+                                                        buttonsHtml += `
+                                                            <button type="button" class="btn btn-danger btn-sm rounded-pill" data-bs-toggle="modal" data-bs-target="#archiverObjectifModal${objectif.id}">
+                                                                <i class="fas fa-ban me-1"></i>Archiver
+                                                            </button>
+                                                        `;
+                                                    } else {
+                                                        buttonsHtml += `
+                                                            <button type="button" class="btn btn-danger btn-sm rounded-pill" data-bs-toggle="modal" data-bs-target="#retraitPartielObjectifModal${objectif.id}">
+                                                                <i class="fas fa-download me-1"></i>Retirer
+                                                            </button>
+                                                        `;
+                                                    }
+                                                    buttonsHtml += `
+                                                        <button type="button" class="btn btn-primary btn-sm rounded-pill" data-bs-toggle="modal" data-bs-target="#depotObjectifModal${objectif.id}">
+                                                            <i class="fas fa-upload me-1"></i>Déposer
+                                                        </button>
+                                                    `;
+                                                } else if (objectif.statut === 'Archivé') {
+                                                    buttonsHtml += `
+                                                        <button type="button" class="btn btn-success btn-sm rounded-pill" data-bs-toggle="modal" data-bs-target="#reactiverObjectifModal${objectif.id}">
+                                                            <i class="fas fa-redo me-1"></i>Activer
+                                                        </button>
+                                                    `;
+                                                } else if (objectif.statut === 'Atteint') {
+                                                    buttonsHtml += `
+                                                        <button type="button" class="btn btn-success btn-sm rounded-pill" data-bs-toggle="modal" data-bs-target="#retraitObjectifModal${objectif.id}">
+                                                            <i class="fas fa-download me-1"></i>Retirer
+                                                        </button>
+                                                    `;
+                                                }
+                                                return buttonsHtml;
+                                            })()}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        `;
+                    });
+                    targetDiv.innerHTML = objectifsHtml;
+                } else {
+                    targetDiv.innerHTML = `
+                        <div class="alert alert-dark" role="alert">
+                            Aucun objectif trouvé avec le statut "${status}".
+                        </div>
+                    `;
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Erreur lors du chargement des objectifs:', error);
+            if (targetDiv) {
+                targetDiv.innerHTML = `
+                    
+                    <div class="alert alert-danger" role="alert">
+                        Impossible de charger les objectifs pour le statut "${status}".
+                    </div>
+                `;
+            }
+        });
+    }
+
+    // Gérer le changement d'onglet
+    document.addEventListener('DOMContentLoaded', () => {
+        const tabs = document.querySelectorAll('#objectifStatusTabs button[data-bs-toggle="tab"]');
+        tabs.forEach(tab => {
+            tab.addEventListener('shown.bs.tab', event => {
+                const status = event.target.dataset.status;
+                loadObjectifsByStatus(status);
+            });
+        });
+
+        // Charger les objectifs pour l'onglet par défaut (En cours) au chargement de la page
+        loadObjectifsByStatus('En cours');
+    });
+</script>
 
 {% endblock %}

@@ -1,0 +1,218 @@
+{% extends 'membres/base.html' %}
+{% load static %}
+{% load humanize %}
+{% block title %}Mes benefices{% endblock %}
+
+{% block content %}
+<style>
+.table thead th {
+  background-color: #fdfdfd;
+  color: #495057;
+  font-weight: 600;
+  vertical-align: middle;
+  text-align: center;
+}
+
+.table tbody td {
+  vertical-align: middle;
+  text-align: center;
+}
+
+.badge {
+  font-size: 0.85rem;
+  padding: 0.4em 0.65em;
+}
+
+.table-sm-custom {
+  font-size: 0.9rem;
+}
+
+.table-sm-custom thead th {
+  padding: 0.65rem;
+}
+
+.table-sm-custom tbody td {
+  padding: 0.5rem;
+}
+.step {
+  display: none;
+}
+.step.active {
+  display: block;
+}
+
+
+  .modal-content {
+    border-radius: 0.5rem;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+    min-height: 50vh;
+    max-height: 70vh; 
+    overflow-y: auto;
+    padding: 1.5rem;
+  }
+
+  .step-header {
+    display: flex !important;
+    align-items: center !important;
+    margin-bottom: 1.5rem; /* Plus d'espace comme dans le paiement */
+  }
+
+  .btn-link-back {
+    color: #718096;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    width: 100%; /* Prend toute la largeur pour alignement à gauche */
+    text-decoration: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    margin-right: auto; /* Pousse le reste des éléments à droite */
+  }
+
+  .btn-link-back svg {
+    width: 1.2rem;
+    height: 1.2rem;
+    margin-right: 0.5rem;
+  }
+
+  .progress-bar-container {
+    width: 30%; /* Occupe une partie de la largeur */
+    display: flex;
+    align-items: center;
+    height: 0.5rem;
+    background-color: #e0e0e0;
+    border-radius: 0.25rem;
+    overflow: hidden;
+    margin-left: auto; /* Pousse la barre de progression à droite */
+  }
+
+  .progress-bar {
+    background-color: var(--primary-color);
+    height: 100%;
+    width: 0%; /* Initialement à 0 */
+    border-radius: 0.25rem;
+    transition: width 0.3s ease-in-out;
+  }
+
+  .step {
+    transition: opacity 0.3s ease-in-out, transform 0.3s ease;
+    opacity: 0;
+    transform: translateX(10px);
+    display: none;
+  }
+
+  .step.active {
+    display: block;
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  :root {
+    --primary-color: #fc9d1b;
+  }
+
+  .btn-outline-hover {
+    background-color: transparent;
+    border: 1px solid var(--primary-color); /* couleur de la bordure, ici vert bootstrap */
+    color: var(--primary-color);
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  .btn-outline-hover:hover {
+    background-color: var(--primary-color);
+    color: #fff;
+  }
+  .btn-primaire {
+    background-color: var(--primary-color);
+    color:white;
+    border-color: var(--primary-color);
+  }
+
+  .btn-primaire:hover {
+    background-color: #e68c16;
+    color:white;
+    border-color: #e68c16;
+  }
+
+  .form-check-input:checked {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+  }
+
+</style>
+
+<div class="container-fluid p-3 p-md-4 rounded-3" style="background-color: #fff; min-height: 100%;">
+
+  {% for message in messages %}
+  <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+    {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+  {% endfor %}
+
+  <div class="mb-4">
+    <div class="card rounded p-4 border">
+      <div class="row align-items-end">
+        <div class="col-md-8">
+          <h5 class="mb-2 fw-semibold text-dark">Aperçu de mes benefices</h5>
+          <p class="mb-1 fs-6 text-muted">
+            Total disponible (CDF) : <strong>{{ montant_benefices_cdf|stringformat:".2f" }} FC</strong>
+          </p>
+          <p class="mb-0 fs-6 text-muted">
+            Total disponible (USD) : <strong>{{ montant_benefices_usd|stringformat:".2f" }} $</strong>
+          </p>
+        </div>
+        <div class="col-md-4 text-md-end mt-3 mt-md-0">
+          <a href="#" class="btn btn-danger btn-sm rounded py-2 px-3 shadow-sm text-white" data-bs-toggle="modal" data-bs-target="#retraitBenefices">
+            <i class="fas fa-hand-holding-usd me-2"></i>Retirer
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mt-4">
+    <div class="card border-0 rounded-3 shadow-sm">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle table-bordered mb-0 table-sm-custom my-table-hover">
+          <thead class="thead-light">
+            <tr>
+              <th>Montant</th>
+              <th>Source</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for benefice in benefices %}
+            <tr  style="cursor: pointer;">
+              <td>{{ benefice.montant|stringformat:".2f" }} {% if benefice.devise == "USD" %} $ {% else %} FC {% endif %}</td>
+              <td>
+                {% if benefice.remboursement %}
+                  Remboursement de {{ benefice.remboursement.montant|stringformat:".2f" }} 
+                  {% if benefice.remboursement.devise == "USD" %} $ {% else %} FC {% endif %}
+                {% else %}
+                  Non défini
+                {% endif %}
+              </td>
+              <td>
+                <small class="d-none d-md-inline">{{ benefice.date|date:"d E Y H:i" }}</small>
+                <small class="d-md-none">{{ benefice.date|date:"d/m/Y" }}</small>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="5" class="text-center">Aucune benefice disponible.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% include "membres/components/investissement_modal.html" with modal="retraitBenefices" titre="retirer" operation="retrait" %}
+
+{% endblock %}

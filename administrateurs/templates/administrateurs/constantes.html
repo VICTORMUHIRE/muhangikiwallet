@@ -1,0 +1,136 @@
+{% extends "administrateurs/base.html" %}
+{% load static %}
+{% block content %}
+<div class="container mt-5">
+  <h2 class="mb-4"><i class="fas fa-cogs me-2"></i>Constantes système</h2>
+
+  <!-- Bouton d'ajout -->
+  <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#settingModal" onclick="openModal()">
+    <i class="fas fa-plus-circle me-1"></i> Ajouter une constante
+  </button>
+
+  <!-- Tableau -->
+  <div class="table-responsive">
+    <table class="table table-bordered table-hover align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>Clé</th>
+          <th>Valeur</th>
+          <th>Type</th>
+          <th>Dernière modification</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in settings %}
+        <tr>
+          <td>{{ s.key }}</td>
+          <td>{{ s.value|stringformat:".0f" }}</td>
+          <td>{{ s.get_type_display }}</td>
+          <td>{{ s.updated_at|date:"d/m/Y" }}</td>
+          <td>
+            <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#settingModal"
+              onclick="openModal('{{ s.id }}', '{{ s.key }}', '{{ s.value }}', '{{ s.type }}', `{{ s.description|escapejs }}`)">
+              <i class="fas fa-edit"></i> Modifier
+            </button>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5" class="text-center text-muted">Aucune constante définie pour l’instant.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade {% if form.errors %}show{% endif %}" id="settingModal" tabindex="-1" aria-labelledby="settingModalLabel" aria-hidden="true" style="{% if form.errors %}display: block; background: rgba(0,0,0,0.5);{% endif %}">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <form method="post" novalidate>
+          {% csrf_token %}
+          <input type="hidden" name="id" id="id-input" value="{{ form.instance.id|default_if_none:'' }}">
+          
+          <div class="modal-header">
+            <h5 class="modal-title" id="settingModalLabel">
+              <i class="fas fa-cog me-2"></i>{% if form.instance.pk %}Modifier{% else %}Créer{% endif %} une constante
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+          </div>
+  
+          <div class="modal-body">
+  
+            <!-- Champ Clé (select) -->
+            <div class="mb-3">
+              <label for="key-input" class="form-label">Clé</label>
+              <select name="key" id="key-input" class="form-select {% if form.key.errors %}is-invalid{% endif %}" {% if form.instance.pk %}disabled{% endif %}>
+                {% for choice in form.fields.key.choices %}
+                  <option value="{{ choice.0 }}" {% if choice.0 == form.key.value %}selected{% endif %}>{{ choice.1 }}</option>
+                {% endfor %}
+              </select>
+              {% for error in form.key.errors %}
+                <div class="invalid-feedback">{{ error }}</div>
+              {% endfor %}
+            </div>
+  
+            <!-- Champ Valeur -->
+            <div class="mb-3">
+              <label for="value-input" class="form-label">Valeur</label>
+              <input type="text" name="value" id="value-input" class="form-control {% if form.value.errors %}is-invalid{% endif %}" value="{{ form.value.value|default:'' }}">
+              {% for error in form.value.errors %}
+                <div class="invalid-feedback">{{ error }}</div>
+              {% endfor %}
+            </div>
+
+            <!-- Champ Description -->
+            <div class="mb-3">
+              <label for="description-input" class="form-label">Description</label>
+              <textarea name="description" id="description-input" rows="3" class="form-control {% if form.description.errors %}is-invalid{% endif %}">{{ form.description.value|default_if_none:'' }}</textarea>
+              {% for error in form.description.errors %}
+                <div class="invalid-feedback">{{ error }}</div>
+              {% endfor %}
+            </div>
+  
+          </div>
+  
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+              <i class="fas fa-times me-1"></i> Annuler
+            </button>
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-save me-1"></i> Enregistrer
+            </button>
+          </div>
+  
+        </form>
+      </div>
+    </div>
+  </div>
+  
+{% endblock %}
+<script>
+  console.log("script active");
+  
+  function openModal(id = '', key = '', value = '', type = 'percentage', description = '') {
+    document.getElementById('id-input').value = id;
+    document.getElementById('value-input').value = value;
+    document.getElementById('type-input').value = type;
+    document.getElementById('description-input').value = description;
+
+    const keyInput = document.getElementById('key-input');
+    if (id) {
+      keyInput.disabled = true;
+      keyInput.value = key;
+    } else {
+      keyInput.disabled = false;
+      keyInput.value = '';
+    }
+  }
+
+  {% if form.errors %}
+    var modal = new bootstrap.Modal(document.getElementById('settingModal'));
+    modal.show();
+  {% endif %}
+</script>

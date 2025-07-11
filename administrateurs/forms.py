@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm
-from .models import Administrateurs
+from .models import Administrateurs, Constantes,SettingKeys
 
 
 
@@ -56,3 +56,18 @@ class CustomLoginForm(AuthenticationForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['username'].widget.attrs.update({'placeholder': 'Entrez votre numéro de téléphone'})
+
+class ConstantesForm(forms.ModelForm):
+    class Meta:
+        model = Constantes
+        fields = ['key', 'value', 'description']
+
+    def __init__(self, *args, **kwargs):
+        super(ConstantesForm, self).__init__(*args, **kwargs)
+
+        # Clé sous forme de dropdown (choix fixes)
+        self.fields['key'].widget = forms.Select(choices=SettingKeys.choices)
+
+        # Tu peux aussi personnaliser les widgets pour les autres champs si tu veux :
+        self.fields['value'].widget = forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Entrez la valeur'})
+        self.fields['description'].widget = forms.Textarea(attrs={'class': 'form-control', 'rows': 2})

@@ -1,0 +1,109 @@
+<style>
+    .totals-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      grid-row-gap: 10px;
+      grid-column-gap: 10px;
+    }
+  
+
+  
+    .total-item {
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 16px;
+      text-decoration: none !important;
+      color: inherit !important;
+      transition: transform 0.1s ease-in-out, box-shadow 0.1s ease-in-out;
+      background-color: white; 
+    }
+  
+    .total-item:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+    }
+  
+    .total-item .icon-wrapper {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 10px;
+    }
+  
+    .total-item .title {
+      font-size: 0.9rem;
+      color: #757575;
+      margin-bottom: 5px;
+    }
+  
+    .total-item .value {
+      font-weight: bold;
+      font-size: 1rem;
+    }
+  </style>
+  
+  <div class="col-md-6 mt-3 mt-md-0 rounded-3 border">
+    <div class="card border-0 ">
+      <div class="card-header bg-white p-3 border-bottom">
+        <h6 class="mb-0 fw-semibold"><i class="fas fa-chart-bar me-2 text-secondary"></i> Aperçu des activités</h6>
+      </div>
+      <div class="card-body p-3">
+        <div class="totals-grid">
+          <a href="{% url "membres:contributions" %}" class="total-item">
+            <div class="d-flex align-items-center">
+              <div class="icon-wrapper d-none d-md-block bg-success-subtle text-success d-none d-md-block">
+                <i class="fas fa-briefcase  fa-sm"></i>
+              </div>
+              <div>
+                <div class="title">Investissement</div>
+                <div class="value">CDF: {{ solde_CDF|stringformat:".2f" }}fc</div>
+                <div class="value">USD: {{ solde_USD|stringformat:".2f" }}$</div>
+              </div>
+            </div>
+          </a>
+  
+          <a href="{% url "membres:demande_pret" %}" class="total-item">
+            <div class="d-flex align-items-center">
+              <div class="icon-wrapper d-none d-md-block bg-danger-subtle text-danger">
+                <i class="fas fa-hand-holding-usd fa-sm"></i>
+              </div>
+              <div>
+                <div class="title">Crédits</div>
+                <div class="value">CDF: {{ total_prets_CDF|stringformat:".2f" }}fc</div>
+                <div class="value">USD: {{ total_prets_USD|stringformat:".2f" }}$</div>
+              </div>
+            </div>
+          </a>
+  
+          <a href="{% url "membres:benefices" %}" class="total-item">
+            <div class="d-flex align-items-center">
+              <div class="icon-wrapper d-none d-md-block bg-info-subtle text-info">
+                <i class="fas fa-chart-line fa-sm"></i>
+              </div>
+              <div>
+                <div class="title">Bénéfices</div>
+                <div class="value">CDF: {{ benefices_CDF|stringformat:".2f" }}fc</div>
+                <div class="value">USD: {{ benefices_USD|stringformat:".2f" }}$</div>
+              </div>
+            </div>
+          </a>
+  
+          <a href="membres:Objectifs" class="total-item">
+            <div class="d-flex align-items-center">
+              <div class="icon-wrapper d-none d-md-block bg-primary-subtle text-primary">
+                <i class="fas fa-bullseye fa-sm"></i>
+              </div>
+              <div>
+                <div class="title">Objectifs ({{ objectifs.count }})</div>
+                <div class="value small">CDF: {{ total_depot_objectif_CDF|stringformat:".2f" }}fc</div>
+                <div class="value small">USD: {{ total_depot_objectif_USD|stringformat:".2f" }}$</div>
+              </div>
+            </div>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>

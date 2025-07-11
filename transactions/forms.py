@@ -1,7 +1,12 @@
+from datetime import timedelta, timezone
 from django import forms
 
-from .models import Transactions, Contributions, Retraits, DepotsObjectif, Transferts, Prets, TypesPret, DepotsInscription, Fidelites
+from .models import Solde, Transactions, Contributions, Retraits, DepotsObjectif, Transferts, Prets, TypesPret, DepotsInscription, Fidelites
 
+MODE_PAYEMENT_EXPRES = [
+    ('hebdomadaire', 'Hebdomadaire'),
+    ('mensuel', 'Mensuel'),
+]
 
 # Formulaire de transaction
 class TransactionsForm(forms.ModelForm):
@@ -14,16 +19,48 @@ class TransactionsForm(forms.ModelForm):
             "devise": forms.Select(attrs={"class": "form-control form-select"}),
         }
 
+# forms.py
 class PretsForm(forms.ModelForm):
+    mode_payement = forms.ChoiceField(
+        choices=MODE_PAYEMENT_EXPRES, 
+        label="Mode de paiement", 
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+
     class Meta:
         model = Prets
-        fields = ["type_pret", "montant", "devise"]
+        fields = ["type_pret", "montant", "devise", "mode_payement"]
 
-# Formulaire de type de pret
+    def __init__(self, *args, **kwargs):
+        super(PretsForm, self).__init__(*args, **kwargs)
+
+        self.fields['type_pret'].widget.attrs.update({
+            'class': 'form-select'  # ou 'form-control' selon le widget
+        })
+        self.fields['montant'].widget.attrs.update({
+            'class': 'form-control',
+            'placeholder': 'Montant du prêt'
+        })
+        self.fields['devise'].widget.attrs.update({
+            'class': 'form-select'
+        })
+
 class TypesPretForm(forms.ModelForm):
     class Meta:
         model = TypesPret
-        fields = ["nom", "taux_interet", "delai_remboursement"]
+        fields = [
+            'taux_interet',
+            'delais_traitement',
+            'delai_remboursement',
+            'investissement_min',  
+            'montant_min',         
+            'montant_max',         
+            'description',         
+        ]
+       
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 4}), 
+        }
 
 class ContributionsForm(forms.ModelForm):
     class Meta:
@@ -41,11 +78,33 @@ class DepotsObjectifForm(forms.ModelForm):
         model = DepotsObjectif
         fields = ["objectif", "montant", "devise"]
 
-class TransfertsForm(forms.ModelForm):
-    numero_destinataire = forms.CharField(max_length=20)
-    class Meta:
-        model = Transferts
-        fields = ["devise", "motif"]
+class TransfertsForm(forms.Form):
+    recherche_destinataire = forms.CharField(
+        label='Destinataire (Nom ou Numéro)',
+        widget=forms.TextInput(attrs={'placeholder': 'Entrez le nom ou le numéro'})
+    )
+    montant = forms.DecimalField(
+        label='Montant à transférer',
+        min_value=0.01,
+        widget=forms.NumberInput(attrs={'placeholder': '0.00'})
+    )
+    devise = forms.ChoiceField(
+        label='Devise',
+        choices=[('CDF', 'CDF'), ('USD', 'USD')],
+        widget=forms.Select
+    )
+    motif = forms.CharField(
+        label='Motif (Optionnel)',
+        required=False,
+        widget=forms.Textarea(attrs={'rows': 2, 'placeholder': 'Ajouter un motif'})
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['recherche_destinataire'].widget.attrs.update({'class': 'form-control mb-3'})
+        self.fields['montant'].widget.attrs.update({'class': 'form-control mb-3'})
+        self.fields['devise'].widget.attrs.update({'class': 'form-select mb-3'})
+        self.fields['motif'].widget.attrs.update({'class': 'form-control mb-3'})
 
 class DepotsInscriptionForm(forms.ModelForm):
     class Meta:
@@ -60,3 +119,40 @@ class FidelitesForm(forms.ModelForm):
     class Meta:
         model = Fidelites
         fields = ["membre", "point", "transaction", "description"]
+
+class SoldeForm(forms.ModelForm):
+
+    class Meta:
+        model = Solde
+        fields = ['montant', 'devise', 'account_sender']
+        widgets = {
+            'montant': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Montant à déposer',
+                'min': '0.01',
+            }),
+            'devise': forms.Select(attrs={
+                'class': 'form-control',
+            }),
+            'account_sender': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Numéro de téléphone de l\'expéditeur',
+            }),
+        }
+        labels = {
+            'montant': 'Montant',
+            'devise': 'Devise',
+            'account_sender': 'Numéro de téléphone',
+        }
+
+    def clean_montant(self):
+        montant = self.cleaned_data.get('montant')
+        if montant <= 0:
+            raise forms.ValidationError("Le montant doit être supérieur à 0.")
+        return montant
+
+    def clean_account_sender(self):
+        numero = self.cleaned_data.get('account_sender')
+        if not numero or len(numero) < 9:
+            raise forms.ValidationError("Numéro de téléphone invalide.")
+        return numero

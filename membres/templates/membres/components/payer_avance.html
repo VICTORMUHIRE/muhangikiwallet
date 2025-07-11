@@ -1,0 +1,149 @@
+{% load humanize %}
+{% load colorFilter %}
+
+{% for pret in demandes_pret %}
+ {% with first_echeance=pret.echeances.all|first %}
+    {% if pret.statut == 'Approuvé' %}
+
+        <div class="modal fade" id="payerAvanceModal{{ pret.id }}" tabindex="-1" aria-labelledby="payerAvanceModalLabel{{ pret.id }}" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="payerAvanceModalLabel{{ pret.id }}">Avance pour le prêt de {{ pret.montant|stringformat:".2f" }} {{ pret.devise }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>
+                            Le solde restant de votre prêt est de <strong id="avancePretSoldeRestant{{ pret.id }}" class="text-info">{{ pret.montant_payer|sub:pret.solde_remboursé|stringformat:".2f" }} {{ pret.devise }}</strong>.
+                            Chaque échéance est de {{ first_echeance.montant|stringformat:".2f" }} {{ pret.devise }}.
+                        </p>
+                        <div class="alert alert-danger mt-3 d-none" id="avance-error-message{{ pret.id }}"></div>
+                        <div class="alert alert-success mt-3 d-none" id="avance-success-message{{ pret.id }}"></div>
+                        <form id="payerAvanceForm{{ pret.id }}">
+                            {% csrf_token %}
+                            <input type="hidden" name="pret_id" value="{{ pret.id }}">
+                            <div class="mb-3">
+                                <label for="montantAvance{{ pret.id }}" class="form-label">Montant de l'avance</label>
+                                <input type="number" step="0.01" class="form-control" id="montantAvance{{ pret.id }}" name="montant"
+                                    placeholder="Entrez le montant de l'avance en {{ pret.devise }}" required min="0.01" max="{{ pret.montant_payer|sub:pret.solde_remboursé }}">
+                                <div class="form-text text-muted">Maximum: {{ pret.montant_payer|sub:pret.solde_remboursé|stringformat:".2f" }} {{ pret.devise }}</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="motDePasseAvance{{ pret.id }}" class="form-label">Mot de passe</label>
+                                <input type="password" class="form-control" id="motDePasseAvance{{ pret.id }}" name="password" required>
+                            </div>
+                            
+                            <button type="button" class="btn btn-primary" onclick="payerAvance({{ pret.id }})">Confirmer l'avance</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    {% endwith %}
+{% endfor %}
+
+
+<script>
+    // Global function to handle advance payment
+    function payerAvance(pretId) {
+        const form = document.getElementById(`payerAvanceForm${pretId}`);
+        const montantInput = document.getElementById(`montantAvance${pretId}`);
+        const passwordInput = document.getElementById(`motDePasseAvance${pretId}`);
+        const csrfToken = form.querySelector('[name=csrfmiddlewaretoken]').value;
+        const errorDiv = document.getElementById(`avance-error-message${pretId}`);
+        const successDiv = document.getElementById(`avance-success-message${pretId}`);
+        const modalElement = document.getElementById(`payerAvanceModal${pretId}`);
+        const modal = bootstrap.Modal.getInstance(modalElement);
+
+        // Reset messages
+        errorDiv.classList.add('d-none');
+        successDiv.classList.add('d-none');
+        errorDiv.textContent = '';
+        successDiv.textContent = '';
+
+        const montantAvance = parseFloat(montantInput.value);
+        const soldeRestant = parseFloat(montantInput.max); // Max is set to remaining balance
+
+        // Client-side validation
+        if (isNaN(montantAvance) || montantAvance <= 0 || montantAvance > soldeRestant) {
+            errorDiv.textContent = `Veuillez entrer un montant d'avance valide (entre 0.01 et ${soldeRestant.toFixed(2)}).`;
+            errorDiv.classList.remove('d-none');
+            return;
+        }
+        if (!passwordInput.value) {
+            errorDiv.textContent = 'Veuillez entrer votre mot de passe.';
+            errorDiv.classList.remove('d-none');
+            return;
+        }
+
+        fetch(`/membres/prets/payer-avance/${pretId}/`, { // Define this URL in urls.py
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
+            },
+            body: JSON.stringify({
+                montant_avance: montantAvance,
+                mot_de_passe: passwordInput.value,
+            }),
+        })
+        .then(response => {
+            if (!response.ok) {
+                // If response is not OK (e.g., 400, 403, 500), parse the JSON error
+                return response.json().then(err => { throw err; });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                successDiv.textContent = data.message;
+                successDiv.classList.remove('d-none');
+                setTimeout(() => {
+                    if (modal) {
+                        modal.hide();
+                    }
+                    form.reset(); // Reset form fields
+                    window.location.reload(); // Reload to reflect changes
+                }, 2000);
+            } else {
+                errorDiv.textContent = data.error || 'Une erreur inconnue s\'est produite.';
+                errorDiv.classList.remove('d-none');
+            }
+        })
+        .catch(error => {
+            console.error('Error during advance payment:', error);
+            errorDiv.textContent = error.error || 'Une erreur de communication est survenue.';
+            errorDiv.classList.remove('d-none');
+        });
+    }
+
+    // Reset modal fields on hide
+    document.addEventListener('DOMContentLoaded', () => {
+        // Iterate through all possible modals for loan advance
+        document.querySelectorAll('[id^="payerAvanceModal"]').forEach(modalElement => {
+            modalElement.addEventListener('hidden.bs.modal', () => {
+                const pretId = modalElement.id.replace('payerAvanceModal', '');
+                const errorDiv = document.getElementById(`avance-error-message${pretId}`);
+                const successDiv = document.getElementById(`avance-success-message${pretId}`);
+                const montantInput = document.getElementById(`montantAvance${pretId}`);
+                const passwordInput = document.getElementById(`motDePasseAvance${pretId}`);
+
+                if (errorDiv) {
+                    errorDiv.classList.add('d-none');
+                    errorDiv.textContent = '';
+                }
+                if (successDiv) {
+                    successDiv.classList.add('d-none');
+                    successDiv.textContent = '';
+                }
+                if (montantInput) {
+                    montantInput.value = '';
+                }
+                if (passwordInput) {
+                    passwordInput.value = '';
+                }
+            });
+        });
+    });
+</script>

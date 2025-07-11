@@ -1,102 +1,429 @@
 {% extends 'membres/base.html' %}
-
-{% block title %}Transfert{% endblock %}
-
+{% load static %}
+{% load humanize %}
+{% load colorFilter %}
+{% load objectifFilter %}
+{% block title %}Mes Transferts{% endblock %}
 {% block content %}
-<div class="container mt-5"> 
-    <div class="row justify-content-center">
-        <div class="col-md-6"> 
-            <div class="card shadow px-2">
-                <div class="card-header bg-white text-center">
-                    <h2>Effectuer un Transfert</h2>
-                    {% if messages %}
-                        {% for message in messages %}
-                            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}warning{% endif %} alert-dismissible fade show" role="alert">
-                                {{ message }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                            </div>
-                        {% endfor %}
-                    {% endif %}
-                </div>
-                <div class="card-body">
-                    <form method="post" id="transfer-form"> 
-                        {% csrf_token %}
-                        <div class="row mb-3">
-                            <div class="form-group col-md-8">
-                                <label for="{{ form.montant.id_for_label }}">Montant à transférer:</label>
-                                <input type="number" class="form-control" id="{{ form.montant.id_for_label }}" name="{{ form.montant.html_name }}"value="{{ form.montant.value|default:'' }}" placeholder="Entrez le montant">
-                            </div>
-                            <div class="form-group col-md-4">
-                                <div class="form-group">
-                                    <label for="{{ form.devise.id_for_label }}">Devise:</label>
-                                    <select class="form-select" id="{{ form.devise.id_for_label }}" name="{{ form.devise.html_name }}">
-                                        <option value="CDF" {% if form.devise.value == 'CDF' %}selected{% endif %}>CDF</option>
-                                        <option value="USD" {% if form.devise.value == 'USD' %}selected{% endif %}>USD</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
 
-                        <div class="form-group mb-3">
-                            <label for="{{ form.numero_destinataire.id_for_label }}">Numéro du destinataire:</label>
-                            <input type="text" class="form-control" id="{{ form.numero_destinataire.id_for_label }}" name="{{ form.numero_destinataire.html_name }}" placeholder="Entrez le numéro du destinataire">
-                        </div>
-                        
-                        <div class="form-group mb-3">
-                            <label for="solde_actuel">Solde disponible: </label>
-                            <span id="solde_actuel" class="font-weight-bold mb-color">
-                                {{ solde_CDF|floatformat:2 }} CDF / {{ solde_USD|floatformat:2 }} USD
-                            </span>
-                        </div>
+<style>
+.table thead th {
+  background-color: #fdfdfd;
+  color: #495057;
+  font-weight: 600;
+  vertical-align: middle;
+  text-align: center;
+}
 
-                        <div class="form-group text-center">
-                            <button type="button" class="btn btn-mw text-white" id="submitTransferBtn" data-bs-toggle="modal" data-bs-target="#passwordConfirmModal">Confirmer le Transfert</button>
-                        </div>
-                    </form>
-                </div>
+.table tbody td {
+  vertical-align: middle;
+  text-align: center;
+}
+
+.badge {
+  font-size: 0.85rem;
+  padding: 0.4em 0.65em;
+}
+
+.table-sm-custom {
+  font-size: 0.9rem;
+}
+
+.table-sm-custom thead th {
+  padding: 0.65rem;
+}
+
+.table-sm-custom tbody td {
+  padding: 0.5rem;
+}
+.step {
+  display: none;
+}
+.step.active {
+  display: block;
+}
+
+
+  .modal-content {
+    border-radius: 0.5rem;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+    overflow-y: auto;
+    padding: 1.5rem;
+  }
+
+  .step-header {
+    display: flex !important;
+    align-items: center !important;
+    margin-bottom: 1.5rem; /* Plus d'espace comme dans le paiement */
+  }
+
+  .btn-link-back {
+    color: #718096;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    width: 100%; /* Prend toute la largeur pour alignement à gauche */
+    text-decoration: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    margin-right: auto; /* Pousse le reste des éléments à droite */
+  }
+
+  .btn-link-back svg {
+    width: 1.2rem;
+    height: 1.2rem;
+    margin-right: 0.5rem;
+  }
+
+  .progress-bar-container {
+    width: 30%; /* Occupe une partie de la largeur */
+    display: flex;
+    align-items: center;
+    height: 0.5rem;
+    background-color: #e0e0e0;
+    border-radius: 0.25rem;
+    overflow: hidden;
+    margin-left: auto; /* Pousse la barre de progression à droite */
+  }
+
+  .progress-bar {
+    background-color: var(--primary-color);
+    height: 100%;
+    width: 0%; /* Initialement à 0 */
+    border-radius: 0.25rem;
+    transition: width 0.3s ease-in-out;
+  }
+
+  .step {
+    transition: opacity 0.3s ease-in-out, transform 0.3s ease;
+    opacity: 0;
+    transform: translateX(10px);
+    display: none;
+  }
+
+  .step.active {
+    display: block;
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  :root {
+    --primary-color: #fc9d1b;
+  }
+
+  .btn-outline-hover {
+    background-color: transparent;
+    border: 1px solid var(--primary-color); /* couleur de la bordure, ici vert bootstrap */
+    color: var(--primary-color);
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  .btn-outline-hover:hover {
+    background-color: var(--primary-color);
+    color: #fff;
+  }
+  .btn-primaire {
+    background-color: var(--primary-color);
+    color:white;
+    border-color: var(--primary-color);
+  }
+
+  .btn-primaire:hover {
+    background-color: #e68c16;
+    color:white;
+    border-color: #e68c16;
+  }
+
+  .form-check-input:checked {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+  }
+ .autocomplete-list {
+    position: absolute;
+    z-index: 10;
+    width: 100%;
+    max-height: 150px;
+    overflow-y: auto;
+    border: 1px solid #ced4da;
+    border-top: none;
+    background-color: #fff;
+    border-radius: 0 0 0.25rem 0.25rem;
+}
+
+.autocomplete-item {
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+}
+
+.autocomplete-item:hover {
+    background-color: #f8f9fa;
+}
+</style>
+
+<div class="container-fluid p-3 p-md-4 rounded-3" style="background-color: #fff; min-height: 100%;">
+
+    {% for message in messages %}
+    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{message.tags}}{% endif %} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+
+    <div class="mb-4">
+        <div class="card rounded p-4 border">
+        <div class="row align-items-end">
+            <div class="col-md-8">
+            <h5 class="mb-2 fw-semibold text-dark">Mes transferts</h5>
+
+            <p class="mb-0 mt-2 fs-6 text-muted">
+                Transfert :
+                <strong class="fw-bold">{{ transferts|length }}</strong> <small>total</small>
+            </p>
+
             </div>
+
+            <div class="col-md-4 text-md-end mt-3 mt-md-0">
+            <button
+                type="button"
+                class="btn btn-mw btn-sm rounded py-2 px-3 shadow-sm text-white"
+                data-bs-toggle="modal"
+                data-bs-target="#transfertModal"
+            >
+                <i class="fas fa-plus me-2"></i> Nouveau transfert
+            </button>
+            </div>
+        </div>
         </div>
     </div>
-</div>
-
-<!-- Modal de confirmation du mot de passe -->
-<div class="modal fade" id="passwordConfirmModal" tabindex="-1" aria-labelledby="passwordConfirmModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="passwordConfirmModalLabel">Confirmation du mot de passe</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <label for="password" class="form-label">Entrez votre mot de passe:</label>
-                    <input type="password" class="form-control" id="password" name="password" required>
-                </div>
-                <div id="passwordError" class="text-danger"></div> 
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                <button type="button" class="btn btn-primary" id="confirmPasswordBtn">Confirmer</button>
-            </div>
+    <div class="mt-4">
+    <div class="card border-0 rounded-3 shadow-sm">
+        <div class="table-responsive">
+        <table class="table table-hover align-middle table-bordered mb-0 table-sm-custom my-table-hover">
+            <thead class="thead-light">
+            <tr>
+                <th>Expediteur</th>
+                <th>Destinataire</th>
+                <th>Montant</th>
+                <th>Date</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for transfert in transferts %}
+            <tr  style="cursor: pointer;">
+                <td>{{transfert.membre_expediteur.nom|capfirst}} {{transfert.membre_expediteur.prenom|capfirst}}</td>
+                <td>{{transfert.membre_destinataire.nom|capfirst}} {{transfert.membre_destinataire.prenom|capfirst}}</td>
+                <td>{{ transfert.montant|stringformat:".2f" }} {% if transfert.devise == "USD" %} $ {% else %} FC {% endif %}</td>
+                <td>
+                <small class="d-none d-md-inline">{{ transfert.date|date:"d E Y H:i" }}</small>
+                <small class="d-md-none">{{ transfert.date|date:"d/m/Y" }}</small>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" class="text-center">Aucun transfert disponible.</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
         </div>
+    </div>
+    </div>
+
+
+<div class="modal fade" id="transfertModal" tabindex="-1" aria-labelledby="transfertModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-md">
+    <div class="modal-content">
+        <form method="post" id="transferForm">
+            {% csrf_token %}
+
+            <div class="modal-body">
+                <div id="transferStepsContainer">
+
+                    <div class="step active" data-step="1">
+                        <div class="step-header">
+                            <button type="button" class="btn-link-back" data-bs-dismiss="modal">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+                                    <path fill-rule="evenodd" d="M15.75 19.5a.75.75 0 01-1.08-.853l-3.286-3.717a.75.75 0 010-1.082l3.286-3.717a.75.75 0 111.08.854l-3.285 3.717a.75.75 0 010 1.082l3.285 3.717a.75.75 0 01-.002 1.146zM9 12a.75.75 0 01.75-.75h5.25a.75.75 0 010 1.5H9.75A.75.75 0 019 12z" clip-rule="evenodd" />
+                                </svg>
+                                Retour
+                            </button>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar" style="width: 50%"></div>
+                            </div>
+                        </div>
+
+                        <h6 class="mb-3 fw-semibold text-secondary">
+                            <i class="fas fa-arrow-right me-2"></i>
+                            Informations du Transfert
+                        </h6>
+
+                        <div class="mb-3">
+                            <label for="destinataireInput" class="form-label">Destinataire</label>
+                            <input type="text" class="form-control" id="destinataireInput" name="recherche_destinataire" placeholder="Rechercher un membre par nom ou numéro" autocomplete="off">
+                            <input type="hidden" id="destinataireId" name="destinataire_id"> {# Hidden field to store the ID #}
+                            <div id="autocompleteList" class="autocomplete-list">
+                                </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.montant.id_for_label }}" class="form-label">{{ form.montant.label }}</label>
+                            {{ form.montant }}
+                            {% if form.montant.errors %}
+                                <div class="text-danger">{{ form.montant.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.devise.id_for_label }}" class="form-label">{{ form.devise.label }}</label>
+                            {{ form.devise }}
+                            {% if form.devise.errors %}
+                                <div class="text-danger">{{ form.devise.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="text-end">
+                            <button type="button" class="btn btn-primaire btn-sm rounded py-2 px-3 me-2 shadow-sm" onclick="goToTransferStep(2)">Suivant</button>
+                        </div>
+                    </div>
+
+                    <div class="step" data-step="2">
+                        <div class="step-header">
+                            <button type="button" class="btn-link-back" onclick="goToTransferStep(1)">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+                                    <path fill-rule="evenodd" d="M15.75 19.5a.75.75 0 01-1.08-.853l-3.286-3.717a.75.75 0 010-1.082l3.286-3.717a.75.75 0 111.08.854l-3.285 3.717a.75.75 0 010 1.082l3.285 3.717a.75.75 0 01-.002 1.146zM9 12a.75.75 0 01.75-.75h5.25a.75.75 0 010 1.5H9.75A.75.75 0 019 12z" clip-rule="evenodd" />
+                                </svg>
+                                Retour
+                            </button>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar" style="width: 100%"></div>
+                            </div>
+                        </div>
+
+                        <h6 class="mb-3 fw-semibold text-secondary">
+                            Confirmer votre Transfert
+                        </h6>
+
+                        <div class="card border mb-3">
+                            <div class="card-body">
+                                <p class="mb-2">
+                                    <strong>Destinataire :</strong> <span id="previewDestinataire"></span>
+                                </p>
+                                <p class="mb-2">
+                                    <strong>Montant à transférer :</strong>
+                                    <span id="previewMontant">0</span>
+                                    <span id="previewDevise">USD</span>
+                                </p>
+                                
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="transferPassword" class="form-label">Mot de passe</label>
+                            <input type="password" id="transferPassword" class="form-control" name="mot_de_passe" required>
+                        </div>
+
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-primaire btn-sm rounded py-2 px-3 me-2 shadow-sm">Valider le Transfert</button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </form>
+    </div>
     </div>
 </div>
 
 <script>
-    // Gestionnaire d'événements pour le bouton "Confirmer" dans le modal
-    document.getElementById('confirmPasswordBtn').addEventListener('click', function() {
-        var password = document.getElementById('password').value;
-        var transferForm = document.getElementById('transfer-form');
+    function goToTransferStep(step) {
+        const steps = document.querySelectorAll('#transferStepsContainer .step');
+        steps.forEach(s => s.classList.remove('active'));
+        document.querySelector(`#transferStepsContainer .step[data-step="${step}"]`).classList.add('active');
 
-        // Ajouter le mot de passe au formulaire avant la soumission
-        var passwordInput = document.createElement('input');
-        passwordInput.type = 'hidden';
-        passwordInput.name = 'password'; 
-        passwordInput.value = password;
-        transferForm.appendChild(passwordInput);
+        const progressBars = document.querySelectorAll('.progress-bar');
+        progressBars.forEach(bar => {
+            bar.style.width = step === 2 ? '100%' : '50%';
+        });
 
-        if (transferForm.checkValidity()) transferForm.submit()
-        else transferForm.reportValidity();
+        if (step === 2) {
+            const destinataireInput = document.getElementById('destinataireInput');
+            const montantInput = document.querySelector('input[name="montant"]');
+            const deviseSelect = document.querySelector('select[name="devise"]');
+
+            const montant = montantInput ? montantInput.value : '0';
+            const devise = deviseSelect ? deviseSelect.options[deviseSelect.selectedIndex].text : 'USD';
+
+            document.getElementById('previewDestinataire').textContent = destinataireInput.value;
+            document.getElementById('previewMontant').textContent = montant;
+            document.getElementById('previewDevise').textContent = devise;
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const destinataireInput = document.getElementById('destinataireInput');
+        const destinataireIdInput = document.getElementById('destinataireId'); // Get the hidden input
+        const autocompleteList = document.getElementById('autocompleteList');
+        const membresOptions = JSON.parse('{{ membres_destinataires_json|escapejs }}');
+
+        console.log(membresOptions);
+        
+
+        destinataireInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            autocompleteList.innerHTML = ''; 
+            destinataireIdInput.value = ''; 
+
+            if (searchTerm.length >= 2) { 
+                const suggestions = membresOptions.filter(membre =>
+                    membre.nom_complet.toLowerCase().includes(searchTerm) || membre.numero_telephone.includes(searchTerm)
+                );
+
+                if (suggestions.length > 0) {
+                    autocompleteList.style.display = 'block';
+                    suggestions.forEach(suggestion => {
+                        const item = document.createElement('div');
+                        item.classList.add('autocomplete-item');
+                        item.textContent = `${suggestion.nom_complet} (${suggestion.numero_telephone})`;
+                        item.dataset.id = suggestion.id; // Store the actual ID on the item
+                        item.addEventListener('click', function() {
+                            destinataireInput.value = this.textContent;
+                            destinataireIdInput.value = this.dataset.id; // Set hidden input value to the ID
+                            autocompleteList.style.display = 'none';
+                        });
+                        autocompleteList.appendChild(item);
+                    });
+                } else {
+                    autocompleteList.style.display = 'none';
+                }
+            } else {
+                autocompleteList.style.display = 'none';
+            }
+        });
+
+        // Hide the suggestion list when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!destinataireInput.contains(event.target) && !autocompleteList.contains(event.target)) {
+                autocompleteList.style.display = 'none';
+            }
+        });
+
+        document.getElementById('transferForm').addEventListener('submit', function(event) {
+            const passwordInput = document.getElementById('transferPassword');
+            const selectedDestinataireId = document.getElementById('destinataireId').value; // Get the ID from the hidden input
+
+            if (!passwordInput.value) {
+                event.preventDefault();
+                passwordInput.reportValidity();
+            }
+
+            if (!selectedDestinataireId) { 
+                event.preventDefault();
+                alert('Veuillez sélectionner un destinataire valide dans la liste suggérée.');
+            }
+        });
     });
 </script>
 

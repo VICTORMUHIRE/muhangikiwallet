@@ -1,180 +1,98 @@
 {% extends 'membres/base.html' %}
 {% load static %}
-
+{% load objectifFilter %}
 {% block title %}Accueil{% endblock %}
-
 {% block content %}
 
-<div class="row pt-5 pt-sm-0 mb-3 mb-md-5">
-    {% if messages %}
-        {% for message in messages %}
-        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{message.tags}}{% endif %} alert-dismissible fade show" role="alert">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-        {% endfor %}
-    {% endif %}
+<div class="container-fluid p-3 p-md-4 rounded-3" style="background-color: #fff; min-height: 100%">
 
-    <!-- <div class="row mb-4 d-none d-sm-block">
-        <div class="col-12">
-            <h1 class="text-center roboto-regular">
-                <span class="mw-color">Bienvenu {% if membre.sexe == "F" %}e{% endif %}</span> {% if membre.sexe == "M" %}cher{% else %}chère{% endif %}  {{ user.membre.nom }} {{ user.membre.postnom }}
-            </h1>
-        </div>
-    </div> -->
-
-    <div class="col-6 col-md-3 my-3 my-md-0 h-100">
-        <div class="card h-100 shadow-sm rounded-4 border-0 bg-light" style="background-color: color(srgb 0 1 0 / 0.05) !important;">
-            <div class="card-body d-flex flex-column align-items-center justify-content-center">
-                <i class="fas fa-wallet fa-3x text-success"></i>
-                <h5 class="card-title my-3 text-center">Capital total</h5>
-                <h6 class="card-subtitle mb-2 text-muted">CDF : {{ solde_CDF|stringformat:".2f" }}</h6>
-                <h6 class="card-subtitle text-muted">USD : {{ solde_USD|stringformat:".2f" }}</h6>
+    {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{message.tags}}{% endif %} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
-            <a href="{% url 'membres:contributions' %}" class="card-footer text-center text-white bg-success btn btn-success rounded-4 rounded-top-0 btn-sm">Contributions</a>
-        </div>
+    {% endfor %}
+
+    <div class="row mb-4">
+        {% include "membres/components/payement.html" %}
+        {% include "membres/components/liens.html" %}
+        
     </div>
 
-    <div class="col-6 col-md-3 my-3 my-md-0 h-100">
-        <div class="card h-100 shadow-sm rounded-4 border-0 bg-light" style="background-color: color(srgb 1 0 0 / 0.05) !important;">
-            <div class="card-body d-flex flex-column align-items-center justify-content-center">
-                <i class="fas fa-hand-holding-usd fa-3x text-danger"></i>
-                <h5 class="card-title my-3 text-center">Crédits</h5>
-                <h6 class="card-subtitle mb-2 text-muted">CDF : {{ total_prets_CDF|stringformat:".2f" }}</h6>
-                <h6 class="card-subtitle text-muted">USD : {{ total_prets_USD|stringformat:".2f" }}</h6>
-            </div>
-            <a href="{% url 'membres:demande_pret' %}" class="card-footer text-center text-white bg-danger btn btn-danger rounded-4 rounded-top-0 btn-sm">Emprunt</a>
-        </div>
-    </div>
-
-    <div class="col-6 col-md-3 my-3 my-md-0 h-100">  <!-- New card for Bénéfices -->
-        <div class="card h-100 shadow-sm rounded-4 border-0 bg-light"  style="background-color: color(srgb 1 0.65 0 / 0.05) !important;">
-            <div class="card-body d-flex flex-column align-items-center justify-content-center">
-                <i class="fas fa-chart-line fa-3x mw-color"></i>
-                <h5 class="card-title my-3 text-center">Bénéfices</h5>
-                <h6 class="card-subtitle mb-2 text-muted">CDF : {{ benefices_CDF|stringformat:".2f" }}</h6>
-                <h6 class="card-subtitle text-muted">USD : {{ benefices_USD|stringformat:".2f" }}</h6>
-            </div>
-            <a href="{% url 'membres:retrait' %}" class="card-footer text-center text-white bg-mw btn btn-mw rounded-4 rounded-top-0 btn-sm">Retrait</a>
-        </div>
-    </div>
-
-    <div class="col-6 col-md-3 my-3 my-md-0 col-md-3 h-100">  <!-- New card for Objectifs -->
-        <div class="card h-100 shadow-sm rounded-4 border-0 bg-light"  style="background-color: color(srgb 0 0 1 / 0.05) !important;">
-            <div class="card-body d-flex flex-column align-items-center justify-content-center">
-                <i class="fas fa-bullseye fa-3x text-primary"></i>
-                <h5 class="card-title my-3 text-center">{{ objectifs.count }} {{objectifs.count|pluralize:"Objectif, Objectifs"}}</h5>
-                <h6 class="card-subtitle mb-2 text-muted">CDF : {{ total_depot_objectif_CDF|stringformat:".2f" }}</h6>
-                <h6 class="card-subtitle text-muted">USD : {{ total_depot_objectif_USD|stringformat:".2f" }}</h6>
-            </div>
-            <a href="{% url 'membres:objectifs' %}" class="card-footer text-center text-white bg-secondary btn btn-primary rounded-4 rounded-top-0 btn-sm">Gérer</a>
-        </div>
-    </div>
-</div>
-
-<div class="row  my-4 d-none">
-    <div class="col-12">
-        <div class="d-flex flex-wrap justify-content-center" style="gap: 10px;">
-            <!-- <a href="% url 'membres:dépot' %" class="btn btn-success rounded-pill p-3" style="min-width: 160px;">
-                <i class="fas fa-money-bill-wave me-2"></i>Déposer
-            </a> -->
-            <a href="{% url 'membres:demande_pret' %}" class="btn btn-danger rounded-pill p-3" style="min-width: 160px;">
-                <i class="fas fa-hand-holding-usd me-2"></i> Emprunter
-            </a>
-            <a href="{% url 'membres:retrait' %}" class="btn btn-success rounded-pill p-3" style="min-width: 160px;">
-                <i class="fas fa-money-bill-wave me-2"></i> Retirer
-            </a>
-            <a href="{% url 'membres:transactions' %}" class="btn btn-mw rounded-pill p-3" style="min-width: 160px;">
-                <i class="fas fa-exchange-alt me-2"></i> Transactions
-            </a>
-        </div>
-    </div>
-</div>
-
-<div class="row flex-grow-1 mb-2 pb-5 mb-sm-0 pb-sm-0 gap-4 gap-md-0">
-    <div class="col-md-6">
-        <div class="card h-100 shadow-sm rounded-4 border-0">
-            <div class="card-header bg-white rounded-top-4">
-                <h5 class="card-title">
-                    <i class="fas fa-history fa-fw mw-color"></i> Historique des transactions
-                </h5>
-            </div>
-            <div class="card-body p-2">
-                {% for transaction in transactions|slice:":5" %}
-                <a href="{% url 'membres:transaction' transaction.id %}" class="d-block btn btn-light bg-white transaction-item {% if 'retrait' in transaction.type or 'annulation' in transaction.type %}transaction-retrait{% elif transaction.type == 'transfert' %}transaction-transfert{% elif transaction.type == 'depot_objectif' %}transaction-depot-objectif{% elif transaction.type == 'depot_inscription' %}transaction-depot-inscription{% elif transaction.type == 'contribution' %}transaction-contribution{% elif 'pret' in transaction.type %}transaction-pret{% endif %}">
-                    <div class="d-flex align-items-center gap-3">
-                        <i class="{% if 'retrait' in transaction.type  or 'annulation' in transaction.type %}fas fa-minus-circle{% elif transaction.type == 'transfert' %}fas fa-exchange-alt{% elif transaction.type == 'depot_objectif' %}fas fa-piggy-bank{% elif transaction.type == 'depot_inscription' %}fas fa-sign-in-alt{% elif transaction.type == 'contribution' %}fas fa-donate{% elif transaction.type == 'pret' %}fas fa-hand-holding-usd{% elif transaction.type == 'remboursement_pret' %}fas fa-money-bill-wave{% endif %}"></i>
-                        <div class="flex-grow-1">
-                            <div class="text-dark d-flex align-items-center justify-content-between mb-1">
-                                <span class="fw-bold">
-                                    {% if transaction.type == 'retrait' %}Retrait d'argent
-                                    {% elif transaction.type == 'transfert' %}Transfert d'argent
-                                    {% elif transaction.type == 'depot_objectif' %}Dépôt sur objectif
-                                    {% elif transaction.type == 'depot_inscription' %}Dépôt d'inscription
-                                    {% elif transaction.type == 'contribution' %}Contribution mensuelle
-                                    {% elif transaction.type == 'pret' %}Prêt d'argent
-                                    {% elif transaction.type == 'remboursement_pret' %}Remboursement
-                                    {% elif transaction.type == 'retrait_objectif' %}Retrait d'objectif
-                                    {% elif transaction.type == 'retrait_tout' %}Retrait total
-                                    {% elif transaction.type == 'annulation_objectif' %}Annulation Objectif
-                                    {% endif %}
-                                </span>
-                                <span class="badge accordion {% if transaction.statut == 'Approuvé' %}bg-success{% elif transaction.statut == 'Rejeté' %}bg-danger{% elif transaction.statut == 'Remboursé' %}bg-info{% else %}bg-warning{% endif %}">
-                                    {% if transaction.statut == 'Demande' %}En attente{% else %}{{ transaction.statut }}{% endif %}
-                                </span>
-                            </div>
-
-                            <div class="text-muted small d-flex justify-content-between">
-                                <span>{{ transaction.montant|stringformat:".2f" }} {{ transaction.devise }}</span>
-                                <span class="d-md-none">{{ transaction.date|date:"d/m/Y" }}</span>
-                                <span class="d-none d-md-inline">{{ transaction.date|date:"d E Y  H:i" }}</span>
-                            </div>
-                        </div>
-                    </div>
-                </a>
-                {% empty %}
-                <span class="list-group-item">Aucune transaction récente</span>
-                {% endfor %}
-                {% if transactions.count > 5 %}
-                <div class="mt-3 text-center">
-                    <a href="{% url 'membres:transactions' %}" class="btn btn-link mw-color">Voir plus</a>
+    <div class="row mb-4">
+        <div class="col-md-6 rounded-3 border">
+            <div class="card border-0  h-100">
+                <div class="card-header bg-white p-3 border-bottom">
+                    <h6 class="mb-0 fw-semibold"><i class="fas fa-history me-2 text-info"></i> Activité Récente</h6>
                 </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-6">
-        <div class="card h-100 shadow-sm rounded-4 border-0">
-            <div class="card-header bg-white rounded-top-4">
-                <h5 class="card-title">
-                    <i class="fas fa-bullseye fa-fw text-primary"></i> Vos Objectifs
-                </h5>
-            </div>
-            <div class="card-body d-flex flex-column justify-content-between">
-                <ul class="list-group list-group-flush">
-                    {% for objectif in objectifs %}
-                    <a href="{% url 'membres:objectifs' %}" class="d-block btn btn-light bg-white objectif-item mb-2">  <!-- Anchor tag styled as button -->
-                        <div class="d-flex align-items-center justify-content-between">
-                            <div class="d-flex align-items-center gap-3">  <!-- Align icon and text -->
-                                <i class="fas fa-bullseye text-primary"></i>  <!-- Use a relevant icon -->
-                                <div class="text-dark fw-bold text-start">  <!-- Style text -->
-                                    {{ objectif.type }}
-                                    <div>
-                                        <span class="text-muted small mb-0">{{ objectif.montant|stringformat:".2f" }} / {{ objectif.montant_cible|stringformat:".2f" }} {{ objectif.devise }}</span>
+                <div class="card-body p-3">
+                    <ul class="list-group list-group-flush">
+                        {% for transaction in transactions|slice:":5" %}
+                        <a href="{% url 'membres:transaction' transaction.pk %}" >
+                            <li class="list-group-item d-flex justify-content-between align-items-center p-2">
+                                <div>
+                                    <span class="fw-semibold small">{{ transaction.type }}</span>
+                                    <div class="text-muted x-small">
+                                        {{ transaction.date|date:"d/m/Y" }}
                                     </div>
                                 </div>
+                                <span class="badge bg-secondary-subtle text-secondary rounded-pill">{{ transaction.montant|stringformat:".2f" }} {{ transaction.devise }}</span>
+                            </li>
+                        </a>
+                        {% empty %}
+                        <li class="list-group-item p-2 text-muted small">Aucune activité récente</li>
+                        {% endfor %}
+                    </ul>
+                    {% if transactions.count > 5 %}
+                    <div class="mt-3 text-center">
+                        <a href="{% url 'membres:transactions' %}" class="btn btn-sm btn-link text-info"><i class="fas fa-arrow-right me-1"></i> Voir l'Historique Complet</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mt-3 mt-md-0 rounded-3 border">
+            <div class="card border-0 rounded-3  h-100">
+                <div class="card-header bg-white p-3 border-bottom">
+                    <h6 class="mb-0 fw-semibold"><i class="fas fa-flag-checkered me-2 text-primary"></i> Objectifs en Cours</h6>
+                </div>
+                <div class="card-body p-3">
+                    {% if objectifs %}
+                    <ul class="list-group list-group-flush">
+                        {% for objectif in objectifs %}
+                        <li class="list-group-item p-2 rounded-3 mt-2">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <h6 class="fw-semibold small mb-2">{{ objectif.nom }}</h6>
+                                    <div class="progress" style="height: 5px;">
+                                        <div class="progress-bar bg-primary" role="progressbar"
+                                            style="width: {{ objectif.montant|pourcentage:objectif.montant_cible|stringformat:".0f" }}%;"
+                                            aria-valuenow="{{ objectif.montant|pourcentage:objectif.montant_cible|stringformat:".0f" }}"
+                                            aria-valuemin="0" aria-valuemax="100">
+                                        </div>
+                                    </div>
+                                    <p class="text-muted x-small mt-1" style="margin-bottom: 0 !important;">{{ objectif.montant}} / {{ objectif.montant_cible}} {{ objectif.devise }}</p>
+                                </div>
+                                <span class="badge {% if objectif.statut == 'Atteint' %}bg-success{% elif objectif.statut == 'En cours' %}bg-warning{% else %}bg-danger{% endif %} rounded-pill">{{ objectif.statut }}</span>
                             </div>
-                            <span class="badge {% if objectif.statut == 'Atteint' %}bg-success{% elif objectif.statut == 'En cours' %}bg-warning{% else %}bg-danger{% endif %}">{{ objectif.statut }}</span>
-                        </div>
-                    </a>
-                    {% empty %}
-                    <li class="list-group-item"> Aucun objectif enregistré</li>
-                    {% endfor %}
-                </ul>
-                <a href="{% url 'membres:objectifs' %}" class="btn btn-sm btn-secondary mt-3 rounded-pill">Gérer</a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="text-muted small">Aucun objectif en cours pour le moment.</p>
+                    <div class="text-center mt-2">
+                        <a href="{% url 'membres:objectifs' %}" class="btn btn-sm btn-outline-primary rounded-pill"><i class="fas fa-plus me-1"></i> Ajouter un Objectif</a>
+                    </div>
+                    {% endif %}
+                    {% if objectifs.count > 5 %}
+                    <div class="mt-3 text-center">
+                        <a href="{% url 'membres:objectifs' %}" class="btn btn-sm btn-link text-info"><i class="fas fa-arrow-right me-1"></i> Voir l'Historique Complet</a>
+                    </div>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
 </div>
+
 {% endblock %}

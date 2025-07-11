@@ -1,0 +1,374 @@
+{% extends 'administrateurs/base.html' %} {# Assurez-vous que le chemin est correct #}
+
+{% load static %}
+
+{% block content %}
+
+<style>
+    /* Réduit l'espacement vertical par défaut des balises <p> */
+    form p {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.5rem; /* Valeur réduite par rapport au 1rem par default de Bootstrap */
+    }
+    .form-group {
+        margin-bottom: 1rem;
+    }
+    .form-group label {
+        font-weight: bold;
+        color: #555;
+        margin-bottom: 5px;
+        display: block;
+    }
+    .form-control{
+        padding: .25rem !important;
+        font-size: .75rem !important;
+    }
+
+    /* Les inputs en mode affichage sont masqués par défaut */
+    .inline-edit-input {
+        display: none;
+    }
+    /* Les spans en mode édition sont masqués */
+    .inline-edit-text.editing {
+        display: none;
+    }
+    /* Les inputs en mode édition sont affichés */
+    .inline-edit-input.editing {
+        display: inline-block; /* Pour qu'ils prennent moins de place sur la ligne si besoin */
+    }
+ 
+    textarea.form-control {
+        resize: vertical;
+    }
+
+    /* Boutons d'action */
+    .actions-buttons {
+        display: flex;
+        gap: 10px; /* Espace entre les boutons */
+    }
+    .btn-icon {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: .75rem;
+    }
+
+    /* Boutons enregistrer/annuler initialement cachés */
+    .save-cancel-buttons {
+        display: none;
+        margin-top: 15px; /* Ajoutez de l'espace au-dessus des boutons */
+    }
+    .save-cancel-buttons.editing {
+        display: flex; /* Affiche les boutons quand on est en mode édition */
+    }
+
+    /* Messages d'alerte */
+    .messages-container {
+        margin-top: 15px;
+    }
+    .alert {
+        margin-bottom: 15px;
+        border-radius: 5px;
+    }
+    .validation-errors {
+        color: #dc3545; /* Couleur rouge de Bootstrap pour les erreurs */
+        font-size: 0.875em;
+        margin-top: 5px;
+    }
+    .card-body input{
+        width: 30%;
+    }
+    p{
+        font-size: .85rem;
+        color: #616161;
+    }
+</style>
+
+<div class="container-fluid p-3 p-md-4 rounded-3" style="background-color: #fff; min-height: 100%">
+    <div class="row justify-content-center">
+        <div class="">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h1 class="h4 mb-0"><i class="fas fa-hand-holding-usd me-2"></i> Gestion des Types de Prêt</h1>
+                </div>
+                <div class="card-body">
+                    <div id="global-messages-container" class="messages-container"></div>                     
+                    <div id="loanTypesContainer" class="row">
+                        {% if types_pret_list_data %}                         
+                            {{ types_pret_list_data|json_script:"loan_types_json" }}
+                            {% for type_pret in types_pret_list_data %}
+                                <div class="col-md-6 col-lg-4 mb-4" id="loan-card-{{ type_pret.id }}">
+                                    <div class="card h-100 shadow-sm" data-pk="{{ type_pret.id }}">
+                                        <div class="card-header d-flex justify-content-between">
+                                            <h3 class="h6 mb-0">
+                                                <span id="card-nom-{{ type_pret.id }}">{{ type_pret.nom }}</span>
+                                            </h3>
+                                            <button class="btn btn-sm btn-mw btn-icon edit-loan-btn text-white" data-pk="{{ type_pret.id }}" title="Modifier">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                        </div>
+                                        <div class="card-body">
+                                            <form class="edit-form" data-pk="{{ type_pret.id }}">
+                                                {% csrf_token %}
+                                                <p>
+                                                    <strong>Taux d'intérêt:</strong>
+                                                    <span class="inline-edit-text" id="card-taux_interet-{{ type_pret.id }}">{{ type_pret.taux_interet|stringformat:".4f"|default:"0.0000" }}%</span>
+                                                    <input type="number" step="0.01" class="form-control inline-edit-input" data-field="taux_interet" value="{{ type_pret.taux_interet|default:"0.00" }}" id="input-taux_interet-{{ type_pret.id }}">
+                                                    <div class="validation-errors" id="errors-taux_interet-{{ type_pret.id }}"></div>
+                                                </p>
+                                                <p>
+                                                    <strong>Délai de traitement:</strong>
+                                                    <span class="inline-edit-text" id="card-delais_traitement-{{ type_pret.id }}">{{ type_pret.delais_traitement|stringformat:".0f" }} heures</span>
+                                                    <input type="number" class="form-control inline-edit-input" data-field="delais_traitement" value="{{ type_pret.delais_traitement|default:"0" }}" id="input-delais_traitement-{{ type_pret.id }}">
+                                                    <div class="validation-errors" id="errors-delais_traitement-{{ type_pret.id }}"></div>
+                                                </p>
+                                                <p>
+                                                    <strong>Délai de remboursement:</strong>
+                                                    <span class="inline-edit-text" id="card-delai_remboursement-{{ type_pret.id }}">{{ type_pret.delai_remboursement|stringformat:".0f" }} mois</span>
+                                                    <input type="number" class="form-control inline-edit-input" data-field="delai_remboursement" value="{{ type_pret.delai_remboursement|default:"0" }}" id="input-delai_remboursement-{{ type_pret.id }}">
+                                                    <div class="validation-errors" id="errors-delai_remboursement-{{ type_pret.id }}"></div>
+                                                </p>
+                                                <p>
+                                                    <strong>Investissement Min:</strong>
+                                                    <span class="inline-edit-text" id="card-investissement_min-{{ type_pret.id }}">{{ type_pret.investissement_min|stringformat:".2f"|default:"-" }}</span>
+                                                    <input type="number" step="0.01" class="form-control inline-edit-input" data-field="investissement_min" value="{{ type_pret.investissement_min|default:"0.00" }}" id="input-investissement_min-{{ type_pret.id }}">
+                                                    <div class="validation-errors" id="errors-investissement_min-{{ type_pret.id }}"></div>
+                                                </p>
+                                                <p>
+                                                    <strong>Montant Min:</strong>
+                                                    <span class="inline-edit-text" id="card-montant_min-{{ type_pret.id }}">{{ type_pret.montant_min|stringformat:".2f"|default:"-" }}</span>
+                                                    <input type="number" step="0.01" class="form-control inline-edit-input" data-field="montant_min" value="{{ type_pret.montant_min|default:"0.00" }}" id="input-montant_min-{{ type_pret.id }}">
+                                                    <div class="validation-errors" id="errors-montant_min-{{ type_pret.id }}"></div>
+                                                </p>
+                                                <p>
+                                                    <strong>Montant Max:</strong>
+                                                    <span class="inline-edit-text" id="card-montant_max-{{ type_pret.id }}">{{ type_pret.montant_max|stringformat:".2f"|default:"-" }}</span>
+                                                    <input type="number" step="0.01" class="form-control inline-edit-input" data-field="montant_max" value="{{ type_pret.montant_max|default:"0.00" }}" id="input-montant_max-{{ type_pret.id }}">
+                                                    <div class="validation-errors" id="errors-montant_max-{{ type_pret.id }}"></div>
+                                                </p>
+                                                <div class="actions-buttons mt-3 save-cancel-buttons">
+                                                    <button type="button" class="btn btn-sm btn-success btn-icon save-loan-btn"><i class="fas fa-save"></i> Enregistrer</button>
+                                                    <button type="button" class="btn btn-sm  btn-secondary btn-icon cancel-edit-btn"><i class="fas fa-times"></i> Annuler</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="col-12">
+                                <p class="alert alert-info">Aucun type de prêt n'est encore défini. Vous pouvez les ajouter via la console d'administration ou un seeder.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const loanTypesDataElement = document.getElementById('loan_types_json');
+        let loanTypes = [];
+
+        if (loanTypesDataElement) {
+            try {
+                loanTypes = JSON.parse(loanTypesDataElement.textContent);
+            } catch (e) {
+                console.error("Erreur lors du parsing des données JSON des types de prêt :", e);
+            }
+        } else {
+            console.error("L'élément 'loan_types_json' n'a pas été trouvé. ");
+        }
+        
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const globalMessagesContainer = document.getElementById('global-messages-container');
+
+        function displayMessage(container, type, text) {
+            let alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.setAttribute('role', 'alert');
+            alertDiv.innerHTML = `
+                ${text}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+
+            container.innerHTML = '';
+            container.appendChild(alertDiv);
+            if (type === 'success') {
+                setTimeout(() => {
+                    if (alertDiv.parentNode) {
+                        alertDiv.remove();
+                    }
+                }, 5000);
+            }
+        }
+
+        function clearValidationErrors(cardElement) {
+            cardElement.querySelectorAll('.validation-errors').forEach(errorDiv => {
+                errorDiv.textContent = '';
+            });
+        }
+
+        function showValidationErrors(cardElement, errors) {
+            clearValidationErrors(cardElement);
+            for (const fieldName in errors) {
+                if (errors.hasOwnProperty(fieldName)) {
+                    const errorDiv = cardElement.querySelector(`#errors-${fieldName}-${cardElement.dataset.pk}`);
+                    if (errorDiv) {
+                        errorDiv.textContent = errors[fieldName].join(' ');
+                    }
+                }
+            }
+        }
+
+        function toggleInlineEditMode(cardElement, isEditing) {
+            cardElement.querySelectorAll('.inline-edit-text').forEach(span => {
+                span.classList.toggle('editing', isEditing); 
+            });
+            cardElement.querySelectorAll('.inline-edit-input').forEach(input => {
+                input.classList.toggle('editing', isEditing);         
+            });
+            
+            const editBtn = cardElement.querySelector('.edit-loan-btn');
+            const saveCancelBtns = cardElement.querySelector('.save-cancel-buttons');
+
+            if (editBtn) {
+                editBtn.classList.toggle('d-none', isEditing); 
+            }
+
+            if (saveCancelBtns) {
+                saveCancelBtns.classList.toggle('editing', isEditing); 
+            }
+        }
+
+        document.querySelectorAll('.edit-loan-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                console.log(button);
+                
+                const pk = this.dataset.pk;
+                const cardElement = document.getElementById(`loan-card-${pk}`);
+                const selectedLoanType = loanTypes.find(item => String(item.id) === pk);
+                
+                if (selectedLoanType && cardElement) {
+                    cardElement.querySelectorAll('.inline-edit-input').forEach(input => {
+                        const fieldName = input.dataset.field;
+                        let value = selectedLoanType[fieldName];
+
+                        if (fieldName === 'nom') {
+                            return; 
+                        }
+
+                        if (value === null || value === undefined) {
+                            input.value = '';
+                        } else if (input.type === 'number') {
+                            input.value = parseFloat(value);
+                        } else {
+                            input.value = value;
+                        }
+                    });
+
+                    clearValidationErrors(cardElement);
+                    toggleInlineEditMode(cardElement, true); 
+                }
+            });
+        });
+
+        document.querySelectorAll('.cancel-edit-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const cardElement = this.closest('.card');
+                clearValidationErrors(cardElement);
+                globalMessagesContainer.innerHTML = '';
+                toggleInlineEditMode(cardElement, false); 
+            });
+        });
+
+        document.querySelectorAll('.save-loan-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const cardElement = this.closest('.card');
+                const pk = cardElement.dataset.pk;
+                
+                clearValidationErrors(cardElement);
+                globalMessagesContainer.innerHTML = '';
+                const formData = new FormData(); 
+
+                cardElement.querySelectorAll('.inline-edit-input').forEach(input => {
+                    const fieldName = input.dataset.field;
+                    
+                    if (fieldName === 'nom') {
+                        return;
+                    }
+                    formData.append(fieldName, input.value);
+                });
+
+                formData.append('csrfmiddlewaretoken', csrfToken);
+                
+                fetch(`/administrateurs/types_pret/api/${pk}/modifier/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken,
+                    },
+                    body: formData,
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(errorData => {
+                            throw { status: response.status, data: errorData };
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        displayMessage(globalMessagesContainer, 'success', data.message);
+                        
+                        document.getElementById(`card-nom-${data.data.pk}`).textContent = data.data.nom;
+                        document.getElementById(`card-taux_interet-${data.data.pk}`).textContent = `${parseFloat(data.data.taux_interet).toFixed(4)}%`; 
+                        document.getElementById(`card-delais_traitement-${data.data.pk}`).textContent = `${data.data.delais_traitement} heures`; 
+                        document.getElementById(`card-delai_remboursement-${data.data.pk}`).textContent = `${data.data.delai_remboursement} mois`; 
+                        document.getElementById(`card-investissement_min-${data.data.pk}`).textContent = data.data.investissement_min !== null ? parseFloat(data.data.investissement_min).toFixed(2) : '-'; 
+                        document.getElementById(`card-montant_min-${data.data.pk}`).textContent = data.data.montant_min !== null ? parseFloat(data.data.montant_min).toFixed(2) : '-'; 
+                        document.getElementById(`card-montant_max-${data.data.pk}`).textContent = data.data.montant_max !== null ? parseFloat(data.data.montant_max).toFixed(2) : '-'; 
+                        
+                        
+                        const index = loanTypes.findIndex(item => String(item.id) === String(data.data.pk));
+                        if (index !== -1) {
+                            
+                            data.data.taux_interet = parseFloat(data.data.taux_interet);
+                            data.data.investissement_min = data.data.investissement_min !== null ? parseFloat(data.data.investissement_min) : null;
+                            data.data.montant_min = data.data.montant_min !== null ? parseFloat(data.data.montant_min) : null;
+                            data.data.montant_max = data.data.montant_max !== null ? parseFloat(data.data.montant_max) : null;
+                            loanTypes[index] = data.data;
+                        }
+
+                        toggleInlineEditMode(cardElement, false); 
+                    } else {
+                        displayMessage(globalMessagesContainer, 'danger', data.message || 'Une erreur inconnue est survenue.');
+                        showValidationErrors(cardElement, data.errors);
+                    }
+                })
+                .catch(error => {
+                    console.error('Erreur AJAX:', error);
+                    let errorMessage = 'Une erreur inattendue est survenue lors de l\'enregistrement.';
+                    if (error.data && error.data.message) {
+                        errorMessage = error.data.message;
+                    } else if (error.message) {
+                        errorMessage = error.message;
+                    }
+                    displayMessage(globalMessagesContainer, 'danger', errorMessage);
+                    if (error.data && error.data.errors) {
+                        showValidationErrors(cardElement, error.data.errors);
+                    }
+                });
+            });
+        });
+    });
+</script>
+
+{% endblock extra_js %}

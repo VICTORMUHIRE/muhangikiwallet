@@ -1,0 +1,102 @@
+{% load humanize %}
+{% load colorFilter %}
+
+<div class="modal fade" id="depotObjectifModal{{ objectif.id }}" tabindex="-1" aria-labelledby="depotObjectifModalLabel{{ objectif.id }}" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="depotObjectifModalLabel{{ objectif.id }}">Déposer sur "{{ objectif.nom }}"</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div><strong>Objectif Cible :</strong> {{ objectif.montant_cible|intcomma }} {{ objectif.devise }}</div>
+                <div><strong>Montant Actuel :</strong> {{ objectif.montant|intcomma }} {{ objectif.devise }}</div>
+                
+                 <div><strong>Montant Restant :</strong> {{ objectif.montant_cible|sub:objectif.montant|intcomma }} {{ objectif.devise }}</div> 
+                <hr>
+
+                <div class="alert alert-danger mt-3 d-none" id="depot-error-message{{ objectif.id }}"></div>
+                <div class="alert alert-success mt-3 d-none" id="depot-success-message{{ objectif.id }}"></div>
+                <form id="depotObjectifForm{{ objectif.id }}">
+                    {% csrf_token %}
+                    <input type="hidden" name="objectif_id" value="{{ objectif.id }}">
+                    <div class="mb-3">
+                        <label for="montant_depot{{ objectif.id }}" class="form-label">Montant à déposer</label>
+                        <input type="number" class="form-control" id="montant_depot{{ objectif.id }}" name="montant" placeholder="Entrez le montant en {{ objectif.devise }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="mot_de_passe_depot{{ objectif.id }}" class="form-label">Mot de passe</label>
+                        <input type="password" class="form-control" id="mot_de_passe_depot{{ objectif.id }}" name="mot_de_passe" required>
+                    </div>
+
+                    <button type="button" class="btn btn-primary" onclick="effectuerDepot('{{ objectif.id }}')">Déposer</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function effectuerDepot(objectifId) {
+        const form = document.getElementById(`depotObjectifForm${objectifId}`);
+        const montantInput = document.getElementById(`montant_depot${objectifId}`);
+        const motDePasseInput = document.getElementById(`mot_de_passe_depot${objectifId}`);
+        const csrfToken = form.querySelector('[name=csrfmiddlewaretoken]').value;
+        const errorDiv = document.getElementById(`depot-error-message${objectifId}`);
+        const successDiv = document.getElementById(`depot-success-message${objectifId}`);
+
+
+        fetch(`/membres/objectifs/depot/${objectifId}`, { 
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
+            },
+            body: JSON.stringify({ 
+                montant: montantInput.value,
+                mot_de_passe: motDePasseInput.value,
+            }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            errorDiv.classList.add('d-none');
+            successDiv.classList.add('d-none');
+
+            if (data.success) {
+                successDiv.textContent = data.message;
+                successDiv.classList.remove('d-none');
+
+                // Mettre à jour l'affichage de l'objectif dans la liste
+                const objectifItem = document.querySelector(`#collapse${data.objectif_slug}`).closest('.objectif-item');
+                if (objectifItem) {
+                    const montantDeposeSpan = objectifItem.querySelector('.text-muted');
+                    const progressCircle = objectifItem.querySelector('.progress-circle');
+
+                    if (montantDeposeSpan) {
+                        montantDeposeSpan.textContent = `${data.nouveau_montant_depose} / ${data.montant_cible} ${data.devise}`;
+                    }
+                    if (progressCircle) {
+                        progressCircle.style.setProperty('--progress-percentage', `${data.nouveau_pourcentage}%`);
+                        progressCircle.style.setProperty('--progress-color', data.progress_color);
+                        progressCircle.textContent = `${data.nouveau_pourcentage}%`;
+                    }
+                }
+
+                // Fermer le modal après un court délai
+                setTimeout(() => {
+                    const modal = bootstrap.Modal.getInstance(document.getElementById(`depotObjectifModal${objectifId}`));
+                    modal.hide();
+                    form.reset();
+                }, 1500);
+            } else {
+                errorDiv.textContent = data.error;
+                errorDiv.classList.remove('d-none');
+            }
+        })
+        .catch(error => {
+            errorDiv.textContent = 'Une erreur s\'est produite lors du dépôt.';
+            errorDiv.classList.remove('d-none');
+            console.error('Erreur lors du dépôt:', error);
+        });
+    }
+</script>

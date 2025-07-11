@@ -15,6 +15,7 @@
                     <h5 class="mb-1">
                         {% if transaction.type == 'retrait' %}Retrait d'argent
                         {% elif transaction.type == 'transfert' %}Transfert d'argent
+                        {% elif transaction.type == 'Rechargement compte' %}Recharger compte
                         {% elif transaction.type == 'depot_objectif' %}Dépôt sur objectif
                         {% elif transaction.type == 'depot_inscription' %}Dépôt d'inscription
                         {% elif transaction.type == 'contribution' %}Contribution

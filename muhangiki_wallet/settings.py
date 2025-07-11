@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
+from datetime import timedelta
 from pathlib import Path
 import os
 import pymysql
@@ -41,6 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.humanize',
     'whitenoise.runserver_nostatic',
     'crispy_forms',
     'django_bootstrap5',
@@ -51,6 +53,8 @@ INSTALLED_APPS = [
     'organisations',
     'administrateurs',
     'muhangiki_wallet',
+    'rest_framework',
+    'rest_framework.authtoken'
 ]
 
 MIDDLEWARE = [
@@ -92,29 +96,22 @@ WSGI_APPLICATION = 'muhangiki_wallet.wsgi.application'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    },
-    'defaul': {
+    # 'default': {
+    #     'ENGINE': 'django.db.backends.sqlite3',
+    #     'NAME': BASE_DIR / 'db.sqlite3',
+    # },
+    'default': {  
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'muhangikiwallet_muhangikiwallet', # Remplacez par le nom de votre base de données
-        'USER': 'muhangikiwallet_muhangik', # Remplacez par votre utilisateur de base de données
-        'PASSWORD': '@!rm0n123#', # Remplacez par votre mot de passe de base de données
+        'NAME': 'muhangiki_wallet',     
+        'USER': 'django',                 
+        'PASSWORD': '1234',                 
+        # 'HOST': '172.24.80.1',
         'HOST': 'localhost',
-        'PORT': '3306',
-        'OPTIONS':{
-            'init_command':"SET sql_mode='STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION'"
-            },
-        
-    },
-    'mysql': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'muhangiki_wallet', # Remplacez par le nom de votre base de données
-        'USER': 'root', # Remplacez par votre utilisateur de base de données
-        'PASSWORD': '', # Remplacez par votre mot de passe de base de données
-        'HOST': 'localhost',
-        'PORT': '3306',
+        'PORT': '3306',                 
+        'OPTIONS': {
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION'",
+            'charset': 'utf8mb4', 
+        }
     },
     'postgres': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -195,3 +192,39 @@ BOOTSTRAP5 = {
     'include_jquery': True,
     'use_bootstrap_5': True,
 }
+
+# rest_framework configuration
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.AllowAny',
+    ],
+}
+
+
+
+#confugurations relative a celery
+
+# CELERY_BROKER_URL = 'redis://localhost:6379/0'
+# # Optionnel : Backend pour stocker les résultats des tâches
+# # CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+# CELERY_ACCEPT_CONTENT = ['application/json']
+# CELERY_TASK_SERIALIZER = 'json'
+# CELERY_RESULT_SERIALIZER = 'json'
+# CELERY_TIMEZONE = 'Africa/Lubumbashi'  # Ajustez votre timezone (pour Goma, pourrait être 'Africa/Lubumbashi' ou 'Africa/Kinshasa')
+
+# from celery.schedules import crontab
+
+# CELERY_BEAT_SCHEDULE = {
+#     # 'remboursement_automatique_pret_every_midnight': {
+#     #     'task': 'membres.tasks.remboursement_automatique_pret',
+#     #     'schedule': crontab(hour=12, minute=0),
+#     # },
+#     'remboursement_automatique_pret': {
+#         'task': 'membres.tasks.remboursement_automatique_pret',
+#         'schedule': timedelta(seconds=120),
+#     },
+# }

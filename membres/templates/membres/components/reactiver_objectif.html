@@ -1,0 +1,144 @@
+
+<div
+    class="modal fade"
+    id="reactiverObjectifModal{{ objectif.id }}" 
+    tabindex="-1"
+    aria-labelledby="reactiverObjectifModalHeading{{ objectif.id }}" 
+    aria-hidden="true"
+>
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="reactiverObjectifModalHeading{{ objectif.id }}">
+                    Réactiver l'objectif "{{ objectif.nom }}"
+                </h5>
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                    aria-label="Close"
+                ></button>
+            </div>
+            <div class="modal-body">
+                <p>
+                    Êtes-vous sûr de vouloir réactiver l'objectif
+                    <strong>"{{ objectif.nom}}"</strong> ?
+                </p>
+                
+                <div class="alert alert-danger mt-3 d-none" id="reactiver-error-message{{ objectif.id }}"></div>
+                <div class="alert alert-success mt-3 d-none" id="reactiver-success-message{{ objectif.id }}"></div>
+                
+                <form id="reactiverObjectifForm{{ objectif.id }}"> 
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="mot_de_passe_reactivation{{ objectif.id }}" class="form-label">Mot de passe</label>
+                        <input
+                            type="password"
+                            class="form-control"
+                            id="mot_de_passe_reactivation{{ objectif.id }}" 
+                            name="password"
+                            placeholder="Entrez votre mot de passe"
+                            required
+                        />
+                    </div>
+                    <button
+                        type="button"
+                        class="btn btn-sm btn-success" 
+                        onclick="reactiverObjectifAjax('{{ objectif.id }}')" 
+                    >
+                        Confirmer la réactivation
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    if (typeof reactiverObjectifAjax === 'undefined') { 
+        function reactiverObjectifAjax(objectifId) {
+            const form = document.getElementById(`reactiverObjectifForm${objectifId}`);
+            const passwordInput = document.getElementById(`mot_de_passe_reactivation${objectifId}`);
+            const csrfToken = form.querySelector('[name=csrfmiddlewaretoken]').value;
+            const errorDiv = document.getElementById(`reactiver-error-message${objectifId}`);
+            const successDiv = document.getElementById(`reactiver-success-message${objectifId}`);
+            const modalElement = document.getElementById(`reactiverObjectifModal${objectifId}`);
+            const modal = bootstrap.Modal.getInstance(modalElement);
+
+            errorDiv.classList.add('d-none');
+            successDiv.classList.add('d-none');
+            errorDiv.textContent = '';
+            successDiv.textContent = '';
+
+            if (!passwordInput.value) {
+                errorDiv.textContent = 'Veuillez entrer votre mot de passe.';
+                errorDiv.classList.remove('d-none');
+                return;
+            }
+
+            fetch(`/membres/objectifs/reactiver/${objectifId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                },
+                body: JSON.stringify({
+                    password: passwordInput.value,
+                }),
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => { throw err; });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    successDiv.textContent = data.message;
+                    successDiv.classList.remove('d-none');
+                    setTimeout(() => {
+                        if (modal) {
+                            modal.hide();
+                        }
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    errorDiv.textContent = data.error || 'Une erreur inconnue s\'est produite lors de la réactivation.';
+                    errorDiv.classList.remove('d-none');
+                }
+            })
+            .catch(error => {
+                if (error.error) {
+                     errorDiv.textContent = error.error;
+                } else {
+                     errorDiv.textContent = 'Une erreur s\'est produite lors de la réactivation.';
+                     console.error('Erreur lors de la réactivation:', error);
+                }
+                errorDiv.classList.remove('d-none');
+            });
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const modalElement = document.getElementById(`reactiverObjectifModal{{ objectif.id }}`);
+        if (modalElement) {
+            modalElement.addEventListener('hidden.bs.modal', () => {
+                const errorDiv = document.getElementById(`reactiver-error-message{{ objectif.id }}`);
+                const successDiv = document.getElementById(`reactiver-success-message{{ objectif.id }}`);
+                const passwordInput = document.getElementById(`mot_de_passe_reactivation{{ objectif.id }}`);
+
+                if (errorDiv) {
+                    errorDiv.classList.add('d-none');
+                    errorDiv.textContent = '';
+                }
+                if (successDiv) {
+                    successDiv.classList.add('d-none');
+                    successDiv.textContent = '';
+                }
+                if (passwordInput) {
+                    passwordInput.value = '';
+                }
+            });
+        }
+    });
+</script>

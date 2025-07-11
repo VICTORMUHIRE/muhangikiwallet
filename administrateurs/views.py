@@ -1,3 +1,5 @@
+from decimal import Decimal
+from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.hashers import check_password
@@ -8,20 +10,19 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.core.paginator import Paginator
 from django.db.models import Q
 
+from administrateurs.services import generer_echeances, generer_echeances_test_minutes, solde_entreprise
 from membres.models import Membres
 from organisations.models import Organisations
 from agents.models import Agents
-from .models import Administrateurs, ContributionsMensuelles, CodesReference, NumerosCompte, Users
+from .models import  NumerosCompte, Users, Constantes
 from agents.models import Agents, NumerosAgent
 from agents.forms import AgentsForm, ModifierAgentsForm
 from organisations.models import Organisations
-from organisations.forms import OrganisationsForm
-from transactions.models import Transactions, Prets, TypesPret, Contributions, DepotsObjectif, Retraits, Transferts, DepotsInscription, Benefices, RetraitsObjectif, AnnulationObjectif, RemboursementsPret, RetraitsAdmin, BalanceAdmin
+from transactions.models import  Retraits, Transactions, Prets, DepotsInscription, Benefices, RetraitsObjectif, AnnulationObjectif, RemboursementsPret, RetraitsAdmin, BalanceAdmin, TypesPret
 
-from .forms import AdministrateurForm
+from .forms import AdministrateurForm, ConstantesForm
 from membres.forms import MembresForm, ModifierMembresForm
-from organisations.forms import OrganisationsForm
-from transactions.forms import TransactionsForm, TypesPretForm, ContributionsForm, PretsForm, TransfertsForm, RetraitsForm, DepotsInscriptionForm
+from transactions.forms import TransactionsForm, PretsForm, DepotsInscriptionForm, TypesPretForm
 from objectifs.models import Objectifs
 from django.utils import timezone
 from functools import wraps
@@ -30,7 +31,6 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum
 from random import randint
-from datetime import datetime, timedelta
 from django.utils import timezone
 from functools import wraps
 
@@ -46,17 +46,10 @@ def verifier_admin(func):
 @login_required
 @verifier_admin
 def home(request):
-    # Solde total de l'entreprise
-    solde_total_entreprise_cdf = Transactions.objects.filter(devise="CDF", type="contribution", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
-    solde_total_entreprise_usd = Transactions.objects.filter(devise="USD", type="contribution", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
-
     # Solde de toutes les dettes
     total_montant_dettes_cdf = Prets.objects.filter(devise="CDF", statut__in=["Approuvé", "Remboursé", "Depassé"]).aggregate(total=Sum('montant_remboursé'))['total'] or 0
     total_montant_dettes_usd = Prets.objects.filter(devise="USD", statut__in=["Approuvé", "Remboursé", "Depassé"]).aggregate(total=Sum('montant_remboursé'))['total'] or 0
     
-    total_prets_CDF = Prets.objects.filter(devise="CDF", statut__in=["Approuvé", "Remboursé", "Depassé"]).aggregate(total=Sum('montant'))['total'] or 0
-    total_prets_USD = Prets.objects.filter(devise="USD", statut__in=["Approuvé", "Remboursé", "Depassé"]).aggregate(total=Sum('montant'))['total'] or 0
-
     total_montant_dettes_remboursees_CDF = RemboursementsPret.objects.filter(devise="CDF", statut="Approuvé").aggregate(total=Sum('montant'))['total'] or 0
     total_montant_dettes_remboursees_USD = RemboursementsPret.objects.filter(devise="USD", statut="Approuvé").aggregate(total=Sum('montant'))['total'] or 0
 
@@ -64,28 +57,13 @@ def home(request):
     total_depots_objectifs_cdf = Objectifs.objects.filter(devise="CDF", statut__in=["En cours", "Atteint", "Epuisé"]).aggregate(Sum('montant'))['montant__sum'] or 0
     total_depots_objectifs_usd = Objectifs.objects.filter(devise="USD", statut__in=["En cours", "Atteint", "Epuisé"]).aggregate(Sum('montant'))['montant__sum'] or 0
 
-    # Calcul du solde total des retraits
-    total_retraits_cdf = Transactions.objects.filter(devise="CDF", type="retrait", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
-    total_retraits_usd = Transactions.objects.filter(devise="USD", type="retrait", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
-
     # Calcul du solde Admin
     total_montant_admin_cdf = BalanceAdmin.objects.filter(devise="CDF").aggregate(Sum('montant'))['montant__sum'] or 0
     total_montant_admin_usd = BalanceAdmin.objects.filter(devise="USD").aggregate(Sum('montant'))['montant__sum'] or 0
 
-    total_depot_inscription_CDF = Transactions.objects.filter(devise="CDF", statut="Approuvé", type="depot_inscription").aggregate(total=Sum('montant'))['total'] or 0
-    total_depot_inscription_USD = Transactions.objects.filter(devise="USD", statut="Approuvé", type="depot_inscription").aggregate(total=Sum('montant'))['total'] or 0
-    
     # Calcul du solde total des retraits Admin
     total_retraits_admin_cdf = Transactions.objects.filter(devise="CDF", type="retrait_admin", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
     total_retraits_admin_usd = Transactions.objects.filter(devise="USD", type="retrait_admin", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
-
-    # Calcul du solde total des retraits_tout
-    total_retraits_tout_cdf = Transactions.objects.filter(devise="CDF", type="retrait_tout", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
-    total_retraits_tout_usd = Transactions.objects.filter(devise="USD", type="retrait_tout", statut="Approuvé").aggregate(Sum('montant'))['montant__sum'] or 0
-
-    # Calcul du solde total des qnnulations_objectif
-    total_annulation_objectif_cdf = AnnulationObjectif.objects.filter(devise="CDF", statut="Approuvé").aggregate(total=Sum('montant'))['total'] or 0
-    total_annulation_objectif_usd = AnnulationObjectif.objects.filter(devise="USD", statut="Approuvé").aggregate(total=Sum('montant'))['total'] or 0
 
     # Nombre total de membres, organisations et agents
     nombre_membres = Membres.objects.count()
@@ -102,9 +80,12 @@ def home(request):
     demandes_annulation_objectif = AnnulationObjectif.objects.filter(statut="En attente")
     demandes_retrait_objectif = RetraitsObjectif.objects.filter(statut="En attente")
     
+    solde_total_entreprise_cdf = solde_entreprise("CDF")
+    solde_total_entreprise_usd = solde_entreprise("USD")
+
     context = {
-        'solde_total_entreprise_cdf': float(solde_total_entreprise_cdf) + float(total_depot_inscription_CDF) + float(total_montant_dettes_remboursees_CDF) + float(total_annulation_objectif_cdf)/10 - (float(total_prets_CDF) + float(total_retraits_cdf) + float(total_retraits_tout_cdf) + float(total_retraits_admin_cdf)),
-        'solde_total_entreprise_usd': float(solde_total_entreprise_usd) + float(total_depot_inscription_USD) + float(total_montant_dettes_remboursees_USD) + float(total_annulation_objectif_usd)/10 - (float(total_prets_USD) + float(total_retraits_usd) + float(total_retraits_tout_usd) + float(total_retraits_admin_usd)),
+        'solde_total_entreprise_cdf': solde_total_entreprise_cdf,
+        'solde_total_entreprise_usd': solde_total_entreprise_usd,
         'total_dettes_cdf': float(total_montant_dettes_cdf) - float(total_montant_dettes_remboursees_CDF),
         'total_dettes_usd': float(total_montant_dettes_usd) - float(total_montant_dettes_remboursees_USD),
         'total_depots_objectifs_cdf': total_depots_objectifs_cdf,
@@ -592,51 +573,50 @@ def prets(request):
 @verifier_admin
 def voir_pret(request, pret_id):
     pret = get_object_or_404(Prets, pk=pret_id)
-    pret.membre.capital = Contributions.objects.filter(transaction__membre=pret.membre, mois=pret.membre.mois_contribution, devise=pret.membre.contribution_mensuelle.devise, statut="Approuvé").aggregate(total=Sum('montant'))['total'] or 0
-    pret.membre.capital_total = Contributions.objects.filter(transaction__membre=pret.membre, devise=pret.membre.contribution_mensuelle.devise, statut="Approuvé").aggregate(total=Sum('montant'))['total'] or 0
-
-    reseaux = NumerosAgent.objects.values_list('reseau', flat=True).distinct()
-    numeros_categories = {reseau: [] for reseau in reseaux}
-    for reseau in reseaux:
-        for numero_agent in NumerosAgent.objects.filter(reseau=reseau):
-            numeros_categories[reseau].append((numero_agent.numero, numero_agent.pk))
-    
+    solde_entreprise_value = solde_entreprise(pret.devise)
     if request.method == "POST":
         mot_de_passe = request.POST.get("password")
         transaction_form = TransactionsForm(request.POST, instance=pret.transaction)
 
         if check_password(mot_de_passe, request.user.password):
             if transaction_form.is_valid():
-                pret.date_approbation = timezone.now()
-                pret.administrateur = request.user.admin
-                pret.statut = "Approuvé"
+               if solde_entreprise_value > pret.montant:
+                    pret.date_approbation = timezone.now()
+                    pret.administrateur = request.user.admin
+                    pret.statut = "Approuvé"
+                    
 
-                transaction = transaction_form.save(commit=False)
+                    transaction = transaction_form.save(commit=False)
+                    transaction.date_approbation = timezone.now()
+                    transaction.statut = "Approuvé"
+                    transaction.membre = pret.membre
+                    transaction.montant = pret.montant
+                    transaction.devise = pret.devise
 
-                transaction.membre = pret.membre
-                transaction.agent = transaction.numero_agent.agent
+                    compte = pret.membre.compte_USD if pret.devise == "USD" else pret.membre.compte_CDF
+                    compte.solde += pret.montant
 
-                transaction.montant = pret.montant
-                transaction.devise = pret.devise
-
-                transaction.statut = "En attente"
-
-                transaction.save()
-                pret.save()
-            
-                messages.success(request, "Le pret a été approuvé avec succès")
-                return redirect("administrateurs:home")
-            
+                    # generations des echeances d'un pret
+                    generer_echeances_test_minutes(pret)
+                            
+                    pret.save()
+                    transaction.save()
+                    compte.save()
+                    messages.success(request, "Le prêt a été approuvé avec succès.")
+                    return redirect("administrateurs:home")
+               else:
+                   messages.error(request, "vous ne pouvez pas valider ce pret, car le capital de l'entreprise est insuffisant depandament du montant de pret")
+            else:
+                messages.error(request, "Le formulaire de transaction est invalide.")
         else:
-            messages.error(request, "Mot de passe incorrect")
-    
+            messages.error(request, "Mot de passe incorrect.")
+
     context = {
         "form": PretsForm(instance=pret),
         "transaction_form": TransactionsForm(instance=pret.transaction),
-        "numeros_categories": numeros_categories,
         "pret": pret
     }
-    
+
     return render(request, "administrateurs/voir_pret.html", context)
 
 @login_required
@@ -652,137 +632,14 @@ def rejeter_pret(request, pret_id):
     messages.success(request, "Le pret a été rejeté avec succès")
     return redirect("administrateurs:home")
 
-@login_required
-@verifier_admin
-def voir_retrait_objectif(request, retrait_objectif_id):
-    retrait_objectif = get_object_or_404(RetraitsObjectif, pk=retrait_objectif_id)
-    membre = retrait_objectif.membre
 
-    reseaux = NumerosAgent.objects.values_list('reseau', flat=True).distinct()
-    numeros_categories = {reseau: [] for reseau in reseaux}
-    for reseau in reseaux:
-        for numero_agent in NumerosAgent.objects.filter(reseau=reseau):
-            numeros_categories[reseau].append((numero_agent.numero, numero_agent.pk))
-
-    if request.method == "POST":
-        mot_de_passe = request.POST.get("password")
-        transaction_form = TransactionsForm(request.POST, instance=retrait_objectif.transaction)
-
-        if check_password(mot_de_passe, request.user.password):
-            if transaction_form.is_valid():
-                retrait_objectif.date_approbation = timezone.now()
-                retrait_objectif.statut = "Approuvé"
-
-                transaction = transaction_form.save(commit=False)
-
-                transaction.membre = membre
-                transaction.agent = transaction.numero_agent.agent
-                transaction.statut = "En attente"
-
-                transaction.save()
-                retrait_objectif.save()
-                messages.success(request, "Le retrait a été approuvé avec succès")
-                return redirect("administrateurs:home")
-            else:
-                messages.error(request, "Veuillez corriger les erreurs du formulaire")
-        else:
-            messages.error(request, "Mot de passe incorrect")
-
-    context = {
-        "form": TransactionsForm(instance=retrait_objectif.transaction),
-        "numeros_categories": numeros_categories,
-        "retrait_objectif": retrait_objectif,
-        "membre": membre,
-        "pourcentage_retrait": retrait_objectif.frais * 100,
-        "frais_retrait": retrait_objectif.montant * retrait_objectif.frais,
-        "montant_à_retirer": retrait_objectif.transaction.montant
-    }
-
-    return render(request, "administrateurs/voir_retrait_objectif.html", context)
 
 @login_required
 @verifier_admin
-def rejeter_retrait_objectif(request, retrait_objectif_id):
-    retrait_objectif = get_object_or_404(RetraitsObjectif, pk=retrait_objectif_id)
-    retrait_objectif.statut = retrait_objectif.transaction.statut = "Rejeté"
-    retrait_objectif.date = timezone.now()
-
-    retrait_objectif.transaction.save()
-    retrait_objectif.save()
-    messages.success(request, "Le retrait a été rejeté avec succès")
-    return redirect("administrateurs:home")
-
-@login_required
-@verifier_admin
-def voir_annulation_objectif(request, annulation_objectif_id):
-    annulation_objectif = get_object_or_404(AnnulationObjectif, pk=annulation_objectif_id)
-    membre = annulation_objectif.membre
-
-    reseaux = NumerosAgent.objects.values_list('reseau', flat=True).distinct()
-    numeros_categories = {reseau: [] for reseau in reseaux}
-    for reseau in reseaux:
-        for numero_agent in NumerosAgent.objects.filter(reseau=reseau):
-            numeros_categories[reseau].append((numero_agent.numero, numero_agent.pk))
-
-    if request.method == "POST":
-        mot_de_passe = request.POST.get("password")
-        transaction_form = TransactionsForm(request.POST, instance=annulation_objectif.transaction)
-
-        if check_password(mot_de_passe, request.user.password):
-            if transaction_form.is_valid():
-                annulation_objectif.date_approbation = timezone.now()
-                annulation_objectif.statut = "Approuvé"
-
-                transaction = transaction_form.save(commit=False)
-
-                transaction.membre = membre
-                transaction.agent = transaction.numero_agent.agent
-                transaction.statut = "En attente"
-
-                transaction.save()
-                annulation_objectif.save()
-                messages.success(request, "L'annulation a été approuvée avec succès")
-                return redirect("administrateurs:home")
-            else:
-                messages.error(request, "Veuillez corriger les erreurs du formulaire")
-        else:
-            messages.error(request, "Mot de passe incorrect")
-
-    context = {
-        "form": TransactionsForm(instance=annulation_objectif.transaction),
-        "numeros_categories": numeros_categories,
-        "annulation_objectif": annulation_objectif,
-        "membre": membre,
-        "pourcentage_retrait": annulation_objectif.frais * 100,
-        "frais_retrait": annulation_objectif.montant * annulation_objectif.frais,
-        "montant_à_retirer": annulation_objectif.transaction.montant
-    }
-
-    return render(request, "administrateurs/voir_annulation_objectif.html", context)
-
-@login_required
-@verifier_admin
-def rejeter_annulation_objectif(request, annulation_objectif_id):
-    annulation_objectif = get_object_or_404(AnnulationObjectif, pk=annulation_objectif_id)
-    annulation_objectif.statut = annulation_objectif.transaction.statut = "Rejeté"
-    annulation_objectif.date = timezone.now()
-
-    annulation_objectif.transaction.save()
-    annulation_objectif.save()
-    messages.success(request, "L'annulation a été rejetée avec succès")
-    return redirect("administrateurs:home")
-
-@login_required
-@verifier_admin
-def voir_retrait(request, retrait_id):
-    retrait = get_object_or_404(Retraits, pk=retrait_id)
+def valider_retrait_investissement(request, retrait_id):
+    retrait = get_object_or_404(Retraits, pk=retrait_id)    
+    solde_total_entreprise = solde_entreprise(retrait.devise)
     membre = retrait.membre
-
-    reseaux = NumerosAgent.objects.values_list('reseau', flat=True).distinct()
-    numeros_categories = {reseau: [] for reseau in reseaux}
-    for reseau in reseaux:
-        for numero_agent in NumerosAgent.objects.filter(reseau=reseau):
-            numeros_categories[reseau].append((numero_agent.numero, numero_agent.pk))
 
     if request.method == "POST":
         mot_de_passe = request.POST.get("password")
@@ -790,19 +647,35 @@ def voir_retrait(request, retrait_id):
 
         if check_password(mot_de_passe, request.user.password):
             if transaction_form.is_valid():
-                retrait.date_approbation = timezone.now()
-                retrait.statut = "Approuvé"
+                if retrait.montant < solde_total_entreprise:
+                        
+                    retrait.date_approbation = timezone.now()
+                    retrait.statut = "Approuvé"
 
-                transaction = transaction_form.save(commit=False)
+                    transaction = transaction_form.save(commit=False)
+                    transaction.membre = membre
+                    transaction.date_approbation = timezone.now()
+                    transaction.statut = "Approuvé"
 
-                transaction.membre = membre
-                transaction.agent = transaction.numero_agent.agent
-                transaction.statut = "En attente"
+                    compte = membre.compte_USD if transaction.devise == "USD" else membre.compte_CDF
+                    
+                    # Enregistrement du bénéfice pour l'administration (une seule fois)
+                    BalanceAdmin.objects.create(
+                        montant=retrait.montant - transaction.montant,
+                        devise=transaction.devise,
+                        type="Retrait investissement"
+                    )
 
-                transaction.save()
-                retrait.save()
-                messages.success(request, "Le retrait a été approuvé avec succès")
-                return redirect("administrateurs:home")
+                    # Débit du compte
+                    compte.solde += transaction.montant 
+                    compte.save()
+
+                    transaction.save()
+                    retrait.save()
+                    messages.success(request, "Le retrait a été approuvé avec succès")
+                    return redirect("administrateurs:home")
+                else:
+                    messages.error(request, "vous ne pouvez pas valider le retrait car le capital de l'entreprise est insufisant")
             else:
                 messages.error(request, "Veuillez corriger les erreurs du formulaire")
         else:
@@ -810,7 +683,6 @@ def voir_retrait(request, retrait_id):
     
     context = {
         "form": TransactionsForm(instance=retrait.transaction),
-        "numeros_categories": numeros_categories,
         "retrait": retrait,
         "pourcentage_retrait": retrait.frais * 100,
         "frais_retrait": retrait.montant * retrait.frais,
@@ -921,3 +793,81 @@ def refuser_retrait_tout(request, retrait_id):
     retrait.save()
     messages.success(request, "Le retrait a été rejeté avec succès")
     return redirect("administrateurs:home")
+
+
+# vues pour la modification des Constantes
+@login_required
+def constantes(request):
+    constantes = Constantes.objects.all().order_by('key')
+
+    # Forme vide par défaut
+    form = ConstantesForm()
+
+    if request.method == 'POST':
+        if request.POST.get('id'):  # Modification
+            setting = get_object_or_404(Constantes, id=request.POST['id'])
+            form = ConstantesForm(request.POST, instance=setting)
+        else:  # Nouvelle constante
+            form = ConstantesForm(request.POST)
+
+        if form.is_valid():
+            obj = form.save(commit=False)
+            obj.modifie_par = request.user
+            obj.save()
+            messages.success(request, "Constante enregistrée.")
+            return redirect('administrateurs:constantes')  # Recharge la page
+
+    return render(request, 'administrateurs/constantes.html', {
+        'settings': constantes,
+        'form': form,
+    })
+
+
+@login_required
+@verifier_admin
+def liste_types_pret(request):
+    types_pret = TypesPret.objects.all().values()
+    form = TypesPretForm() 
+
+    context = {
+        'types_pret_list_data': list(types_pret),
+        'form': form, 
+    }
+    return render(request, 'administrateurs/liste_types_pret.html', context)
+
+
+@login_required
+@verifier_admin
+def modifier_type_pret(request, pk):
+    type_pret = get_object_or_404(TypesPret, pk=pk)
+
+    if request.method == 'POST':
+        form = TypesPretForm(request.POST, instance=type_pret)
+        if form.is_valid():
+            type_pret = form.save()
+            message_text = f"Le type de prêt '{type_pret.nom}' a été mis à jour avec succès."
+
+            return JsonResponse({
+                'success': True,
+                'message': message_text,
+                'data': { # Renvoie les données mises à jour
+                    'pk': type_pret.pk,
+                    'nom': type_pret.nom,
+                    'description': type_pret.description,
+                    'taux_interet': str(type_pret.taux_interet), # DecimalField à string
+                    'delais_traitement': type_pret.delais_traitement,
+                    'delai_remboursement': type_pret.delai_remboursement,
+                    'investissement_min': str(type_pret.investissement_min) if type_pret.investissement_min is not None else None,
+                    'montant_min': str(type_pret.montant_min) if type_pret.montant_min is not None else None,
+                    'montant_max': str(type_pret.montant_max) if type_pret.montant_max is not None else None,
+                }
+            })
+        else:
+            message_text = "Veuillez corriger les erreurs dans le formulaire."
+            return JsonResponse({
+                'success': False,
+                'message': message_text,
+                'errors': form.errors
+            }, status=400)
+    
+    return JsonResponse({'message': 'Méthode non autorisée.'}, status=405)

@@ -1,0 +1,461 @@
+<style>
+  .modal-content {
+    border-radius: 0.5rem;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+    overflow-y: auto;
+    padding: 1.5rem;
+  }
+
+  .step-header {
+    display: flex !important;
+    align-items: center !important;
+    margin-bottom: 1.5rem; /* Plus d'espace comme dans le paiement */
+  }
+
+  .btn-link-back {
+    color: #718096;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    width: 100%; /* Prend toute la largeur pour alignement à gauche */
+    text-decoration: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    margin-right: auto; /* Pousse le reste des éléments à droite */
+  }
+
+  .btn-link-back svg {
+    width: 1.2rem;
+    height: 1.2rem;
+    margin-right: 0.5rem;
+  }
+
+  .progress-bar-container {
+    width: 30%; /* Occupe une partie de la largeur */
+    display: flex;
+    align-items: center;
+    height: 0.5rem;
+    background-color: #e0e0e0;
+    border-radius: 0.25rem;
+    overflow: hidden;
+    margin-left: auto; /* Pousse la barre de progression à droite */
+  }
+
+  .progress-bar {
+    background-color: var(--primary-color);
+    height: 100%;
+    width: 0%; /* Initialement à 0 */
+    border-radius: 0.25rem;
+    transition: width 0.3s ease-in-out;
+  }
+
+  .step {
+    transition: opacity 0.3s ease-in-out, transform 0.3s ease;
+    opacity: 0;
+    transform: translateX(10px);
+    display: none;
+  }
+
+  .step.active {
+    display: block;
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  :root {
+    --primary-color: #fc9d1b;
+  }
+
+  .btn-outline-hover {
+    background-color: transparent;
+    border: 1px solid var(--primary-color); /* couleur de la bordure, ici vert bootstrap */
+    color: var(--primary-color);
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  .btn-outline-hover:hover {
+    background-color: var(--primary-color);
+    color: #fff;
+  }
+  .btn-primaire {
+    background-color: var(--primary-color);
+    color:white;
+    border-color: var(--primary-color);
+  }
+
+  .btn-primaire:hover {
+    background-color: #e68c16;
+    color:white;
+    border-color: #e68c16;
+  }
+
+  .accordion-button {
+    background-color: white;
+    color: #000;
+  }
+
+  .accordion-button:not(.collapsed) {
+    background-color: white; /* Conserve le fond blanc même déroulé */
+    color: #000;
+  }
+
+  .accordion-button:focus {
+    box-shadow: 0 0 0 0.25rem rgba(252, 157, 27, 0.25);
+  }
+
+  .form-check-input:checked {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+  }
+
+  .text-orange {
+    color: var(--primary-color);
+  }
+  .accordion-button::after {
+    display: none !important;
+  }
+  .accordion-item {
+    border: 1px solid #dee2e6 !important;
+    border-radius: .375rem !important;
+  }
+  
+  .accordion-button {
+    border-top-left-radius: .375rem !important;
+    border-top-right-radius: .375rem !important;
+  }
+  .detail-link {
+    color: #616161;
+    text-decoration: underline;
+    transition: color 0.3s ease;
+  }
+  .detail-link:hover {
+    color: var(--primary-color);
+  }
+  
+</style>
+
+<div
+  class="modal fade"
+  id="loanRequestModal"
+  tabindex="-1"
+  aria-labelledby="loanRequestModalLabel"
+  aria-hidden="true"
+>
+  {% if form.errors %}
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      var myModal = new bootstrap.Modal(document.getElementById('loanRequestModal'));
+      myModal.show();
+    });
+  </script>
+  {% endif %}
+
+
+  <div
+    class="modal-dialog modal-dialog-centered modal-lg "
+  >
+    <div class="modal-content">
+      <form
+        method="post"
+        action="{% url 'membres:demande_pret' %}"
+        id="loan-form"
+      >
+        {% csrf_token %}
+
+        <div class="modal-body">
+          <div id="loanStepsContainer">
+
+           
+            {% if form.errors %}
+              <div class="alert alert-danger">
+                <ul class="mb-0">
+                  {% for field in form %}
+                    {% for error in field.errors %}
+                      <li>{{ error|escape }}</li>
+                    {% endfor %}
+                  {% endfor %}
+                  {% for error in form.non_field_errors %}
+                    <li>{{ error|escape }}</li>
+                  {% endfor %}
+                </ul>
+              </div>
+            {% endif %}
+
+
+            <div class="step active" data-step="1">
+              <div class="step-header">
+                <div class="progress-bar-container">
+                  <div class="progress-bar" style="width: 0%"></div>
+                </div>
+              </div>
+              <h6 class="mb-3 fw-semibold text-secondary">
+                <i class="fas fa-list-alt me-2"></i>
+                Quel type de prêt souhaitez-vous ?
+              </h6>
+
+              <div class="accordion" id="loanTypeAccordion">
+                {% for type in types_pret %}
+                  {% with type.nom|slugify as slug %}
+                  <div class="accordion-item mb-3 border rounded">
+                    <h2 class="accordion-header" id="heading{{ slug }}">
+                      <div
+                        class="accordion-button collapsed d-flex justify-content-between align-items-center"
+                        style="cursor: default"
+                      >
+                        <div class="d-flex gap-2 w-100 justify-content-between align-items-center">
+                          <label class="d-flex align-items-center gap-2 w-100">
+                            <input
+                              class="form-check-input mt-0"
+                              type="radio"
+                              name="type_pret"
+                              value="{{ type.id }}"
+                              required
+                            />
+                            <span class="fw-semibold mb-0">{{ type.nom }}</span>
+                          </label>
+                          <a
+                            class="detail-link fw-light"
+                            style="font-size: 0.8rem"
+                            data-bs-toggle="collapse"
+                            href="#collapse{{ slug }}"
+                            role="button"
+                            aria-expanded="false"
+                            aria-controls="collapse{{ slug }}"
+                          >
+                            Détail
+                          </a>
+                        </div>
+                      </div>
+                    </h2>
+                    <div
+                      id="collapse{{ slug }}"
+                      class="accordion-collapse collapse"
+                      aria-labelledby="heading{{ slug }}"
+                      data-bs-parent="#loanTypeAccordion"
+                    >
+                      <div class="accordion-body" style="padding-top: 0 !important;">
+                        <ul class="mb-0 text-muted">
+                          <li><small><strong>Traitement :</strong> {{ type.delais_traitement }}h</small></li>
+                        
+                          {% if type.nom|lower == "prêts express" or type.nom|lower == "prets express" %}
+                            <li>
+                              <small><strong>Montant max :</strong> soit {{max_possible_cdf|floatformat:0}}fc, soit {{max_possible_usd|floatformat:0}}$</small>
+                            </li>
+                          {% else %}
+                            <li>
+                              <small>
+                                <strong>Montant :</strong>
+                                {% if type.montant_min and type.montant_max %}
+                                  {{ type.montant_min|floatformat:0 }}$ à {{ type.montant_max|floatformat:0 }}$
+                                {% elif type.montant_max %}
+                                  Jusqu’à {{ type.montant_max|floatformat:0 }}$
+                                {% endif %}
+                              </small>
+                            </li>
+                          {% endif %}
+                        
+                          <li><small><strong>Intérêt :</strong> {{ type.taux_interet| floatformat:0 }}%</small></li>
+                          <li><small><strong>Durée :</strong> {{ type.delai_remboursement }} mois</small></li>
+                        
+                          {% if type.description %}
+                            <li><small><strong>Description :</strong> {{ type.description }}</small></li>
+                          {% endif %}
+                        </ul>
+                                            
+                      </div>
+                    </div>
+                  </div>
+                  {% endwith %}
+                {% empty %}
+                  <p>Aucun type de prêt disponible pour le moment.</p>
+                {% endfor %}
+              </div>
+              
+
+              <div class="mt-4 d-flex justify-content-end">
+                <button
+                  type="button"
+                  class="btn btn-primaire rounded-3 next-btn"
+                >
+                  Suivant
+                </button>
+              </div>
+            </div>
+
+            <div class="step" data-step="2">
+              <div class="step-header">
+                <button
+                  type="button"
+                  class="btn-link-back"
+                  onclick="goToStep(1)"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="feather feather-arrow-left"
+                  >
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                  </svg>
+                  Retour
+                </button>
+                <div class="progress-bar-container">
+                  <div class="progress-bar" style="width: 50%"></div>
+                </div>
+              </div>
+              <h6 class="mb-3 fw-semibold text-secondary">
+                <i class="fas fa-money-bill-wave me-2"></i>
+                Informations sur le prêt
+              </h6>
+              
+              <div class="mb-3">
+                <label for="{{ form.montant.id_for_label }}">Montant</label>
+                {{ form.montant }}
+              </div>
+              <div class="mb-3">
+                <label for="{{ form.devise.id_for_label }}">Device</label>
+                {{ form.devise }}
+              </div>
+              <div class="mb-3">
+                <label for="{{ form.mode_payement.id_for_label }}">Mode de paiement</label>
+                {{ form.mode_payement }}
+              </div>
+              <div class="mt-4 d-flex justify-content-end">
+                <button
+                  type="button"
+                  class="btn btn-primaire rounded-3 next-btn"
+                >
+                  Suivant
+                </button>
+              </div>
+            </div>
+
+            <div class="step" data-step="3">
+              <div class="step-header">
+                <button
+                  type="button"
+                  class="btn-link-back"
+                  onclick="goToStep(2)"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="feather feather-arrow-left"
+                  >
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                  </svg>
+                  Retour
+                </button>
+                <div class="progress-bar-container">
+                  <div class="progress-bar" style="width: 100%"></div>
+                </div>
+              </div>
+              <h6 class="mb-3 fw-semibold text-secondary">
+                <i class="fas fa-key me-2 text-info"></i> Confirmation avec
+                votre mot de passe
+              </h6>
+              <div class="mb-3">
+                <label
+                  for="mot_de_passe"
+                  class="form-label fw-semibold text-muted"
+                  >Mot de passe</label
+                >
+                <input
+                  type="password"
+                  class="form-control"
+                  id="mot_de_passe"
+                  name="mot_de_passe"
+                  placeholder="Votre mot de passe"
+                  required
+                />
+              </div>
+              <div class="mt-4 d-flex justify-content-end">
+                <button type="submit" class="btn btn-primaire rounded-3">
+                  Soumettre la demande
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const steps = document.querySelectorAll(".step");
+    const nextButtons = document.querySelectorAll(".next-btn");
+    const prevButtons = document.querySelectorAll(".prev-btn");
+    const progressBar = document.querySelector(
+      "#loanRequestModal .progress-bar"
+    );
+    const accordionButtons = document.querySelectorAll(
+      "#loanTypeAccordion .accordion-button"
+    );
+    const loanTypeRadios = document.querySelectorAll(
+      'input[name="type_pret_detail"]'
+    );
+    const firstNextButton = document.querySelector(
+      '.step[data-step="1"] .next-btn'
+    );
+
+    let currentStep = 0;
+
+    function showStep(index) {
+      steps.forEach((step, i) => {
+        step.classList.remove("active");
+        if (i === index) {
+          step.classList.add("active");
+        }
+      });
+
+      // Mettre à jour la barre de progression
+      if (progressBar) {
+        progressBar.style.width = `${(index / (steps.length - 1)) * 100}%`;
+      }
+      currentStep = index;
+    }
+
+    nextButtons.forEach((btn, i) => {
+      btn.addEventListener("click", function () {
+        if (currentStep < steps.length - 1) {
+          showStep(currentStep + 1);
+        }
+      });
+    });
+
+    prevButtons.forEach((btn) => {
+      btn.addEventListener("click", function () {
+        if (currentStep > 0) {
+          showStep(currentStep - 1);
+        }
+      });
+    });
+
+    window.goToStep = function (stepNumber) {
+      showStep(stepNumber - 1); // Parce que l’index commence à 0
+    };
+
+    // Activer le bouton "Suivant" de l'étape 1 seulement si un type de prêt est sélectionné
+    loanTypeRadios.forEach((radio) => {
+      radio.addEventListener("change", function () {
+        firstNextButton.disabled = false;
+      });
+    });
+
+    showStep(currentStep);
+  });
+  
+</script>
+
